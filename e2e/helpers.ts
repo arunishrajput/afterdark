@@ -157,6 +157,7 @@ export async function toPlaying(page: Page, opts: { minigames?: string[] } = {})
 }
 
 interface Actions {
+  devAdvanceClock(seconds: number): Promise<{ ok: boolean }>;
   devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
   simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
 }
@@ -169,6 +170,34 @@ export async function setMinigames(page: Page, types: string[]) {
     types,
   );
   expect(res.ok).toBe(true);
+}
+
+/** Test hook: jump game time forward (host, test mode, playing): cooldowns and incubation end sooner. */
+export async function advanceClock(page: Page, seconds: number) {
+  const res = await page.evaluate(
+    (n) =>
+      (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devAdvanceClock(n),
+    seconds,
+  );
+  expect(res.ok).toBe(true);
+}
+
+/**
+ * Every Socket.IO payload this page receives, as text: WebSocket frames and long-polling
+ * responses (the first requests go over polling before the upgrade). For raw leak scans.
+ * Call it before navigating.
+ */
+export function captureFrames(page: Page): string[] {
+  const frames: string[] = [];
+  page.on('websocket', (ws) => ws.on('framereceived', (f) => frames.push(String(f.payload))));
+  page.on('response', (res) => {
+    if (!res.url().includes('/socket.io/')) return;
+    void res.text().then(
+      (t) => frames.push(t),
+      () => undefined,
+    );
+  });
+  return frames;
 }
 
 /** Hop the simulated player to a place, the same call a long-press makes. */
