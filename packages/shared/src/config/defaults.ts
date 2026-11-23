@@ -93,8 +93,8 @@ export const DEFAULT_CONFIG = {
   taskAbandonExtraM: 10,
   keyFetchMinLegM: 60,
   taskMinDistanceM: 60,
-  /** Types a new task can be (a type joins the list when its minigame ships: Phase 11 adds the rest). */
-  minigamesEnabled: ['wires', 'lock'],
+  /** Types a new task can be. The host can switch some off (at least two stay on). */
+  minigamesEnabled: ['wires', 'lock', 'pattern', 'signal', 'slide', 'crossword', 'keyfetch'],
   minigameWeights: {
     wires: 3,
     lock: 3,
@@ -108,6 +108,12 @@ export const DEFAULT_CONFIG = {
   lockDigits: 3,
   lockDigitMax: 5,
   lockMaxGuesses: 8,
+  slideShuffleMinMoves: 20,
+  slideShuffleMaxMoves: 30,
+  patternLength: 5,
+  signalKeyFraction: 0.6,
+  keyHoldS: 3,
+  keyTurnSteps: 3,
   coopPinDigits: 4,
 
   // Points (SCORING.md)

@@ -90,6 +90,8 @@ export interface TaskState {
   type: MinigameType;
   /** A co-op task only: the session both copies belong to (`GameState.coops`). */
   coopId?: string;
+  /** Key Fetch only: the key from Point 1 is in hand, so this card now points at Point 2. Survives Task Stop, meetings and reconnects. */
+  keyHeld?: true;
   fake?: true;
   /** A fake only: the Phantom who planted it. Server-only (it frees that Phantom's count when the task goes). */
   fakeOwnerId?: string;

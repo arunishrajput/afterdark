@@ -11,6 +11,7 @@ import {
   minigameOf,
   type SoloMinigameType,
   type TaskActionAck,
+  type TaskContext,
   type TaskOpenAck,
   type WiresPuzzle,
 } from '@afterdark/shared';
@@ -59,6 +60,12 @@ function gameOf(task: TaskState) {
   return game;
 }
 
+/** What a minigame may know about the task around it: game time and whether the key is held (TASKS §4). */
+function contextOf(state: RoomState, task: TaskState, now: number): TaskContext {
+  const clock = state.game?.clock;
+  return { gameMs: clock ? gameNow(clock, now) : 0, keyHeld: task.keyHeld === true };
+}
+
 /** A player outside the zone can't open tasks or submit (RULES §9.3). */
 function requireInZone(p: PlayerState): void {
   if (isZoneLocked(p)) throw new RuleError('TASKS_LOCKED', 'Return to the zone to use tasks');
@@ -91,7 +98,7 @@ export function openTask(
     if (p.tasks?.some((t) => t.open)) {
       throw new RuleError('NOT_ALLOWED', 'Finish or cancel the task you have open');
     }
-    const { puzzle, solution } = game.generate(taskRng(state), 1, state.config);
+    const { puzzle, solution } = game.generate(taskRng(state), 1, state.config, contextOf(state, task, now));
     task.open = { puzzle, solution };
   }
   // The same ack for a real and a fake task: only the submit result differs (TASKS §1).
@@ -133,7 +140,14 @@ export function actOnTask(
   const open = requireOpen(task);
   const game = gameOf(task);
   if (!game.hasActions) throw new RuleError('INVALID_PAYLOAD', 'This game has no actions');
-  const step = game.act(open.puzzle, open.solution, open.progress, action, taskRng(state));
+  const step = game.act(
+    open.puzzle,
+    open.solution,
+    open.progress,
+    action,
+    taskRng(state),
+    contextOf(state, task, now),
+  );
   if (step === 'invalid') throw new RuleError('INVALID_PAYLOAD', 'That is not a valid move');
   open.progress = step.state;
   if (step.solution !== undefined) open.solution = step.solution;
@@ -192,7 +206,13 @@ export function submitTask(
   if (open.lockedUntilGameMs !== undefined && gameMs < open.lockedUntilGameMs) {
     throw new RuleError('COOLDOWN', 'Wait a moment before trying again');
   }
-  const check = gameOf(task).check(open.puzzle, open.solution, answer, open.progress);
+  const check = gameOf(task).check(
+    open.puzzle,
+    open.solution,
+    answer,
+    open.progress,
+    contextOf(state, task, now),
+  );
   if (check === 'invalid') throw new RuleError('INVALID_PAYLOAD', 'That is not a valid answer');
   if (check === 'wrong') {
     open.lockedUntilGameMs = gameMs + state.config.taskWrongLockoutS * MS_PER_S;

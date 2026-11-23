@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG } from '../config/defaults';
 import { createRng } from '../rng';
 import { lock, type LockCode, type LockFeedback, type LockState, scoreGuess } from './lock';
 import { eraseMinigame } from './types';
+import { CTX } from './testCtx';
 
 const params = DEFAULT_CONFIG;
 const game = eraseMinigame(lock);
@@ -30,12 +31,12 @@ interface Session {
 }
 
 function start(seed: number): Session {
-  const g = game.generate(createRng(seed), 1, params);
+  const g = game.generate(createRng(seed), 1, params, CTX);
   return { ...g, state: undefined };
 }
 
 function guess(s: Session, digits: number[], rng = createRng(99)): LockFeedback {
-  const res = game.act(s.puzzle, s.solution, s.state, { guess: digits }, rng);
+  const res = game.act(s.puzzle, s.solution, s.state, { guess: digits }, rng, CTX);
   if (res === 'invalid') throw new Error('invalid action');
   s.state = res.state;
   if (res.solution !== undefined) s.solution = res.solution;
@@ -60,10 +61,10 @@ describe('lock', () => {
     const s = start(1);
     const code = s.solution as LockCode;
     // Submitting the right code without having guessed it is refused.
-    expect(game.check(s.puzzle, s.solution, code, s.state)).toBe('wrong');
+    expect(game.check(s.puzzle, s.solution, code, s.state, CTX)).toBe('wrong');
     const fb = guess(s, code);
     expect(fb).toMatchObject({ exact: params.lockDigits, solved: true });
-    expect(game.check(s.puzzle, s.solution, code, s.state)).toBe('right');
+    expect(game.check(s.puzzle, s.solution, code, s.state, CTX)).toBe('right');
     // A different code never passes, even when solved.
     expect(
       game.check(
@@ -71,6 +72,7 @@ describe('lock', () => {
         s.solution,
         code.map((d) => (d + 1) % 6),
         s.state,
+        CTX,
       ),
     ).toBe('wrong');
   });
@@ -101,9 +103,9 @@ describe('lock', () => {
 
   it('rejects an action that is not a guess', () => {
     const s = start(4);
-    expect(game.act(s.puzzle, s.solution, s.state, { guess: 'abc' }, createRng(1))).toBe('invalid');
+    expect(game.act(s.puzzle, s.solution, s.state, { guess: 'abc' }, createRng(1), CTX)).toBe('invalid');
     expect(
-      game.act(s.puzzle, s.solution, s.state, { guess: [1, 2, 3], extra: 1 }, createRng(1)),
+      game.act(s.puzzle, s.solution, s.state, { guess: [1, 2, 3], extra: 1 }, createRng(1), CTX),
     ).toBe('invalid');
   });
 

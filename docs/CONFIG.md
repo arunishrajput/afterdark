@@ -97,12 +97,18 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `taskAbandonExtraM` | 10 | — | 🔒 | A minigame in progress is cancelled if the player goes further than `reachRadiusM` plus this from the pin. |
 | `keyFetchMinLegM` | 60 | — | 🔒 | Minimum distance between the two points of a key-fetch task. |
 | `taskMinDistanceM` | 60 | — | 🔒 | A new task's pin is picked at least this far from the player when a point that far exists (MAP §4). |
-| `minigamesEnabled` | `['wires','lock']` | — | 🔒 | Types a solo task can roll. Grows as minigames ship (Phase 11 adds the rest). |
+| `minigamesEnabled` | all 7 solo types | ≥ 2 types | ⚙️ | Types a solo task can roll. The host's **Minigame variety** setting switches types off; at least 2 stay on (ADR-090). |
 | `minigameWeights` | wires 3, lock 3, pattern 3, signal 2, slide 2, crossword 2, keyfetch 1 | — | 🔒 | Relative chance of each type among the enabled ones (TASKS §2). |
 | `wiresPairs` | 4 | 3–6 | 🔒 | Wires per side in Wire Connect. |
 | `lockDigits` | 3 | 3–5 | 🔒 | Length of the Lock Breaker code. |
 | `lockDigitMax` | 5 | 3–9 | 🔒 | Highest digit used (digits run 0 to this). |
 | `lockMaxGuesses` | 8 | — | 🔒 | Guesses before the lock re-rolls its code. |
+| `slideShuffleMinMoves` | 20 | — | 🔒 | Sliding Puzzle: fewest random legal moves used to shuffle the solved board. |
+| `slideShuffleMaxMoves` | 30 | — | 🔒 | Sliding Puzzle: most random legal moves used to shuffle. |
+| `patternLength` | 5 | 3–9 | 🔒 | Steps in a Pattern Memory sequence. |
+| `signalKeyFraction` | 0.6 | 0–1 | 🔒 | Signal Decode: share of the word's distinct letters the partial key reveals (raised only when the puzzle would not have a single answer). |
+| `keyHoldS` | 3 | — | 🔒 | Key Fetch: seconds to hold "Pick up key" at Point 1. |
+| `keyTurnSteps` | 3 | 2–6 | 🔒 | Key Fetch: turns in the rotation sequence at Point 2. |
 | `coopPinDigits` | 4 | 3–6 | 🔒 | Length of each PIN in the co-op PIN Relay. |
 
 ## Points

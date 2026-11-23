@@ -39,8 +39,26 @@ export type Difficulty = 1 | 2 | 3;
 /** The tunable numbers a generator may read (CONFIG: Tasks). */
 export type MinigameParams = Pick<
   GameConfig,
-  'wiresPairs' | 'lockDigits' | 'lockDigitMax' | 'lockMaxGuesses'
+  | 'wiresPairs'
+  | 'lockDigits'
+  | 'lockDigitMax'
+  | 'lockMaxGuesses'
+  | 'slideShuffleMinMoves'
+  | 'slideShuffleMaxMoves'
+  | 'patternLength'
+  | 'signalKeyFraction'
+  | 'keyHoldS'
+  | 'keyTurnSteps'
 >;
+
+/**
+ * What a game may know about the task around it: the game clock (pausable) and
+ * whether the player already holds the key (Key Fetch's second leg). Games stay pure.
+ */
+export interface TaskContext {
+  gameMs: number;
+  keyHeld: boolean;
+}
 
 /**
  * `P` puzzle (sent to the client), `S` solution (server only), `A` the final
@@ -49,9 +67,14 @@ export type MinigameParams = Pick<
  */
 export interface MinigameDef<P, S, A, Act = never, F = never, St = never> {
   type: SoloMinigameType;
-  generate(rng: Rng, difficulty: Difficulty, params: MinigameParams): { puzzle: P; solution: S };
+  generate(
+    rng: Rng,
+    difficulty: Difficulty,
+    params: MinigameParams,
+    ctx: TaskContext,
+  ): { puzzle: P; solution: S };
   /** `state` is the progress `act` built up: a game can refuse an answer that skipped its steps. */
-  verify(puzzle: P, solution: S, answer: A, state: St | undefined): boolean;
+  verify(puzzle: P, solution: S, answer: A, state: St | undefined, ctx: TaskContext): boolean;
   /** Multi-step games only. May swap in a new `solution` (the lock re-rolls its code). */
   act?(
     puzzle: P,
@@ -59,6 +82,7 @@ export interface MinigameDef<P, S, A, Act = never, F = never, St = never> {
     state: St | undefined,
     action: Act,
     rng: Rng,
+    ctx: TaskContext,
   ): { state: St; feedback: F; solution?: S };
   answerSchema: z.ZodType<A>;
   actionSchema?: z.ZodType<Act>;
@@ -74,15 +98,23 @@ export interface ErasedMinigame {
     rng: Rng,
     difficulty: Difficulty,
     params: MinigameParams,
+    ctx: TaskContext,
   ): { puzzle: unknown; solution: unknown };
   /** `invalid` when `answer` is not shaped like this game's answer (it never reaches `verify`). */
-  check(puzzle: unknown, solution: unknown, answer: unknown, state: unknown): CheckResult;
+  check(
+    puzzle: unknown,
+    solution: unknown,
+    answer: unknown,
+    state: unknown,
+    ctx: TaskContext,
+  ): CheckResult;
   act(
     puzzle: unknown,
     solution: unknown,
     state: unknown,
     action: unknown,
     rng: Rng,
+    ctx: TaskContext,
   ): { state: unknown; feedback: unknown; solution?: unknown } | 'invalid';
 }
 
@@ -97,19 +129,19 @@ export function eraseMinigame<P, S, A, Act, F, St>(
   return {
     type: def.type,
     hasActions: def.act !== undefined && def.actionSchema !== undefined,
-    generate: (rng, difficulty, params) => def.generate(rng, difficulty, params),
-    check: (puzzle, solution, answer, state) => {
+    generate: (rng, difficulty, params, ctx) => def.generate(rng, difficulty, params, ctx),
+    check: (puzzle, solution, answer, state, ctx) => {
       const parsed = def.answerSchema.safeParse(answer);
       if (!parsed.success) return 'invalid';
-      return def.verify(puzzle as P, solution as S, parsed.data, state as St | undefined)
+      return def.verify(puzzle as P, solution as S, parsed.data, state as St | undefined, ctx)
         ? 'right'
         : 'wrong';
     },
-    act: (puzzle, solution, state, action, rng) => {
+    act: (puzzle, solution, state, action, rng, ctx) => {
       if (!def.act || !def.actionSchema) return 'invalid';
       const parsed = def.actionSchema.safeParse(action);
       if (!parsed.success) return 'invalid';
-      return def.act(puzzle as P, solution as S, state as St | undefined, parsed.data, rng);
+      return def.act(puzzle as P, solution as S, state as St | undefined, parsed.data, rng, ctx);
     },
   };
 }

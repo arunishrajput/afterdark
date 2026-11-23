@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG } from '../config/defaults';
 import { createRng } from '../rng';
 import { eraseMinigame } from './types';
 import { generateWires, wires } from './wires';
+import { CTX } from './testCtx';
 
 const params = DEFAULT_CONFIG;
 const erased = eraseMinigame(wires);
@@ -34,14 +35,14 @@ describe('wires', () => {
 
   it('accepts the matching connections (round trip) and rejects any other mapping', () => {
     for (let seed = 0; seed < 50; seed++) {
-      const { puzzle, solution } = erased.generate(createRng(seed), 1, params);
-      expect(erased.check(puzzle, solution, solution, undefined)).toBe('right');
+      const { puzzle, solution } = erased.generate(createRng(seed), 1, params, CTX);
+      expect(erased.check(puzzle, solution, solution, undefined, CTX)).toBe('right');
       const answer = solution as number[];
       // Swap two connections.
       const swapped = [...answer];
       [swapped[0], swapped[1]] = [swapped[1] as number, swapped[0] as number];
-      expect(erased.check(puzzle, solution, swapped, undefined)).toBe('wrong');
-      expect(erased.check(puzzle, solution, answer.slice(1), undefined)).toBe('wrong');
+      expect(erased.check(puzzle, solution, swapped, undefined, CTX)).toBe('wrong');
+      expect(erased.check(puzzle, solution, answer.slice(1), undefined, CTX)).toBe('wrong');
     }
   });
 
@@ -51,14 +52,14 @@ describe('wires', () => {
   });
 
   it('flags malformed answers as invalid instead of wrong', () => {
-    const { puzzle, solution } = erased.generate(createRng(1), 1, params);
+    const { puzzle, solution } = erased.generate(createRng(1), 1, params, CTX);
     for (const bad of ['x', null, [1.5], [-1], [99], {}, [1, 2, 3, 4, 5, 6, 7]]) {
-      expect(erased.check(puzzle, solution, bad, undefined)).toBe('invalid');
+      expect(erased.check(puzzle, solution, bad, undefined, CTX)).toBe('invalid');
     }
   });
 
   it('has no mid-game actions', () => {
     expect(erased.hasActions).toBe(false);
-    expect(erased.act({}, [], undefined, {}, createRng(1))).toBe('invalid');
+    expect(erased.act({}, [], undefined, {}, createRng(1), CTX)).toBe('invalid');
   });
 });

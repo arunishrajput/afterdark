@@ -25,6 +25,7 @@ export type {
   MinigameParams,
   MinigameType,
   SoloMinigameType,
+  TaskContext,
 } from './types';
 export { eraseMinigame, MINIGAME_TYPES, SOLO_MINIGAME_TYPES } from './types';
 export type { WireColor, WireEnd, WiresAnswer, WiresPuzzle, WireSymbol } from './wires';

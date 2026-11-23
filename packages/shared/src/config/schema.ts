@@ -37,6 +37,16 @@ const minigameWeightsSchema = z.strictObject({
   keyfetch: count(),
 });
 
+const soloTypeSchema = z.enum([
+  'wires',
+  'lock',
+  'pattern',
+  'signal',
+  'slide',
+  'crossword',
+  'keyfetch',
+]);
+
 const imposterAutoRuleSchema = z.strictObject({ maxPlayers: positiveInt(), count: positiveInt() });
 const regionCountBucketSchema = z.strictObject({ min: count(), label: z.string().min(1) });
 
@@ -118,14 +128,18 @@ export const gameConfigSchema = z.strictObject({
   taskAbandonExtraM: positive(),
   keyFetchMinLegM: positive(),
   taskMinDistanceM: positive(),
-  minigamesEnabled: z
-    .array(z.enum(['wires', 'lock', 'pattern', 'signal', 'slide', 'crossword', 'keyfetch']))
-    .min(1),
+  minigamesEnabled: z.array(soloTypeSchema).min(1),
   minigameWeights: minigameWeightsSchema,
   wiresPairs: int(3, 6),
   lockDigits: int(3, 5),
   lockDigitMax: int(3, 9),
   lockMaxGuesses: positiveInt(),
+  slideShuffleMinMoves: positiveInt(),
+  slideShuffleMaxMoves: positiveInt(),
+  patternLength: int(3, 9),
+  signalKeyFraction: fraction(),
+  keyHoldS: positive(),
+  keyTurnSteps: int(2, 6),
   coopPinDigits: int(3, 6),
 
   // Points
@@ -196,6 +210,9 @@ export type GameConfig = z.infer<typeof gameConfigSchema>;
 export type ImposterAbilityMode = z.infer<typeof imposterAbilityModeSchema>;
 export type PlayerVisibility = z.infer<typeof playerVisibilitySchema>;
 
+/** The fewest minigame types the host can leave enabled. */
+export const MIN_ENABLED_MINIGAMES = 2;
+
 /** Which host settings screen a key appears on: ✅ basic, ⚙️ advanced. */
 export type HostConfigTier = 'basic' | 'advanced';
 
@@ -219,6 +236,7 @@ export const HOST_CONFIG_TIER = {
   incubationS: 'advanced',
   infectionWinPercent: 'advanced',
   taskStopLockS: 'advanced',
+  minigamesEnabled: 'advanced',
 } as const satisfies Partial<Record<keyof GameConfig, HostConfigTier>>;
 
 export type EditableConfigKey = keyof typeof HOST_CONFIG_TIER;
@@ -230,7 +248,10 @@ const editableMask = Object.fromEntries(EDITABLE_CONFIG_KEYS.map((k) => [k, true
 };
 
 /** The host-editable subset of the config. */
-export const gameConfigEditableSchema = gameConfigSchema.pick(editableMask);
+export const gameConfigEditableSchema = gameConfigSchema.pick(editableMask).extend({
+  /** The host may switch games off, but at least this many stay on (TASKS §2, ADR-090). */
+  minigamesEnabled: z.array(soloTypeSchema).min(MIN_ENABLED_MINIGAMES),
+});
 export type GameConfigEditable = z.infer<typeof gameConfigEditableSchema>;
 
 /** Payload of `lobby:updateConfig`: any subset of editable keys, range-checked. */

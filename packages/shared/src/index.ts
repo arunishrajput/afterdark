@@ -85,6 +85,7 @@ export type {
   MinigameParams,
   MinigameType,
   SoloMinigameType,
+  TaskContext,
   WireColor,
   WireEnd,
   WiresAnswer,
