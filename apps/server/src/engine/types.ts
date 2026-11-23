@@ -44,6 +44,8 @@ export type Command =
   | { type: 'pause'; playerId: string }
   | { type: 'resume'; playerId: string }
   | { type: 'abort'; playerId: string }
+  /** Host, ended: back to the lobby with the same setup. `salt` re-seeds the secrets (drawn by the socket layer). */
+  | { type: 'playAgain'; playerId: string; salt: string }
   | { type: 'taskOpen'; playerId: string; taskId: string }
   | { type: 'taskAction'; playerId: string; taskId: string; action: unknown }
   | { type: 'taskSubmit'; playerId: string; taskId: string; answer: unknown }

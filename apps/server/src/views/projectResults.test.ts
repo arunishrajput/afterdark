@@ -2,7 +2,7 @@ import { offsetByMeters, type ResultsView } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
 import type { RoomState } from '../engine/state';
-import { logEvent } from '../engine/systems/log';
+import { type LogEntry, logEvent } from '../engine/systems/log';
 import {
   advanceTo,
   crewOf,
@@ -257,11 +257,11 @@ describe('projectResults (SCORING › awards, PROTOCOL › ResultsView)', () => 
 
 describe('scoreSeriesOf', () => {
   it('steps through gains by game time and finishes on the final score', () => {
-    const log = [
+    const log: LogEntry[] = [
       { at: 0, gameMs: 20_000, type: 'task', actors: ['a'], data: { task: 'wires', points: 8 } },
       { at: 0, gameMs: 40_000, type: 'coop', actors: ['a', 'b'], data: { team: 12, personal: 5 } },
-    ] as const;
-    const series = scoreSeriesOf([...log], 70_000, 30, 20);
+    ];
+    const series = scoreSeriesOf(log, 70_000, 30, 20);
     expect(series).toEqual([
       { atS: 0, team: 0 },
       { atS: 30, team: 8 },

@@ -100,6 +100,8 @@ export interface ClientToServerEvents {
   'game:pause': (payload: GameCommandPayload, ack: AckCallback) => void;
   'game:resume': (payload: GameCommandPayload, ack: AckCallback) => void;
   'game:abort': (payload: GameCommandPayload, ack: AckCallback) => void;
+  /** Host, after the game has ended: back to the lobby with the same setup (Phase 12). */
+  'lobby:playAgain': (payload: GameCommandPayload, ack: AckCallback) => void;
   'task:open': (payload: TaskRefPayload, ack: AckCallback<TaskOpenAck>) => void;
   'task:action': (payload: TaskActionPayload, ack: AckCallback<TaskActionAck>) => void;
   'task:submit': (payload: TaskSubmitPayload, ack: AckCallback<TaskSubmitAck>) => void;

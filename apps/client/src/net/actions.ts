@@ -69,6 +69,7 @@ export const pauseGame = () => request('game:pause', {});
 export const resumeGame = () => request('game:resume', {});
 /** Ends the game with no winner. */
 export const abortGame = () => request('game:abort', {});
+export const playAgain = () => request('lobby:playAgain', {});
 
 /** Test mode, host, lobby only: add in-process bots (they walk, ready up and play like players). */
 export const addBots = (count: number) => request('dev:addBots', { count });

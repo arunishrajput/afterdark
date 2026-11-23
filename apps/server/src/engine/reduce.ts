@@ -9,6 +9,7 @@ import * as lobby from './systems/lobby';
 import * as location from './systems/location';
 import * as map from './systems/map';
 import * as meetings from './systems/meetings';
+import * as rematch from './systems/rematch';
 import * as setup from './systems/setup';
 import * as play from './systems/taskPlay';
 import { type Command, type Effect, type ReduceResult, RuleError } from './types';
@@ -25,6 +26,7 @@ const ALLOWED_WHILE_PAUSED: ReadonlySet<Command['type']> = new Set([
   'pause',
   'resume',
   'abort',
+  'playAgain',
 ]);
 
 export function reduce(state: RoomState, cmd: Command, now: number): ReduceResult {
@@ -92,6 +94,9 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'abort':
         control.abort(draft, cmd.playerId, now, effects);
+        break;
+      case 'playAgain':
+        rematch.playAgain(draft, cmd.playerId, cmd.salt, now, effects);
         break;
       case 'taskOpen':
         play.openTask(draft, cmd.playerId, cmd.taskId, now, effects);

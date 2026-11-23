@@ -217,7 +217,7 @@ export type LobbySetBasePayload = z.infer<typeof lobbySetBaseSchema>;
 
 // ── Phase 4: game flow ──────────────────────────────────────────────────────
 
-/** `game:forceStart`, `game:pause`, `game:resume`, `game:abort` carry nothing. */
+/** `game:forceStart`, `game:pause`, `game:resume`, `game:abort` and `lobby:playAgain` carry nothing. */
 export const gameCommandSchema = z.strictObject({});
 export type GameCommandPayload = z.infer<typeof gameCommandSchema>;
 

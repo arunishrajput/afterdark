@@ -38,10 +38,12 @@ const exactNumber = (n: number) =>
 
 describe.each(PHASES)('leak: game fixture in the %s phase', (phase) => {
   const { state, now, tokens } = buildGameFixture({ players: 8, phase });
-  const views = state.players.map((p) => ({
-    player: p,
-    view: projectView(state, p.id, now),
-  }));
+  // The end-of-game reveal is meant to show roles, tags and classes: it has its own tests (leak.results.test.ts).
+  const full = state.players.map((p) => projectView(state, p.id, now));
+  const views = state.players.map((p, i) => {
+    const { results: _results, ...view } = full[i] as ReturnType<typeof projectView>;
+    return { player: p, view };
+  });
   const crew = views.filter((v) => v.player.role !== 'imposter');
   const imposters = views.filter((v) => v.player.role === 'imposter');
 
@@ -54,7 +56,7 @@ describe.each(PHASES)('leak: game fixture in the %s phase', (phase) => {
   });
 
   it('every view contains only allow-listed key paths', () => {
-    for (const { view } of views) {
+    for (const view of full) {
       const keys = keysDeep(view).filter((k) => !k.startsWith('lobby.config.'));
       for (const k of keys) expect(ALLOWED_VIEW_KEYS, `unexpected key ${k}`).toContain(k);
     }
