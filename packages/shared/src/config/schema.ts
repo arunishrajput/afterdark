@@ -51,6 +51,7 @@ export const gameConfigSchema = z.strictObject({
   startCountdownS: positiveInt(),
   spawnTimeoutS: int(60, 600),
   spawnMinSeparationM: positive(),
+  spawnAttempts: positiveInt(),
   roleRevealS: positiveInt(),
   lobbyIdleTimeoutMin: positiveInt(),
   lobbyIdleSweepS: positiveInt(),
@@ -151,6 +152,12 @@ export const gameConfigSchema = z.strictObject({
   tickIntervalMs: positiveInt(),
   socketEventsPerSecond: positiveInt(),
   locEventsPerSecond: positiveInt(),
+
+  // Bots (test mode)
+  botSpeedMps: positive(),
+  botJitterM: positive(),
+  botStepS: positive(),
+  botWanderLegM: positive(),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;

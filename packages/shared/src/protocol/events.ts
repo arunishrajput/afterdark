@@ -2,8 +2,10 @@
 import type { KickReason } from '../types/domain';
 import type { GameEvent, PlayerView, RadarPayload } from '../types/view';
 import type {
+  DevAddBotsPayload,
   DevTeleportPayload,
   ErrorCode,
+  GameCommandPayload,
   LobbyCreatePayload,
   LobbyEditTaskPointsPayload,
   LobbyJoinPayload,
@@ -71,7 +73,12 @@ export interface ClientToServerEvents {
   'lobby:editTaskPoints': (payload: LobbyEditTaskPointsPayload, ack: AckCallback) => void;
   'lobby:setNoGoZones': (payload: LobbySetNoGoZonesPayload, ack: AckCallback) => void;
   'lobby:setBase': (payload: LobbySetBasePayload, ack: AckCallback) => void;
+  'game:forceStart': (payload: GameCommandPayload, ack: AckCallback) => void;
+  'game:pause': (payload: GameCommandPayload, ack: AckCallback) => void;
+  'game:resume': (payload: GameCommandPayload, ack: AckCallback) => void;
+  'game:abort': (payload: GameCommandPayload, ack: AckCallback) => void;
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
+  'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
 }
 
 export interface KickedPayload {

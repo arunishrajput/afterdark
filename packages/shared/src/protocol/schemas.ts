@@ -213,3 +213,16 @@ export type LobbySetNoGoZonesPayload = z.infer<typeof lobbySetNoGoZonesSchema>;
 
 export const lobbySetBaseSchema = latLngSchema;
 export type LobbySetBasePayload = z.infer<typeof lobbySetBaseSchema>;
+
+// ── Phase 4: game flow ──────────────────────────────────────────────────────
+
+/** `game:forceStart`, `game:pause`, `game:resume`, `game:abort` carry nothing. */
+export const gameCommandSchema = z.strictObject({});
+export type GameCommandPayload = z.infer<typeof gameCommandSchema>;
+
+/** `dev:addBots` (test mode, host): how many in-process bots to add. The room's player cap is the real limit. */
+const MAX_BOTS_PER_CALL = 11;
+export const devAddBotsSchema = z.strictObject({
+  count: z.number().int().min(1).max(MAX_BOTS_PER_CALL),
+});
+export type DevAddBotsPayload = z.infer<typeof devAddBotsSchema>;

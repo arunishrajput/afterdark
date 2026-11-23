@@ -7,7 +7,7 @@ import type { GameConfigEditable } from '../config/schema';
 import type { TaskPointSource } from '../geo/pool';
 import type { SectionId } from '../geo/sections';
 import type { LatLng, MultiPolygonCoords, Position, Ring } from '../geo/types';
-import type { Phase, PlayerStatus } from './domain';
+import type { EndReason, ImposterClass, Phase, PlayerStatus, Role, Winner } from './domain';
 
 /**
  * Config every player sees in the lobby: the host-editable keys. Fixed (🔒)
@@ -71,9 +71,49 @@ export interface RegionCount {
   bucket: string;
 }
 
-/** Phase 3 only has the counts; Phase 4 adds the clock, score and the rest (PROTOCOL › PlayerView). */
+/** How the spawn phase is going: public numbers, no names (RULES §4). */
+export interface SpawnProgress {
+  reached: number;
+  total: number;
+  /** Server epoch ms when the spawn timeout ends. */
+  endsAt: number;
+}
+
+/** The match clock as a display pair: remaining time is `endsAt − (pausedAt ?? now)` (ARCHITECTURE §3). */
+export interface ClockView {
+  /** Server epoch ms when game time runs out, if it keeps running from now. */
+  endsAt: number;
+  /** Present while the clock is frozen (a host pause). */
+  pausedAt?: number;
+}
+
+/** Why and how a game ended (the full results screen is Phase 12). */
+export interface ResultView {
+  winner: Winner;
+  reason: EndReason;
+}
+
+/**
+ * Public game state. Every player gets the same values (ROLES.md visibility
+ * matrix): nothing here depends on role or infection. The optional groups appear
+ * with the phase that needs them.
+ */
 export interface GameView {
   regionCounts: RegionCount[];
+  /** `spawning` only. */
+  spawn?: SpawnProgress;
+  /** `reveal` only: server epoch ms when play begins. */
+  revealEndsAt?: number;
+  /** `reveal` onwards: infection boxes, team score and the match clock. */
+  clock?: ClockView;
+  teamScore?: number;
+  targetScore?: number;
+  compromised?: number;
+  threshold?: number;
+  crewCount?: number;
+  meetingsLeft?: number;
+  /** `ended` only. */
+  result?: ResultView;
 }
 
 export type LocationQuality = 'good' | 'weak' | 'stale';
@@ -84,7 +124,7 @@ export interface LocationView {
   lng: number;
   accuracy: number;
   quality: LocationQuality;
-  /** Outside the boundary (display only until Phase 4 adds penalties). */
+  /** Outside the boundary or inside a no-go zone (RULES §9). */
   oob: boolean;
 }
 
@@ -101,6 +141,34 @@ export interface LobbyView {
   countdownEndsAt?: number;
 }
 
+/** The viewer's own spawn point (spawn phase onwards; nobody else's is ever sent). */
+export interface SpawnView {
+  lat: number;
+  lng: number;
+  reached: boolean;
+}
+
+/** The viewer's own zone state (RULES §9): same shape for every role. */
+export interface ZoneView {
+  oob: boolean;
+  /** Server epoch ms when penalties start; only while out of bounds, inside the grace and not paused. */
+  graceEndsAt?: number;
+}
+
+/** Another imposter, as an imposter sees them (ROLES.md: username, tag and class). */
+export interface ImposterAlly {
+  playerId: string;
+  username: string;
+  tag: string;
+  classes: ImposterClass[];
+}
+
+/** Imposter-only information. A crew view has no `imposter` key at all. */
+export interface ImposterView {
+  classes: ImposterClass[];
+  allies: ImposterAlly[];
+}
+
 export interface MeView {
   id: string;
   username: string;
@@ -109,6 +177,16 @@ export interface MeView {
   status: PlayerStatus;
   /** Absent until the server has accepted a fix from this player. */
   location?: LocationView;
+  /** Spawn phase onwards. */
+  spawn?: SpawnView;
+  /** `reveal` onwards: the viewer's own secret tag, role, and (imposters only) the imposter block. */
+  tag?: string;
+  role?: Role;
+  imposter?: ImposterView;
+  /** `reveal` onwards. */
+  personalScore?: number;
+  /** `playing` onwards. */
+  zone?: ZoneView;
 }
 
 export interface PlayerView {
@@ -145,4 +223,15 @@ export type GameEvent =
   /** The host changed the settings, so everyone was un-readied (RULES §3.6). */
   | { type: 'lobby.configChanged' }
   /** The host changed the boundary, so everyone was un-readied (RULES §3.6). */
-  | { type: 'lobby.mapChanged' };
+  | { type: 'lobby.mapChanged' }
+  /** The countdown ended but the game could not start (E3: the area is too small to spread everyone out). */
+  | { type: 'lobby.startFailed'; reason: 'spawns' }
+  | { type: 'game.spawnStarted' }
+  | { type: 'game.rolesRevealed' }
+  | { type: 'game.playStarted' }
+  | { type: 'game.paused' }
+  | { type: 'game.resumed' }
+  | { type: 'game.ended'; winner: Winner; reason: EndReason }
+  /** Private to the player who is out of bounds (RULES §9.2). */
+  | { type: 'zone.warning' }
+  | { type: 'zone.penalty'; points: number };

@@ -33,6 +33,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `startCountdownS` | 5 | — | 🔒 | Starts when everyone is ready and the config is valid. Cancelled if anyone un-readies. |
 | `spawnTimeoutS` | 300 | 60–600 | ⚙️ | Roles are assigned even if not everyone has reached their spawn. |
 | `spawnMinSeparationM` | 40 | — | 🔒 | Lower limit only. The generator spreads spawns as far apart as it can. |
+| `spawnAttempts` | 8 | — | 🔒 | Spawn layouts the server draws; the one with the largest minimum distance between spawns is kept (RULES §4, ADR-050). |
 | `roleRevealS` | 10 | — | 🔒 | Length of the hold-to-reveal screen before play begins. |
 | `lobbyIdleTimeoutMin` | 30 | — | 🔒 | A lobby with no connected players is deleted after this. |
 | `lobbyIdleSweepS` | 60 | — | 🔒 | How often the server looks for idle lobbies to delete. |
@@ -163,3 +164,13 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `tickIntervalMs` | 1000 | — | 🔒 | Server room tick (countdowns, timers, win checks). |
 | `socketEventsPerSecond` | 10 | — | 🔒 | Basic per-socket rate limit for client → server events; extra events get `RATE_LIMITED`. |
 | `locEventsPerSecond` | 2 | — | 🔒 | Separate per-socket limit for `loc:update` (which has no ack): extra fixes are dropped silently. It does not count against `socketEventsPerSecond`. |
+
+## Bots (test mode)
+Used by the bot CLI and the in-process bots from `dev:addBots` (TESTING §5, ADR-056).
+
+| Key | Default | Range | Host | Notes |
+|---|---|---|---|---|
+| `botSpeedMps` | 1.4 | — | 🔒 | Walking speed. |
+| `botJitterM` | 3 | — | 🔒 | GPS noise added to each bot fix (± this many metres). |
+| `botStepS` | 1 | — | 🔒 | Seconds between bot position updates. |
+| `botWanderLegM` | 60 | — | 🔒 | Longest random leg a bot walks while wandering. |

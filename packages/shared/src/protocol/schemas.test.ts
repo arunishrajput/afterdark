@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  devAddBotsSchema,
   devTeleportSchema,
+  gameCommandSchema,
   lobbyCodeSchema,
   lobbyCreateSchema,
   lobbyEditTaskPointsSchema,
@@ -268,5 +270,20 @@ describe('Phase 2 schemas', () => {
       expect(lobbySetBaseSchema.safeParse({ lat: 1, lng: 2 }).success).toBe(true);
       expect(lobbySetBaseSchema.safeParse({ lat: 1 }).success).toBe(false);
     });
+  });
+});
+
+describe('Phase 4 payloads', () => {
+  it('game commands carry nothing', () => {
+    expect(gameCommandSchema.safeParse({}).success).toBe(true);
+    expect(gameCommandSchema.safeParse({ x: 1 }).success).toBe(false);
+  });
+
+  it('dev:addBots takes an integer count of 1 to 11', () => {
+    expect(devAddBotsSchema.safeParse({ count: 7 }).success).toBe(true);
+    expect(devAddBotsSchema.safeParse({ count: 0 }).success).toBe(false);
+    expect(devAddBotsSchema.safeParse({ count: 12 }).success).toBe(false);
+    expect(devAddBotsSchema.safeParse({ count: 2.5 }).success).toBe(false);
+    expect(devAddBotsSchema.safeParse({ count: 3, extra: 1 }).success).toBe(false);
   });
 });

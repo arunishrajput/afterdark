@@ -31,6 +31,7 @@ export const DEFAULT_CONFIG = {
   startCountdownS: 5,
   spawnTimeoutS: 300,
   spawnMinSeparationM: 40,
+  spawnAttempts: 8,
   roleRevealS: 10,
   lobbyIdleTimeoutMin: 30,
   lobbyIdleSweepS: 60,
@@ -148,4 +149,10 @@ export const DEFAULT_CONFIG = {
   tickIntervalMs: 1000,
   socketEventsPerSecond: 10,
   locEventsPerSecond: 2,
+
+  // Bots (test mode)
+  botSpeedMps: 1.4,
+  botJitterM: 3,
+  botStepS: 1,
+  botWanderLegM: 60,
 } as const satisfies GameConfig;

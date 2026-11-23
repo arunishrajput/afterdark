@@ -64,8 +64,10 @@ export type {
   TimePingAck,
 } from './protocol/events';
 export type {
+  DevAddBotsPayload,
   DevTeleportPayload,
   ErrorCode,
+  GameCommandPayload,
   LobbyCreatePayload,
   LobbyEditTaskPointsPayload,
   LobbyJoinPayload,
@@ -84,8 +86,10 @@ export type {
 } from './protocol/schemas';
 export {
   boundaryInputSchema,
+  devAddBotsSchema,
   devTeleportSchema,
   ERROR_CODES,
+  gameCommandSchema,
   lobbyCodeSchema,
   lobbyCreateSchema,
   lobbyEditTaskPointsSchema,
@@ -109,19 +113,33 @@ export {
 } from './protocol/schemas';
 export type { Rng } from './rng';
 export { createRng, hashSeed, mulberry32 } from './rng';
+export { drawTags, formatTag, TAG_PATTERN, TAG_WORDS } from './tags';
 export { bucketLabel } from './rules/buckets';
 export type { SetupIssue, SetupSummary } from './rules/setup';
 export { pointsNeeded, summarizeSetup, validateSetup } from './rules/setup';
+export type { Progress } from './rules/victory';
+export { infectionThreshold, winnerOnTimeUp } from './rules/victory';
 export type { StartBlocker } from './rules/start';
 export { resolveImposterCount, startBlockers } from './rules/start';
-export type { KickReason, Phase, PlayerStatus } from './types/domain';
-export { PHASES } from './types/domain';
+export type {
+  EndReason,
+  ImposterClass,
+  KickReason,
+  Phase,
+  PlayerStatus,
+  Role,
+  Winner,
+} from './types/domain';
+export { GAME_PHASES, IMPOSTER_CLASSES, PHASES } from './types/domain';
 export type {
   AnonDot,
   DotFlag,
   GameConfigPublic,
   GameEvent,
+  ClockView,
   GameView,
+  ImposterAlly,
+  ImposterView,
   LobbyView,
   LocationQuality,
   LocationView,
@@ -133,5 +151,7 @@ export type {
   RegionCount,
   RegionPublic,
   SectionStat,
+  SpawnView,
+  ZoneView,
   TaskPointPublic,
 } from './types/view';
