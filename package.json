@@ -1,0 +1,28 @@
+{
+  "name": "afterdark",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AfterDark: a real-world GPS social-deduction PWA.",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @afterdark/server --filter @afterdark/client dev",
+    "build": "pnpm -r --workspace-concurrency=1 build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings=0 && prettier --check .",
+    "format": "prettier --write . && eslint . --fix",
+    "typecheck": "pnpm -r typecheck",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "e2e": "playwright test",
+    "tunnel": "cloudflared tunnel --url http://localhost:5173"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.1"
+  }
+}
