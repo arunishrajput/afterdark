@@ -7,14 +7,27 @@ const cfg = DEFAULT_CONFIG;
 
 describe('infectionThreshold (SCORING.md table)', () => {
   it.each([
-    [3, 2],
-    [4, 3],
-    [5, 3],
-    [6, 4],
-    [7, 5],
-    [9, 6],
-  ])('%i crew need %i compromised at 60%%', (crew, expected) => {
+    [3, 3],
+    [4, 4],
+    [5, 4],
+    [6, 5],
+    [7, 6],
+    [9, 8],
+  ])('%i crew need %i compromised at the default 80%%', (crew, expected) => {
     expect(infectionThreshold(cfg, crew)).toBe(expected);
+  });
+
+  it('the old 60% table still holds when a host sets it', () => {
+    for (const [crew, expected] of [
+      [3, 2],
+      [4, 3],
+      [5, 3],
+      [6, 4],
+      [7, 5],
+      [9, 6],
+    ] as const) {
+      expect(infectionThreshold({ infectionWinPercent: 60 }, crew)).toBe(expected);
+    }
   });
 
   it('does not suffer float error (100% of 7 is 7, 40% of 5 is 2)', () => {

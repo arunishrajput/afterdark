@@ -1,3 +1,4 @@
+import { DEFAULT_CONFIG } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
 import { simulateGame } from './runGame';
@@ -18,7 +19,7 @@ describe('simulateGame (the balance script)', () => {
     expect(g.soloTasks + g.coopTasks).toBeGreaterThan(0);
     expect(g.teamScore).toBeGreaterThanOrEqual(0);
     expect(g.coopPoints).toBeLessThanOrEqual(g.teamScore);
-    expect(g.targetScore).toBe(100);
+    expect(g.targetScore).toBe(DEFAULT_CONFIG.targetScore);
   });
 
   it('is repeatable: the same seed gives the same game, another seed another', () => {

@@ -7,8 +7,8 @@ import type { GameConfig } from './schema';
 export const DEFAULT_CONFIG = {
   // Match
   playTimeMin: 25,
-  targetScore: 100,
-  targetScoreHintPerCrew: 16,
+  targetScore: 130,
+  targetScoreHintPerCrew: 22,
   minPlayers: 4,
   maxPlayers: 12,
   imposterCount: 'auto',
@@ -85,7 +85,7 @@ export const DEFAULT_CONFIG = {
 
   // Tasks
   taskSlots: 3,
-  coopChance: 0.25,
+  coopChance: 0.15,
   coopExpiryS: 360,
   rerollCooldownS: 180,
   taskPointReuseCooldownS: 300,
@@ -137,8 +137,8 @@ export const DEFAULT_CONFIG = {
   infectionGapToleranceS: 3,
   incubationS: 60,
   incubationDepartS: 3,
-  infectionCooldownS: 60,
-  infectionWinPercent: 60,
+  infectionCooldownS: 120,
+  infectionWinPercent: 80,
 
   // Imposter abilities
   abilityInitialCooldownS: 60,

@@ -46,20 +46,20 @@ After `zoneGraceS` (15 s) outside, a player loses `zonePenaltyPoints` (1) person
 ## Win math
 `originalCrewCount` is fixed when roles are assigned.
 
-**Imposter threshold** = `ceil(infectionWinPercent / 100 × originalCrewCount)`, with `infectionWinPercent` = 60.
+**Imposter threshold** = `ceil(infectionWinPercent / 100 × originalCrewCount)`, with `infectionWinPercent` = 80 (tuned in Phase 11, ADR-094; it was 60).
 
-| Players | Imposters (auto) | Crew | Compromised needed | Suggested target (16 × crew) |
+| Players | Imposters (auto) | Crew | Compromised needed | Suggested target (22 × crew) |
 |---|---|---|---|---|
-| 4 | 1 | 3 | 2 | 48 |
-| 5 | 1 | 4 | 3 | 64 |
-| 6 | 2 | 4 | 3 | 64 |
-| 7 | 2 | 5 | 3 | 80 |
-| 8 | 2 | 6 | **4** | 96 → default **100** |
-| 9 | 2 | 7 | 5 | 112 |
-| 10 | 3 | 7 | 5 | 112 |
-| 12 | 3 | 9 | 6 | 144 |
+| 4 | 1 | 3 | 3 | 66 |
+| 5 | 1 | 4 | 4 | 88 |
+| 6 | 2 | 4 | 4 | 88 |
+| 7 | 2 | 5 | 4 | 110 |
+| 8 | 2 | 6 | **5** | 132 → default **130** |
+| 9 | 2 | 7 | 6 | 154 |
+| 10 | 3 | 7 | 6 | 154 |
+| 12 | 3 | 9 | 8 | 198 |
 
-The default `targetScore` is 100. The host settings screen shows the suggested target as a hint.
+The default `targetScore` is 130. The host settings screen shows the suggested target as a hint. The simulation numbers behind these defaults are in [DECISIONS.md › ADR-094](DECISIONS.md) and PROGRESS.md (Phase 11).
 
 **Compromised** = |unique crew who are infected, after incubation| ∪ |unique crew wrongly ejected|. Each player counts at most once.
 
@@ -71,7 +71,7 @@ winner = crewProgress > imposterProgress ? CREW
        : imposterProgress > crewProgress ? IMPOSTERS
        : DRAW
 ```
-**Example:** 8 players, threshold 4, target 100. At time-up the team score is 72 (0.72) and compromised is 3 (0.75). **Imposters win.** If the team score were 80 (0.80), crew would win.
+**Example:** 8 players, threshold 5, target 130. At time-up the team score is 91 (0.70) and compromised is 4 (0.80). **Imposters win.** If the team score were 110 (0.85), crew would win.
 
 Use exact rational comparison, not floats: compare `teamScore × threshold` with `compromised × targetScore`.
 
@@ -82,6 +82,6 @@ Use exact rational comparison, not floats: compare `teamScore × threshold` with
 - Per-player stats: tasks done, points, distance walked (approximate, from accepted fixes), meetings called, and votes cast. Votes are shown as counts only.
 
 ## Balance notes (to tune in Phases 11 and 14)
-- **Rough pacing at 8 players with no imposter pressure:** 6 crew × ~1 task per 3 min ≈ 2 tasks/min × ~6 points ≈ 12 points/min. That reaches 100 in about 8–9 min of pure tasking. Real play is slower because of walking, wrong answers, Task Stops, fakes and meetings, so expect 12–20 min.
+- **Rough pacing at 8 players with no imposter pressure:** 6 crew × ~1 task per 3 min ≈ 2 tasks/min × ~6 points ≈ 12 points/min. That reaches 100 in about 8–9 min of pure tasking. Real play is slower because of walking, wrong answers, Task Stops, fakes and meetings. The Phase 11 balance script (`pnpm bots:simulate`) puts a typical 8-player game at about 15 minutes with the tuned defaults (see ADR-094).
 - The imposters' natural pace is one infection per imposter every ~2 min at best (60 s cooldown + 10 s channel + 60 s incubation + finding a target).
 - If crew win too often, raise `targetScore` or lower `coopChance`. If imposters win too often, raise `infectionWinPercent` or `infectionCooldownS`.

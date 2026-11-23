@@ -69,7 +69,7 @@ Rules version: **1.2** (2026-11-23: §3.8 host hand-over on disconnect, §3.10 l
 4. Before a minigame opens, the client shows **"Stop somewhere safe"**.
 5. **Reroll:** one task can be swapped for a new one every `rerollCooldownS` (180 s).
 6. **Report unsafe point:** this removes the point from the pool for this game and replaces the task. It has no cooldown, but reports are logged.
-7. **Co-op tasks** (`coopChance` 25% of new tasks) pair the player with a partner drawn from **all** active players, so the partner may be an imposter. Both players see "Find **`<partner tag>`** at **`<section>`**". The task completes when both players are at the pin and finish the co-op minigame. It expires after `coopExpiryS` (360 s of game time) with a neutral "Co-op task expired" message. Full rules are in [TASKS.md](TASKS.md#5-co-op-tasks).
+7. **Co-op tasks** (`coopChance` 15% of new tasks) pair the player with a partner drawn from **all** active players, so the partner may be an imposter. Both players see "Find **`<partner tag>`** at **`<section>`**". The task completes when both players are at the pin and finish the co-op minigame. It expires after `coopExpiryS` (360 s of game time) with a neutral "Co-op task expired" message. Full rules are in [TASKS.md](TASKS.md#5-co-op-tasks).
 8. Tasks never run out. Crew keep earning until a win condition is met.
 
 ## 7. Playing: imposters
@@ -79,7 +79,7 @@ Imposters have no solo tasks. They hold the co-op tasks they are drawn into as p
 1. The Infect button is enabled when a **healthy, active, non-imposter** player has a good fix within `infectionRadiusM` (8 m) of the imposter, the imposter is inside the boundary, and Infect is not on cooldown or blocked by a meeting.
 2. Tapping Infect starts a **channel** on the nearest eligible target. Imposter and target must stay within range for `infectionChannelS` (10 s). Out-of-range or stale gaps of up to `infectionGapToleranceS` (3 s) are tolerated; longer gaps fail the channel. Infect does not go on cooldown when a channel fails.
 3. When the channel completes, the target becomes **Exposed**. **Incubation** (`incubationS`, 60 s of game time) starts once the imposter has been out of range for 3 s. A stale imposter fix counts as out of range. When incubation ends, the target is **Infected**, and the compromised count and infection boxes go up.
-4. After every **successful** channel, that imposter's Infect has a cooldown of `infectionCooldownS` (60 s).
+4. After every **successful** channel, that imposter's Infect has a cooldown of `infectionCooldownS` (120 s).
 5. Infection is permanent. It does not spread from infected players. Each crew member can be compromised only once. Imposters can't infect imposters or spectators.
 6. **Infected players are never told.** Their view is identical to a healthy crew member's, and their task points still count.
 7. While a meeting is running, and for `postMeetingGraceS` (30 s) afterwards, Infect is disabled and any channel in progress is cancelled. Incubation timers pause during meetings because they run on game time.
@@ -168,9 +168,9 @@ The server checks win conditions after **every** state change, in strict process
 
 | # | Condition | Winner |
 |---|---|---|
-| V1 | Team score ≥ `targetScore` (100) | **Crew** |
+| V1 | Team score ≥ `targetScore` (130) | **Crew** |
 | V2 | Every imposter has been ejected | **Crew** |
-| V3 | Compromised ≥ `ceil(infectionWinPercent/100 × originalCrewCount)` (60%) | **Imposters** |
+| V3 | Compromised ≥ `ceil(infectionWinPercent/100 × originalCrewCount)` (80%) | **Imposters** |
 | V4 | Match clock reaches `playTimeMin` (25 min) | Compare progress: crew `min(1, teamScore/targetScore)` vs imposters `min(1, compromised/threshold)`. Higher wins; equal is a **Draw**. |
 | V5 | Forfeit (§10.6) | The side that is still connected |
 | V6 | Host aborts | No result |

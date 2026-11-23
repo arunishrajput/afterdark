@@ -331,8 +331,11 @@ export class BotDriver {
     const meeting = game.meeting;
     if (!meeting) {
       if (this.meetingMode !== 'random' || meetingsLeft(state, p) === 0) return;
-      const { botMeetingMinS: min, botMeetingMaxS: max, botMeetingCallPercent: callers } =
-        state.config;
+      const {
+        botMeetingMinS: min,
+        botMeetingMaxS: max,
+        botMeetingCallPercent: callers,
+      } = state.config;
       // Decided once: some bots never call (people rarely do), the rest at a random game time.
       bot.callAtGameMs ??=
         bot.rng.next() * 100 < callers

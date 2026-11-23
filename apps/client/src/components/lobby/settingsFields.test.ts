@@ -28,11 +28,11 @@ describe('settings fields', () => {
     }
   });
 
-  it('presets are Quick 15/70, Standard 25/100 and Long 40/150, all inside the schema ranges', () => {
+  it('presets are Quick 15/90, Standard 25/130 and Long 40/190, all inside the schema ranges', () => {
     expect(PRESETS.map((p) => [p.label, p.values.playTimeMin, p.values.targetScore])).toEqual([
-      ['Quick', 15, 70],
-      ['Standard', 25, 100],
-      ['Long', 40, 150],
+      ['Quick', 15, 90],
+      ['Standard', 25, 130],
+      ['Long', 40, 190],
     ]);
     for (const p of PRESETS) {
       const time = editableNumberRange('playTimeMin');
@@ -46,7 +46,7 @@ describe('settings fields', () => {
 
   it('matchingPreset recognises the defaults as Standard', () => {
     expect(matchingPreset(DEFAULT_CONFIG)).toBe('standard');
-    expect(matchingPreset({ playTimeMin: 20, targetScore: 100 })).toBeUndefined();
+    expect(matchingPreset({ playTimeMin: 20, targetScore: 130 })).toBeUndefined();
   });
 
   it('formats values for display', () => {

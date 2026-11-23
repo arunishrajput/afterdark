@@ -13,8 +13,8 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | Key | Default | Range | Host | Notes |
 |---|---|---|---|---|
 | `playTimeMin` | 25 | 10–60 | ✅ | Game-time minutes. Pauses during meetings and host pauses. |
-| `targetScore` | 100 | 40–300 | ✅ | Team score needed for a crew win. The UI hint suggests `16 × crewCount`. |
-| `targetScoreHintPerCrew` | 16 | — | 🔒 | Multiplier for the UI hint `targetScoreHintPerCrew × crewCount`. |
+| `targetScore` | 130 | 40–300 | ✅ | Team score needed for a crew win. The UI hint suggests `22 × crewCount`. Tuned in Phase 11 (ADR-094). |
+| `targetScoreHintPerCrew` | 22 | — | 🔒 | Multiplier for the UI hint `targetScoreHintPerCrew × crewCount`. |
 | `minPlayers` | 4 | — | 🔒 | Fewer than this cannot start. |
 | `maxPlayers` | 12 | — | 🔒 | Lobby is full at 12. |
 | `imposterCount` | `auto` | auto, 1–3 | ✅ | auto: 4–5 players → 1, 6–9 → 2, 10–12 → 3. At least 3 crew must remain. |
@@ -89,7 +89,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | Key | Default | Range | Host | Notes |
 |---|---|---|---|---|
 | `taskSlots` | 3 | — | 🔒 | Active tasks per crew member, always refilled. |
-| `coopChance` | 0.25 | 0–0.5 | ⚙️ | Chance that a newly generated task is co-op. |
+| `coopChance` | 0.15 | 0–0.5 | ⚙️ | Chance that a newly generated task is co-op. |
 | `coopExpiryS` | 360 | — | 🔒 | Game time. Pauses during meetings. |
 | `rerollCooldownS` | 180 | — | 🔒 | Per player. |
 | `taskPointReuseCooldownS` | 300 | — | 🔒 | A candidate point rests this long before it can be reused. |
@@ -135,8 +135,8 @@ Rules: [SCORING.md](SCORING.md).
 | `infectionGapToleranceS` | 3 | — | 🔒 | Out-of-range or stale gaps up to this long don't break the channel. |
 | `incubationS` | 60 | 0–180 | ⚙️ | Starts when the imposter leaves the target. |
 | `incubationDepartS` | 3 | — | 🔒 | How long the exposing imposter must stay out of range (or stale) before incubation starts (RULES §7.1.3). |
-| `infectionCooldownS` | 60 | — | 🔒 | Per imposter, after each *successful* infection. |
-| `infectionWinPercent` | 60 | 40–100 | ⚙️ | Win threshold = `ceil(pct/100 × originalCrewCount)`. |
+| `infectionCooldownS` | 120 | — | 🔒 | Per imposter, after each *successful* infection. |
+| `infectionWinPercent` | 80 | 40–100 | ⚙️ | Win threshold = `ceil(pct/100 × originalCrewCount)`. |
 
 ## Imposter abilities
 | Key | Default | Range | Host | Notes |

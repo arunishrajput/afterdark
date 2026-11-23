@@ -91,7 +91,10 @@ export function simulateGame(opts: SimOptions): GameStats {
     ...opts.config,
   };
   const state = createRoomState({
-    code: `SIM${opts.seed}`.slice(0, 12).toUpperCase().replace(/[^A-Z0-9]/g, 'X'),
+    code: `SIM${opts.seed}`
+      .slice(0, 12)
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, 'X'),
     hostId: 'host',
     username: 'host',
     allowTestMode: true,

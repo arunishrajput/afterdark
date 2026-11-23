@@ -135,7 +135,7 @@ describe('game start flow over sockets', () => {
     for (const v of crew) {
       expect('imposter' in v.me).toBe(false);
       expect(v.game?.crewCount).toBe(6);
-      expect(v.game?.threshold).toBe(4);
+      expect(v.game?.threshold).toBe(5);
     }
     expect(revealed[0]?.game?.revealEndsAt).toBeDefined();
 

@@ -60,7 +60,8 @@ export function summarise(games: readonly GameStats[]): Summary {
     earlyEndPercent: pct(n - timeUp),
     timeUpPercent: pct(timeUp),
     medianMinutes: median(games.map((g) => g.minutes)),
-    tasksPerCrew: totalCrew === 0 ? 0 : sum(games.map((g) => g.soloTasks + g.coopTasks)) / totalCrew,
+    tasksPerCrew:
+      totalCrew === 0 ? 0 : sum(games.map((g) => g.soloTasks + g.coopTasks)) / totalCrew,
     infectionsPerGame: mean(games.map((g) => g.infectionsCompleted)),
     meetingsPerGame: mean(games.map((g) => g.meetings)),
     coopTasksPerGame: mean(games.map((g) => g.coopTasks)),

@@ -38,7 +38,7 @@ test('1 human + 7 bots: spawn → crew reveal → HUD → pause → abort', asyn
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'crew');
   await expect(page.getByTestId('infection-boxes')).toHaveAttribute('aria-label', /of 6 crew/);
   await expect(page.getByTestId('infection-notch')).toHaveCount(1);
-  await expect(page.getByTestId('team-score')).toContainText('0 / 100');
+  await expect(page.getByTestId('team-score')).toContainText('0 / 130');
   await expect(page.getByTestId('role-chip')).toHaveText('CREW');
   await expect(page.getByTestId('map')).toBeVisible();
   await page.waitForTimeout(2000); // let the map tiles load before the screenshot

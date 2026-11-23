@@ -87,7 +87,8 @@ describe('game state fixed at the reveal (RULES §12)', () => {
   it('fixes originalCrewCount and the infection threshold', () => {
     const s = reveal(8);
     expect(s.game?.originalCrewCount).toBe(6);
-    expect(s.game?.threshold).toBe(4);
+    // 80% of 6 crew, rounded up (the Phase 11 default).
+    expect(s.game?.threshold).toBe(5);
     expect(s.game?.teamScore).toBe(0);
     expect(s.game?.matchEndsAtGameMs).toBe(DEFAULT_CONFIG.playTimeMin * 60_000);
   });

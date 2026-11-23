@@ -19,7 +19,7 @@ ASSIGNED ──(enter section, 3 s hold)──▶ PIN_REVEALED ──(within 15 
 ## 2. Slots and assignment
 - Each crew member has `taskSlots` (3) **own slots**. When a slot empties, it refills straight away:
   1. If the fake queue isn't empty, the slot gets the oldest queued fake.
-  2. Otherwise, with probability `coopChance` (25%), a **co-op** task, if an eligible partner exists (see §4).
+  2. Otherwise, with probability `coopChance` (15%), a **co-op** task, if an eligible partner exists (see §4).
   3. Otherwise, a **solo** task. The minigame type is chosen by weight from the enabled types (default weights: wires 3, lock 3, pattern 3, signal 2, slide 2, crossword 2, keyfetch 1). The type is hidden until AT_PIN.
 - The target section and point are chosen as described in [MAP_AND_REGIONS.md §4](MAP_AND_REGIONS.md#4-task-point-pool).
 - A player never holds two tasks at the same point.

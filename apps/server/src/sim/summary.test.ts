@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { median, parseSimArgs, summarise } from './summary';
 import type { GameStats } from './runGame';
+import { median, parseSimArgs, summarise } from './summary';
 
 const game = (over: Partial<GameStats>): GameStats => ({
   seed: 's',
@@ -37,7 +37,14 @@ describe('median', () => {
 describe('summarise', () => {
   const games = [
     game({ winner: 'crew', reason: 'score', minutes: 12 }),
-    game({ winner: 'imposters', reason: 'infection', minutes: 8, soloTasks: 6, coopTasks: 0, coopPoints: 0 }),
+    game({
+      winner: 'imposters',
+      reason: 'infection',
+      minutes: 8,
+      soloTasks: 6,
+      coopTasks: 0,
+      coopPoints: 0,
+    }),
     game({ winner: 'imposters', reason: 'time', minutes: 25 }),
     game({ winner: 'draw', reason: 'time', minutes: 25 }),
   ];
@@ -72,8 +79,23 @@ describe('summarise', () => {
 
 describe('parseSimArgs', () => {
   it('has defaults and reads the flags', () => {
-    expect(parseSimArgs([])).toMatchObject({ games: 50, players: 8, meetings: 'random', json: false });
-    const a = parseSimArgs(['--games', '10', '--players', '6', '--radius', '150', '--meetings', 'off', '--json']);
+    expect(parseSimArgs([])).toMatchObject({
+      games: 50,
+      players: 8,
+      meetings: 'random',
+      json: false,
+    });
+    const a = parseSimArgs([
+      '--games',
+      '10',
+      '--players',
+      '6',
+      '--radius',
+      '150',
+      '--meetings',
+      'off',
+      '--json',
+    ]);
     expect(a).toMatchObject({ games: 10, players: 6, radiusM: 150, meetings: 'off', json: true });
   });
 

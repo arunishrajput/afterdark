@@ -60,6 +60,11 @@ export default defineConfig(
     files: ['apps/server/src/**', 'packages/shared/src/**'],
     rules: { 'no-console': 'error' },
   },
+  // The balance script is a command-line tool: printing is its output.
+  {
+    files: ['apps/server/src/sim/cli.ts'],
+    rules: { 'no-console': 'off' },
+  },
 
   // Invariant 5: the engine and views are pure. Inject the clock and RNG.
   {

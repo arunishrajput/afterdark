@@ -58,7 +58,8 @@ describe('meetings over sockets', () => {
       members.push({ client, name: `Player ${i}` });
     }
     await host.ok('lobby:updateConfig', {
-      patch: { testMode: true, coopChance: 0, playerVisibility: 'all' },
+      // 60% keeps the threshold at 4 of 6, so the meeting callers outnumber it (the shipped default is 80%).
+      patch: { testMode: true, coopChance: 0, playerVisibility: 'all', infectionWinPercent: 60 },
     });
     await host.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },

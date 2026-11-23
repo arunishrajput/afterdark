@@ -140,9 +140,9 @@ export interface Preset {
 }
 
 export const PRESETS: Preset[] = [
-  { id: 'quick', label: 'Quick', values: { playTimeMin: 15, targetScore: 70 } },
-  { id: 'standard', label: 'Standard', values: { playTimeMin: 25, targetScore: 100 } },
-  { id: 'long', label: 'Long', values: { playTimeMin: 40, targetScore: 150 } },
+  { id: 'quick', label: 'Quick', values: { playTimeMin: 15, targetScore: 90 } },
+  { id: 'standard', label: 'Standard', values: { playTimeMin: 25, targetScore: 130 } },
+  { id: 'long', label: 'Long', values: { playTimeMin: 40, targetScore: 190 } },
 ];
 
 /** Which preset the draft matches, if any. */

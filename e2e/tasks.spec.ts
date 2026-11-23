@@ -48,7 +48,7 @@ test('wires: section → pin → solve through the UI → the score goes up', as
   await page.screenshot({ path: `${SHOT}-wires-wrong.png` });
   await page.getByTestId('wires-submit').click();
   await expect(page.getByTestId('task-feedback')).toContainText('Not quite');
-  await expect(page.getByTestId('team-score')).toContainText('0 / 100');
+  await expect(page.getByTestId('team-score')).toContainText('0 / 130');
 
   // Wait out the lockout, undo the wrong connections and connect each wire to its match.
   await page.waitForTimeout(WRONG_ATTEMPT_PAUSE_MS);
@@ -65,7 +65,7 @@ test('wires: section → pin → solve through the UI → the score goes up', as
   // Back on the map: the personal score rose, the team bar moved, and the slot refilled.
   await expect(page.getByTestId('task-player')).toHaveCount(0, { timeout: 5000 });
   await expect(page.getByTestId('personal-score')).toHaveText(/You\s*4/);
-  await expect(page.getByTestId('team-score')).not.toContainText(/^0 \/ 100/);
+  await expect(page.getByTestId('team-score')).not.toContainText(/^0 \/ 130/);
   await expect(page.getByTestId('task-card')).toHaveCount(3);
   await expect(page.getByTestId('task-card').first()).toHaveAttribute('data-stage', 'assigned');
   await page.context().close();
