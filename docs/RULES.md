@@ -132,6 +132,7 @@ Full rules are in [MEETINGS.md](MEETINGS.md). In summary:
 - The meeting runs **Gather** at the Base (≤180 s) → **Discuss** face to face (`meetingDiscussS` 90 s) → **Vote** by username or skip (`meetingVoteS` 45 s) → **Result** (8 s).
 - The player with the most votes is ejected only if they have more votes than Skip and nobody ties with them. An ejection always reveals **Imposter / Not an imposter**, and never reveals infection.
 - **Wrongly ejecting a crew member compromises that player.** Ejected players become spectators.
+- Building notes (stage timing, V2/V3 after the reveal, the post-meeting grace, spectators): [MEETINGS.md §8](MEETINGS.md#8-clarifications-from-building-it-phase-8-adr-072-to-adr-077).
 
 ## 9. Zone (boundary)
 1. A player is **out of bounds** when a good fix places them outside the boundary or inside a no-go zone. Every client sees that player's dot flagged.

@@ -67,3 +67,13 @@ Every ejected player becomes a **Spectator** ([ROLES.md](ROLES.md#spectator-)):
 - The meeting screen uses a **neutral theme** (dark with white accents) for **everyone**, imposters included, so nobody standing in the circle can glance at a screen and see red.
 - Big countdown, large roster cards, and a clear "Your vote is locked" state.
 - Imposters see no extra information on the meeting screen, which keeps it safe to show your phone in the circle.
+
+## 8. Clarifications from building it (Phase 8, ADR-072 to ADR-077)
+- **Calling.** Allowed: any active player with an allowance left. Refusals: `WRONG_PHASE` (not playing), `NOT_ALLOWED` (spectator, meetings off, or the allowance is used), `MEETING_ACTIVE`, `PAUSED`, `COOLDOWN` (the first `meetingStartGraceS`, or `meetingCooldownS` after the last meeting ended, both on game time) and `STALE` (the caller's last fix is stale; a weak fix is fine). The call is the first moment of Gather and stops the game clock with the reason `meeting`.
+- **Stage timers use server time** and a host pause pushes them back, so a pause never costs a stage its time. The clock reasons `host` and `meeting` can overlap.
+- **Gather.** A player counts as arrived once they have had a good fix within `baseRadiusM` of the Base (sticky). The stage ends when every active **connected** player has arrived, or after `meetingGatherS`. If everyone is already at the Base (a second meeting), Gather ends at once.
+- **Discuss and Vote** wait only for active connected players. A vote is for any active player (yourself included) or Skip; it is locked once cast. A non-vote and a vote for someone who can no longer be a candidate count as Skip.
+- **Result.** The ejection is applied and revealed when Result **begins**, and the win checks V2 and V3 wait until the meeting has ended (after `meetingResultS`), so the reveal is always shown before a game-ending ejection (ADR-072). The tallies list every active player (zero included) and Skip, sorted by count and then join order, so the order says nothing about who voted. `tallies` never name voters.
+- **After a meeting** every imposter's Infect is pushed back to at least `postMeetingGraceS` from now (it shows as the cooldown ring, ADR-073). The forfeit timers are credited the meeting's whole length (MEETINGS §6).
+- **Reveals and holds.** Section-entry holds and cooldowns run on game time, so they freeze during a meeting too. A player's position still counts, so walking to the Base is never wasted.
+- **Spectators** are out of the game: no dot on anyone's radar, never an Infect target, no tasks, no imposter block (an ejected imposter and the other imposters stop seeing each other as allies). They keep seeing the public HUD and every meeting.

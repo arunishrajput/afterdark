@@ -89,6 +89,17 @@ function ready(metres = 3, players = 6): Fixture {
 const eventsOf = (effects: Effect[], type: string) =>
   effects.filter((e) => e.kind === 'event' && e.event.type === type);
 
+describe('spectators are never targets (E7, Phase 8)', () => {
+  it('an ejected crew member next to the imposter is not eligible', () => {
+    const f = ready();
+    const victim = get(f.state, f.victim);
+    victim.spectator = true;
+    expect(errCode(reduce(f.state, { type: 'infectStart', playerId: f.imp }, f.now))).toBe(
+      'OUT_OF_RANGE',
+    );
+  });
+});
+
 describe('starting a channel (RULES §7.1.1, §7.1.2)', () => {
   it('is on cooldown when play starts and ready after abilityInitialCooldownS', () => {
     const { state, now } = toPlaying(newLobby({ players: 6 }));

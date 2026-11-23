@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import {
   advanceClock,
@@ -23,7 +23,7 @@ const SHOT = 'test-results/phase08';
 const SECONDS_PER_MIN = 60;
 
 /** `mm:ss` of the match timer as seconds. */
-async function timerSeconds(page: import('@playwright/test').Page): Promise<number> {
+async function timerSeconds(page: Page): Promise<number> {
   const text = (await page.getByTestId('match-timer').textContent()) ?? '0:0';
   const [m = 0, s = 0] = text.split(':').map(Number);
   return m * SECONDS_PER_MIN + s;
@@ -74,9 +74,13 @@ test('a meeting runs gather → discuss → vote → result, with the match time
   await expect(host.getByTestId('base-distance')).toBeVisible();
   await host.screenshot({ path: `${SHOT}-gather.png` });
   for (const p of players) await simTeleportToBase(p);
-  await expect(host.getByTestId('at-base')).toBeVisible();
-  await expect(host.getByTestId('arrivals')).toContainText('at the Base');
-  await host.screenshot({ path: `${SHOT}-gather-arrived.png` });
+  // The bots may already be at the Base (then Discuss is up at once), so the arrival check is only made while Gather lasts.
+  const stage = host.getByTestId('meeting-stage');
+  await expect(stage).toHaveText(/Go to the Base|Discuss/);
+  if ((await stage.textContent()) === 'Go to the Base') {
+    await expect(host.getByTestId('arrivals')).toContainText('at the Base');
+    await host.screenshot({ path: `${SHOT}-gather-arrived.png` });
+  }
 
   // Discuss starts when everyone is at the Base (the bots walk there) or after 180 s.
   await expect(host.getByTestId('meeting-stage')).toHaveText('Discuss', { timeout: 200_000 });

@@ -330,3 +330,27 @@ Accounts, profiles, XP and cosmetics; public rooms and matchmaking; chat; AR/cam
 ### ADR-071 · The Infect button disables itself only for reasons the client can prove · Accepted (Phase 7)
 **Decision:** the button is disabled for cooldown, out of bounds, weak or stale GPS (all in the viewer's own view), and for "no one in range" only when the radar can show everybody who could be a target (`playerVisibility` is `all`, or `nearby` with `nearbyRadiusM ≥ infectionRadiusM`) and no crew-looking dot is within `infectionRadiusM`. In `regions` mode the radar is empty by design, so the button stays tappable and the server's `OUT_OF_RANGE` becomes a toast. It pulses when a dot is in range. A radar frame can lag the server by up to `radarIntervalMs`; the server is always the judge.
 **Why:** UI_UX asks for a disabled button with its reason, but a button that is wrongly disabled is worse than one that says "no one is close enough".
+
+### ADR-072 · V2 and V3 wait for the meeting to end, so the reveal always plays · Accepted (Phase 8)
+**Decision:** the ejection (spectator, reveal, wrong-ejection compromise) is applied when Result begins, but `checkVictory` skips V2, V3 and the forfeit check while a meeting exists. They run in the same call that ends the meeting, after `meetingResultS`.
+**Why:** RULES E27/E28 say "immediately", and the screen would otherwise jump to the results with no "X was an Imposter" moment, which is the climax of the game. The eight seconds change nothing else: game time is frozen and no command can alter the outcome.
+
+### ADR-073 · The post-meeting grace is a cooldown pushed onto Infect · Accepted (Phase 8)
+**Decision:** when a meeting ends, every imposter's `infect.readyAtGameMs` becomes at least `now + postMeetingGraceS`. During the meeting `infect:start` answers `MEETING_ACTIVE`.
+**Why:** it reuses the cooldown ring the client already draws, needs no new view field, and Phase 9's abilities can do the same. The cost: Infect shows "recharging", not "after the meeting", for 30 s.
+
+### ADR-074 · Meeting stages run on server time; a host pause shifts them · Accepted (Phase 8)
+**Decision:** a stage deadline is a server timestamp. `control.pause` records `pausedAt`, `control.resume` adds the paused length to the deadline, and nothing advances while the clock has the reason `host`.
+**Why:** the stages must keep running while game time is stopped (that is the point of a meeting), yet MEETINGS §6 says a host pause freezes them. A second clock would duplicate `GameClock`; one shifting deadline is smaller. The view sends `endsAt` plus `pausedAt` exactly like the match clock.
+
+### ADR-075 · Voting: self-votes allowed, non-votes are Skip, the order of tallies hides the voters · Accepted (Phase 8)
+**Decision:** a vote may target any active player including the voter, or Skip. Tallies list every active player (zero included) and Skip, sorted by count then join order. A non-vote counts as Skip. `meeting.progress` and `myVote` are the only per-voter facts in a view, and `myVote` is the viewer's own.
+**Why:** a rule against self-votes needs a UI exception and protects nothing. A tally in vote-arrival order or one that omits zero rows would leak who voted. "Progress" counts only.
+
+### ADR-076 · Spectators leave the radar, the ally lists and the Infect target set · Accepted (Phase 8)
+**Decision:** `isActive(p)` (not left, not ejected) is the one test: `activePlayers`, the radar (viewer and dots), imposter allies, Infect targets and the exposing imposter's incubation check all use it. An exposed crew member who is ejected has the exposure cancelled and counts once as compromised; an infected one is not counted again (E26).
+**Why:** spectators still send fixes, but a dot that cannot be acted on only confuses. An ejected imposter sitting next to an exposed player must not freeze the incubation.
+
+### ADR-077 · Forfeit timers are credited the length of a meeting · Accepted (Phase 8)
+**Decision:** when a meeting ends, every `disconnectedAt` moves forward by the meeting's length (never past now) and `rolesAssignedAt` too. V5 is not evaluated while a meeting runs, and it counts only players who are not ejected.
+**Why:** MEETINGS §6 says forfeit timing is suspended. Shifting the timestamps avoids a second set of counters. The host hand-over grace shares `disconnectedAt`, so it is delayed by at most one meeting: acceptable.

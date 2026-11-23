@@ -11,7 +11,7 @@ Claude can't walk around outside. So most of the game must be provable with **un
 | `pnpm lint` | ESLint (flat config) + Prettier check |
 | `pnpm verify` | lint + typecheck + test + build. **Must be green before every commit that ends a phase.** |
 | `pnpm e2e` | Playwright against the dev or preview servers (Chromium) |
-| `pnpm bots -- --code ABC123 --count 7 [--imposter-behaviour chase]` | Bot players (Phase 4+) |
+| `pnpm bots -- --code ABC123 --count 7 [--imposter-behaviour chase] [--meetings random]` | Bot players (Phase 4+) |
 | `pnpm tunnel` | cloudflared quick tunnel to the dev client, for real-phone HTTPS tests |
 
 ## 2. Test layers
@@ -64,7 +64,7 @@ Two ways to get bots (ADR-056), both driven by the same shared `BotWalker`:
   - (Phase 5) crew bots work through their first task card: they find a spot in the card's section (`pointInSection`), hold there until the pin appears, walk to the pin and open the task
   - in testMode, completes each task after a `botTaskMinS`–`botTaskMaxS` (10–30 s) delay using `dev:autoComplete`; the integration tests and e2e specs solve puzzles with test-only solvers written in the test files
   - joins its co-op tasks
-  - votes at random (or Skip) in meetings
+  - (Phase 8) in a meeting they walk to the Base, skip the discussion and vote at random among the active players (Skip with `botVoteSkipPercent`; an imposter bot never votes for an ally). `--meetings random` (or `dev:addBots {meetings:'random'}`) also makes each bot call one meeting at a random game time between `botMeetingMinS` and `botMeetingMaxS`; without it bots only join the meetings humans call
 - **Imposter bots:**
   - `--imposter-behaviour chase` (Phase 7, ADR-069): imposter bots walk to the nearest crew-looking dot on their radar, start Infect when within `infectionRadiusM − 3 m`, keep following during the channel, then walk 20 m away so the incubation can start. Set the lobby's visibility to **Everyone** so they see far. In-process bots (`dev:addBots {imposterBehaviour:'chase'}`) do the same from the room state
   - `wander` (default): they walk like everyone else and never infect
