@@ -1,14 +1,6 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import {
-  createLobby,
-  drawCircle,
-  enableTestMode,
-  longPress,
-  mapPoint,
-  newPlayer,
-  zoomTo,
-} from './helpers';
+import { lobbyWithBots, longPress, mapPoint, newPlayer, startAndReveal, zoomTo } from './helpers';
 
 /**
  * Phase 4: one browser plus bots, through spawn → reveal → play → pause → abort.
@@ -18,42 +10,6 @@ import {
 test.describe.configure({ timeout: 120_000 });
 
 const SHOT = 'test-results/phase04';
-const BIG_CIRCLE_DEG = 0.002; // about 195 m, so even 8 spawns fit 40 m apart
-
-async function lobbyWithBots(page: Page, bots: number): Promise<string> {
-  const code = await createLobby(page, 'Human');
-  await enableTestMode(page);
-  // Full screen, so the whole big circle is on screen for the real drawing tool.
-  await page.getByTestId('map-expand').click();
-  await drawCircle(page, BIG_CIRCLE_DEG);
-  await page.getByTestId('map-expand').click();
-  await expect(page.getByTestId('boundary-status')).toHaveText(/^Area /);
-  await expect(page.getByTestId('location-ok')).toBeVisible();
-  // The bot button adds up to 7; for a smaller lobby, add bots one call at a time via the same button.
-  const add = page.getByTestId('add-bots');
-  await add.click();
-  await expect(page.getByTestId('roster-row')).toHaveCount(8);
-  if (bots < 7) {
-    // Kick the surplus bots (host only), keeping `bots` of them.
-    for (let i = 7; i > bots; i--) {
-      await page.getByRole('button', { name: `Kick bot-${i}` }).click();
-      await page.getByRole('button', { name: `Confirm kicking bot-${i}` }).click();
-    }
-    await expect(page.getByTestId('roster-row')).toHaveCount(bots + 1);
-  }
-  return code;
-}
-
-async function startAndReveal(page: Page) {
-  // Bots ready themselves; then the human readies and the countdown runs.
-  await expect(page.getByTestId('ready-button')).toBeEnabled();
-  await page.getByTestId('ready-button').click();
-  await expect(page.getByTestId('spawn-title')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('spawn-count')).toContainText(/\d+\/\d+ in position/);
-  await page.getByTestId('force-start').click();
-  await expect(page.getByTestId('reveal-hold')).toBeVisible();
-}
-
 test('1 human + 7 bots: spawn → crew reveal → HUD → pause → abort', async ({ browser }) => {
   const page = await newPlayer(browser);
   await lobbyWithBots(page, 7);

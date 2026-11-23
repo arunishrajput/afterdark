@@ -266,3 +266,15 @@ export const taskReportUnsafeSchema = z.strictObject({
   reason: z.string().max(REPORT_REASON_MAX).optional(),
 });
 export type TaskReportUnsafePayload = z.infer<typeof taskReportUnsafeSchema>;
+
+/**
+ * `dev:setMinigames` (test mode, host, lobby): which minigame types new tasks may roll.
+ * For testing one game at a time; a type with no game yet is ignored by the server.
+ */
+export const devSetMinigamesSchema = z.strictObject({
+  types: z
+    .array(z.enum(['wires', 'lock', 'pattern', 'signal', 'slide', 'crossword', 'keyfetch']))
+    .min(1)
+    .max(7),
+});
+export type DevSetMinigamesPayload = z.infer<typeof devSetMinigamesSchema>;

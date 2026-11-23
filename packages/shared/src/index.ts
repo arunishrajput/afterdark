@@ -101,6 +101,7 @@ export type {
 } from './protocol/events';
 export type {
   DevAddBotsPayload,
+  DevSetMinigamesPayload,
   DevTeleportPayload,
   ErrorCode,
   GameCommandPayload,
@@ -127,6 +128,7 @@ export type {
 export {
   boundaryInputSchema,
   devAddBotsSchema,
+  devSetMinigamesSchema,
   devTeleportSchema,
   ERROR_CODES,
   gameCommandSchema,

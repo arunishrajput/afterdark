@@ -30,9 +30,10 @@ export function Game({ view }: { view: PlayerView }) {
   const paused = game?.clock?.pausedAt !== undefined;
   const self = useSelfPosition(view);
   const cards = game?.tasks ?? [];
-  const [playing, setPlaying] = useState<string | undefined>();
+  // The card being played is kept here: the server drops a card from the view the moment it is
+  // completed, and the sheet still has the result to show.
+  const [playing, setPlaying] = useState<TaskCard | undefined>();
   const [focus, setFocus] = useState<{ id: string; seq: number } | undefined>();
-  const playingCard = cards.find((c) => c.id === playing);
 
   return (
     <main className="relative mx-auto flex h-dvh max-w-md flex-col gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -80,10 +81,10 @@ export function Game({ view }: { view: PlayerView }) {
           view={view}
           self={self}
           onFocus={(card: TaskCard) => setFocus((f) => ({ id: card.id, seq: (f?.seq ?? 0) + 1 }))}
-          onStart={(card: TaskCard) => setPlaying(card.id)}
+          onStart={(card: TaskCard) => setPlaying(card)}
         />
       )}
-      {playingCard && <TaskPlayer card={playingCard} onClose={() => setPlaying(undefined)} />}
+      {playing && <TaskPlayer card={playing} onClose={() => setPlaying(undefined)} />}
 
       <section
         aria-label="Your status"

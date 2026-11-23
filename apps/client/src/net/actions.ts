@@ -6,6 +6,7 @@ import type {
   LobbyEditTaskPointsPayload,
   LobbyRegenerateRegionsPayload,
   Position,
+  SoloMinigameType,
   TaskActionBody,
   TaskAnswerBody,
 } from '@afterdark/shared';
@@ -94,3 +95,7 @@ export const rerollTask = (taskId: string) => request('task:reroll', { taskId })
 export const reportUnsafe = (taskId: string) => request('task:reportUnsafe', { taskId });
 /** Test mode only: finish the open task as if it was solved. */
 export const devAutoComplete = (taskId: string) => request('dev:autoComplete', { taskId });
+
+/** Test mode, host, lobby only: limit which minigames new tasks can be (to test one game at a time). */
+export const devSetMinigames = (types: SoloMinigameType[]) =>
+  request('dev:setMinigames', { types });

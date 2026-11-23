@@ -112,3 +112,142 @@ export async function longPress(page: Page, at: { x: number; y: number }) {
   await page.waitForTimeout(900);
   await page.mouse.up();
 }
+
+const BIG_CIRCLE_DEG = 0.002; // about 195 m, so even 8 spawns fit 40 m apart
+
+/** Host with test mode on, a drawn ~195 m area and `bots` in-process bots (the surplus ones kicked). */
+export async function lobbyWithBots(page: Page, bots: number): Promise<string> {
+  const code = await createLobby(page, 'Human');
+  await enableTestMode(page);
+  // Full screen, so the whole big circle is on screen for the real drawing tool.
+  await page.getByTestId('map-expand').click();
+  await drawCircle(page, BIG_CIRCLE_DEG);
+  await page.getByTestId('map-expand').click();
+  await expect(page.getByTestId('boundary-status')).toHaveText(/^Area /);
+  await expect(page.getByTestId('location-ok')).toBeVisible();
+  await page.getByTestId('add-bots').click();
+  await expect(page.getByTestId('roster-row')).toHaveCount(8);
+  if (bots < 7) {
+    for (let i = 7; i > bots; i--) {
+      await page.getByRole('button', { name: `Kick bot-${i}` }).click();
+      await page.getByRole('button', { name: `Confirm kicking bot-${i}` }).click();
+    }
+    await expect(page.getByTestId('roster-row')).toHaveCount(bots + 1);
+  }
+  return code;
+}
+
+/** Ready up, wait for the spawn phase, force-start it: the role reveal screen is showing. */
+export async function startAndReveal(page: Page) {
+  await expect(page.getByTestId('ready-button')).toBeEnabled();
+  await page.getByTestId('ready-button').click();
+  await expect(page.getByTestId('spawn-title')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('spawn-count')).toContainText(/\d+\/\d+ in position/);
+  await page.getByTestId('force-start').click();
+  await expect(page.getByTestId('reveal-hold')).toBeVisible();
+}
+
+/** Lobby with 7 bots → reveal → play: the HUD and the task cards are showing. */
+export async function toPlaying(page: Page, opts: { minigames?: string[] } = {}) {
+  await lobbyWithBots(page, 7);
+  if (opts.minigames) await setMinigames(page, opts.minigames);
+  await startAndReveal(page);
+  await expect(page.getByTestId('match-timer')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('task-card')).toHaveCount(3);
+}
+
+interface Actions {
+  devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
+  simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
+}
+
+/** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
+export async function setMinigames(page: Page, types: string[]) {
+  const res = await page.evaluate(
+    (t) =>
+      (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devSetMinigames(t),
+    types,
+  );
+  expect(res.ok).toBe(true);
+}
+
+/** Hop the simulated player to a place, the same call a long-press makes. */
+export async function simTeleport(page: Page, to: { lat: number; lng: number }) {
+  const res = await page.evaluate(
+    (p) => (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.simTeleport(p),
+    to,
+  );
+  expect(res.ok).toBe(true);
+}
+
+/**
+ * A spot well inside the highlighted section number `index` (the `index`-th highlight drawn on the
+ * map), found the way a player would: look at the highlight and pick a spot inside it. Returns lat/lng.
+ */
+export async function spotInHighlight(
+  page: Page,
+  index = 0,
+): Promise<{ lat: number; lng: number }> {
+  return page.evaluate((i) => {
+    const map = (
+      window as unknown as {
+        __afterdarkMap?: TestMap & {
+          containerPointToLatLng(p: [number, number]): { lat: number; lng: number };
+        };
+      }
+    ).__afterdarkMap;
+    if (!map) throw new Error('map test hook missing');
+    const path = document.querySelectorAll<SVGGeometryElement>('path.task-section')[i];
+    if (!path) throw new Error('no section highlight');
+    const svg = path.ownerSVGElement;
+    const ctm = path.getScreenCTM();
+    if (!svg || !ctm) throw new Error('no svg');
+    const box = path.getBBox();
+    const inside = (x: number, y: number) => path.isPointInFill(new DOMPoint(x, y));
+    // The point whose ring of neighbours is all inside the highlight is the safest from the edges.
+    let best: { x: number; y: number; score: number } | undefined;
+    const steps = 24;
+    for (let a = 0; a <= steps; a++) {
+      for (let b = 0; b <= steps; b++) {
+        const x = box.x + (box.width * a) / steps;
+        const y = box.y + (box.height * b) / steps;
+        if (!inside(x, y)) continue;
+        let score = 0;
+        for (const r of [6, 12, 18, 24]) {
+          for (let k = 0; k < 8; k++) {
+            const t = (k / 8) * 2 * Math.PI;
+            if (inside(x + r * Math.cos(t), y + r * Math.sin(t))) score++;
+          }
+        }
+        if (!best || score > best.score) best = { x, y, score };
+      }
+    }
+    if (!best) throw new Error('no spot inside the highlight');
+    const screen = new DOMPoint(best.x, best.y).matrixTransform(ctm);
+    const frame = map.getContainer().getBoundingClientRect();
+    const ll = map.containerPointToLatLng([screen.x - frame.left, screen.y - frame.top]);
+    return { lat: ll.lat, lng: ll.lng };
+  }, index);
+}
+
+/** lat/lng of the `index`-th revealed pin on the map. */
+export async function pinPosition(page: Page, index = 0): Promise<{ lat: number; lng: number }> {
+  return page.evaluate((i) => {
+    const map = (
+      window as unknown as {
+        __afterdarkMap?: TestMap & {
+          containerPointToLatLng(p: [number, number]): { lat: number; lng: number };
+        };
+      }
+    ).__afterdarkMap;
+    const pin = document.querySelectorAll<HTMLElement>('.task-pin')[i];
+    if (!map || !pin) throw new Error('no pin on the map');
+    const r = pin.getBoundingClientRect();
+    const frame = map.getContainer().getBoundingClientRect();
+    const ll = map.containerPointToLatLng([
+      r.left + r.width / 2 - frame.left,
+      r.top + r.height / 2 - frame.top,
+    ]);
+    return { lat: ll.lat, lng: ll.lng };
+  }, index);
+}

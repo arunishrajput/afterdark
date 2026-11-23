@@ -11,7 +11,7 @@ import {
   type TaskCard,
   type TaskOpenAck,
 } from '@afterdark/shared';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { cancelTask, openTask, submitTask, taskAction } from '../../net/actions';
 import { messageFor } from '../../net/errors';
@@ -35,7 +35,14 @@ type Step =
   | { kind: 'play'; ack: TaskOpenAck }
   | { kind: 'done'; result: 'success' | 'fooled'; points: number };
 
-export function TaskPlayer({ card, onClose }: { card: TaskCard; onClose: () => void }) {
+export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: () => void }) {
+  // The parent re-renders on every view, so its callback is new each time: keep the latest in a
+  // ref and let effects call it without restarting (the close timer must run its whole length).
+  const closeRef = useRef(close);
+  useEffect(() => {
+    closeRef.current = close;
+  }, [close]);
+  const onClose = useCallback(() => closeRef.current(), []);
   const [step, setStep] = useState<Step>({ kind: 'safe' });
   const [message, setMessage] = useState<string | undefined>();
   const [lockedUntil, setLockedUntil] = useState(0);
@@ -51,10 +58,11 @@ export function TaskPlayer({ card, onClose }: { card: TaskCard; onClose: () => v
     if (resetSeq !== startedAt.current && step.kind !== 'done') onClose();
   }, [resetSeq, step.kind, onClose]);
 
-  // The card is gone from the view (swapped out): nothing left to play.
+  // The card is gone from the view (swapped out): nothing left to play. While a submit is in
+  // flight the card can vanish just before the ack arrives (it was completed): wait for the ack.
   useEffect(() => {
-    if (!live && step.kind !== 'done') onClose();
-  }, [live, step.kind, onClose]);
+    if (!live && step.kind !== 'done' && !busy) onClose();
+  }, [live, step.kind, busy, onClose]);
 
   useEffect(() => {
     if (step.kind !== 'done') return;
@@ -94,7 +102,7 @@ export function TaskPlayer({ card, onClose }: { card: TaskCard; onClose: () => v
       return;
     }
     if (res.data.result === 'wrong') {
-      setMessage('Not quite. Try again.');
+      setMessage(undefined);
       setLockedUntil(Date.now() + DEFAULT_CONFIG.taskWrongLockoutS * MS_PER_S);
       setNow(Date.now());
       setShake((n) => n + 1);
@@ -187,14 +195,13 @@ export function TaskPlayer({ card, onClose }: { card: TaskCard; onClose: () => v
                 />
               )}
             </Suspense>
-            {message && (
+            {(locked || message) && (
               <p
                 role="status"
                 data-testid="task-feedback"
                 className="mt-3 text-center font-semibold text-danger"
               >
-                {message}
-                {locked && ` Wait ${lockLeft} s.`}
+                {locked ? `Not quite. Try again in ${lockLeft} s.` : message}
               </p>
             )}
             <Button variant="ghost" className="mt-4 w-full" data-testid="task-back" onClick={back}>

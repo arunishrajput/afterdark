@@ -661,3 +661,31 @@ describe('V1 crew win (RULES §12)', () => {
     expect(res.state.players.find((p) => p.id === at.id)?.tasks).toHaveLength(s.config.taskSlots);
   });
 });
+
+describe('dev:setMinigames (test mode)', () => {
+  it('limits the types new tasks roll, in the lobby, for the host, in test mode only', () => {
+    const lobby = newLobby();
+    const res = run(lobby, { type: 'devSetMinigames', playerId: 'host', types: ['lock'] });
+    expect(res.state.config.minigamesEnabled).toEqual(['lock']);
+    // Every task of the game that follows is a lock.
+    const play = toPlaying(res.state);
+    for (const p of crewOf(play.state)) for (const t of p.tasks ?? []) expect(t.type).toBe('lock');
+    expect(
+      errCode(reduce(lobby, { type: 'devSetMinigames', playerId: 'p1', types: ['lock'] }, 0)),
+    ).toBe('NOT_HOST');
+    expect(
+      errCode(
+        reduce(play.state, { type: 'devSetMinigames', playerId: 'host', types: ['lock'] }, 0),
+      ),
+    ).toBe('WRONG_PHASE');
+    // A type with no game yet is dropped; with nothing left it is refused.
+    expect(
+      errCode(reduce(lobby, { type: 'devSetMinigames', playerId: 'host', types: ['pattern'] }, 0)),
+    ).toBe('INVALID_PAYLOAD');
+    const off = structuredClone(lobby);
+    off.config.testMode = false;
+    expect(
+      errCode(reduce(off, { type: 'devSetMinigames', playerId: 'host', types: ['lock'] }, 0)),
+    ).toBe('NOT_ALLOWED');
+  });
+});

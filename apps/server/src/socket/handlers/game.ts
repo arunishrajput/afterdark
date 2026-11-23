@@ -1,5 +1,5 @@
 /** Host controls during a game, and the test-mode bots (PROTOCOL Phase 4). */
-import { devAddBotsSchema, gameCommandSchema } from '@afterdark/shared';
+import { devAddBotsSchema, devSetMinigamesSchema, gameCommandSchema } from '@afterdark/shared';
 
 import { type GatewayContext, requireBinding, run } from '../context';
 import { HandlerError, validated } from '../handler';
@@ -36,6 +36,14 @@ export function registerGameHandlers(ctx: GatewayContext, socket: GameSocket): v
         throw new HandlerError('LOBBY_FULL', 'That would overfill the lobby');
       }
       ctx.bots.get(room.code)?.add(count);
+    }),
+  );
+
+  socket.on(
+    'dev:setMinigames',
+    validated('dev:setMinigames', devSetMinigamesSchema, logger, ({ types }) => {
+      const { room, playerId } = requireBinding(ctx, socket);
+      run(room, { type: 'devSetMinigames', playerId, types });
     }),
   );
 }

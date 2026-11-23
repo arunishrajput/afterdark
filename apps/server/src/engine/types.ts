@@ -9,6 +9,7 @@ import type {
   LobbyRegenerateRegionsPayload,
   LocUpdatePayload,
   Position,
+  SoloMinigameType,
   TaskActionAck,
   TaskOpenAck,
   TaskSubmitAck,
@@ -44,7 +45,9 @@ export type Command =
   | { type: 'taskReroll'; playerId: string; taskId: string }
   | { type: 'taskReportUnsafe'; playerId: string; taskId: string }
   /** Test mode only (`dev:autoComplete`): finish an open task as if solved. */
-  | { type: 'devAutoComplete'; playerId: string; taskId: string };
+  | { type: 'devAutoComplete'; playerId: string; taskId: string }
+  /** Test mode only (`dev:setMinigames`): restrict the types new tasks can be. */
+  | { type: 'devSetMinigames'; playerId: string; types: SoloMinigameType[] };
 
 /** What a task command answers its caller with (the ack's data). It goes to nobody else. */
 export type CommandReply =

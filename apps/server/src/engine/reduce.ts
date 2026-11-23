@@ -107,6 +107,9 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
       case 'taskReportUnsafe':
         play.reportUnsafe(draft, cmd.playerId, cmd.taskId, now, effects);
         break;
+      case 'devSetMinigames':
+        control.setMinigames(draft, cmd.playerId, cmd.types);
+        break;
       case 'devAutoComplete':
         play.autoCompleteTask(draft, cmd.playerId, cmd.taskId, now, effects);
         break;

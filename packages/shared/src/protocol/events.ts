@@ -10,6 +10,7 @@ import type {
 } from '../types/view';
 import type {
   DevAddBotsPayload,
+  DevSetMinigamesPayload,
   DevTeleportPayload,
   ErrorCode,
   GameCommandPayload,
@@ -97,6 +98,7 @@ export interface ClientToServerEvents {
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
   'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
   'dev:autoComplete': (payload: TaskRefPayload, ack: AckCallback) => void;
+  'dev:setMinigames': (payload: DevSetMinigamesPayload, ack: AckCallback) => void;
 }
 
 export interface KickedPayload {

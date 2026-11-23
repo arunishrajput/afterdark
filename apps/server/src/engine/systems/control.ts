@@ -1,4 +1,6 @@
 /** Host controls during a game (RULES §11): force start, pause, resume, abort. */
+import { MINIGAMES, type SoloMinigameType } from '@afterdark/shared';
+
 import { pauseClock, resumeClock } from '../clock';
 import type { RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
@@ -53,4 +55,15 @@ export function abort(state: RoomState, playerId: string, effects: Effect[]): vo
     throw new RuleError('WRONG_PHASE', 'There is no game to abort');
   }
   endGame(state, null, 'abort', effects);
+}
+
+/** `dev:setMinigames` (test mode, host, lobby): which types new tasks may roll. Types without a game are dropped. */
+export function setMinigames(state: RoomState, playerId: string, types: SoloMinigameType[]): void {
+  if (!state.config.testMode) throw new RuleError('NOT_ALLOWED', 'Test mode is off');
+  requireHost(state, playerId);
+  if (state.phase !== 'lobby') throw new RuleError('WRONG_PHASE', 'Choose minigames in the lobby');
+  const playable = types.filter((t) => MINIGAMES[t] !== undefined);
+  if (playable.length === 0)
+    throw new RuleError('INVALID_PAYLOAD', 'None of those games exist yet');
+  state.config.minigamesEnabled = [...new Set(playable)];
 }
