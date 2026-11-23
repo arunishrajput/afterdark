@@ -66,8 +66,8 @@ Two ways to get bots (ADR-056), both driven by the same shared `BotWalker`:
   - joins its co-op tasks
   - votes at random (or Skip) in meetings
 - **Imposter bots:**
-  - `--imposter-behaviour chase` follows the nearest crew member and channels Infect
-  - `idle` does nothing
+  - `--imposter-behaviour chase` (Phase 7, ADR-069): imposter bots walk to the nearest crew-looking dot on their radar, start Infect when within `infectionRadiusM − 3 m`, keep following during the channel, then walk 20 m away so the incubation can start. Set the lobby's visibility to **Everyone** so they see far. In-process bots (`dev:addBots {imposterBehaviour:'chase'}`) do the same from the room state
+  - `wander` (default): they walk like everyone else and never infect
 - **Balance script** (Phase 11): `pnpm bots:simulate --games 50 --players 8` runs headless games at accelerated game time (injected clock) and prints the win rate, average length and tasks per player.
 
 ## 6. Field-test checklist (the human runs this, from Phase 6)

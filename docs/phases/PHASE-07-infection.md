@@ -20,7 +20,7 @@
 - **Out:** meeting interactions (Phase 8 adds the cancellations and the post-meeting grace; leave clean hooks), class abilities (9–10).
 
 ## Tasks
-- [ ] **07.1 Infection system** (`engine/systems/infection.ts`):
+- [x] **07.1 Infection system** (`engine/systems/infection.ts`):
   - eligibility: imposter active, in bounds, good fix, Infect off cooldown, not paused, not in a meeting (hook); target healthy, active, non-imposter, good fix, within `infectionRadiusM`
   - `ability:infect` picks the **nearest** eligible target
   - channel: `infectionChannelS` continuous, with `infectionGapToleranceS` tolerance for out-of-range or stale gaps; fails beyond that, with no cooldown
@@ -29,7 +29,7 @@
   - infected → compromised++ → `checkVictory` (V3)
   - two imposters on one target (E6): the first to complete wins, and the other channel is cancelled with no cooldown
   - exposures still incubating at game end don't count (E9)
-- [ ] **07.2 Tests** with a fake clock. Every rule above plus:
+- [x] **07.2 Tests** with a fake clock. Every rule above plus:
   - channel survives a 2 s gap and fails on a 4 s gap
   - incubation doesn't start while the imposter stays near (E8)
   - a stale imposter counts as leaving
@@ -37,23 +37,23 @@
   - spectators are not eligible
   - V3 thresholds for 4–12 players (the table in SCORING)
   - V4 rational comparison, including a draw
-- [ ] **07.3 Views:**
+- [x] **07.3 Views:**
   - `me.imposter.infect {readyAt, channel?{endsAt, inRange}}`, `compromisedIds`, `exposures`
   - radar flags `exposed` / `infected` / `ally` for imposters only
   - `game.compromised` for everyone
 
   The target gets **no** event, vibration or any other signal.
-- [ ] **07.4 Leak tests** (from TESTING §3): infection invisibility with deep key equality between a healthy and an infected crew view; crew radar flags; a raw frame scan over a scripted game where 3 players get infected. Then the GDD tests: "Crew cannot retrieve infected identities from client data or network responses" and "An infected player receives no notification".
-- [ ] **07.5 Client, imposter HUD:**
+- [x] **07.4 Leak tests** (from TESTING §3): infection invisibility with deep key equality between a healthy and an infected crew view; crew radar flags; a raw frame scan over a scripted game where 3 players get infected. Then the GDD tests: "Crew cannot retrieve infected identities from client data or network responses" and "An infected player receives no notification".
+- [x] **07.5 Client, imposter HUD:**
   - Infect button: disabled with the reason (no target, cooldown, out of bounds), enabled with a pulse when a target is in range
   - channel progress ring with an "Stay close" hint and haptics
   - cooldown ring
   - "Infected: n" chip that opens a list of usernames by status
   - map dot styling for ally, exposed and infected
-- [ ] **07.6 Client, everyone:** infection boxes fill with a glitch animation, a sound, and the toast "Someone has been compromised". Make the threshold notch prominent.
-- [ ] **07.7 Bots v3:** `--imposter-behaviour chase`: imposter bots walk to the nearest crew bot or human, channel Infect, then walk away. The integration test shows imposters reaching V3 in a bot game. A separate scripted game checks V4 at time-up.
-- [ ] **07.8 E2E:** a sim-mode imposter context and a crew context. The imposter teleports next to the crew player, channels, walks away, waits for incubation (shorten the config in testMode, or inject the clock through a test hook), and the crew HUD box fills while the crew view shows no infected flag.
-- [ ] **07.9 Wrap up.** Update the docs (RULES if a clarification was needed, PROTOCOL, PROGRESS). Commit, tag, push. Production auto-deploys; ask the human for an optional field test of infection at real distances.
+- [x] **07.6 Client, everyone:** infection boxes fill with a glitch animation, a sound, and the toast "Someone has been compromised". Make the threshold notch prominent.
+- [x] **07.7 Bots v3:** `--imposter-behaviour chase`: imposter bots walk to the nearest crew bot or human, channel Infect, then walk away. The integration test shows imposters reaching V3 in a bot game. A separate scripted game checks V4 at time-up.
+- [x] **07.8 E2E:** a sim-mode imposter context and a crew context. The imposter teleports next to the crew player, channels, walks away, waits for incubation (shorten the config in testMode, or inject the clock through a test hook), and the crew HUD box fills while the crew view shows no infected flag.
+- [x] **07.9 Wrap up.** Update the docs (RULES if a clarification was needed, PROTOCOL, PROGRESS). Commit, tag, push. Production auto-deploys; ask the human for an optional field test of infection at real distances.
 
 ## Acceptance criteria
 - Infection behaves exactly as RULES §7.1 says, with all timing edge cases tested.

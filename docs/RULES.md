@@ -84,6 +84,14 @@ Imposters have no solo tasks. They hold the co-op tasks they are drawn into as p
 6. **Infected players are never told.** Their view is identical to a healthy crew member's, and their task points still count.
 7. While a meeting is running, and for `postMeetingGraceS` (30 s) afterwards, Infect is disabled and any channel in progress is cancelled. Incubation timers pause during meetings because they run on game time.
 
+**Clarifications from building it (Phase 7, ADR-067/068):**
+- *In range* means both players have a good, fresh fix and are within `infectionRadiusM`, and the imposter is not out of bounds. Each gap is judged on its own: a gap of up to `infectionGapToleranceS` is fine (exactly the tolerance still counts as tolerated), however often it happens. The channel completes at `infectionChannelS` after it started, if both are in range at that moment; if they are inside a tolerated gap it completes as soon as they are back in range.
+- The *nearest* target is the smallest distance between the two fixes; a tie goes to the player who joined the lobby first.
+- When two imposters channel on one target (E6), channels are finished in order of their end time; the first to complete exposes the target and every other channel on that target ends on the next evaluation with no cooldown.
+- Incubation starts when the exposing imposter has been out of range of the target for `incubationDepartS` (3 s) in a row, counted on game time, and ends `incubationS` after that moment. A weak or stale imposter fix, an imposter who left the game and a disconnected imposter all count as out of range. Once incubation has started it does not pause or reset if the imposter comes back.
+- A crew member who leaves the game while exposed still becomes infected when the incubation ends (they are still part of `originalCrewCount`).
+- Infect's cooldown does not run down while the imposter is out of bounds (§9.3): the ready time is pushed back by the time spent out.
+
 ### 7.2 Saboteur: Task Stop
 Cooldown `taskStopCooldownS` (120 s). When activated:
 - every minigame in progress, solo or co-op, resets to its start
