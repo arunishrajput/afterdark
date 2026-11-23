@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { devAdvanceClock, devSetMinigames, simTeleport } from './net/actions';
 import { startConnection } from './net/socket';
+import { useGame } from './store';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('#root missing from index.html');
@@ -18,6 +19,8 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {
     devSetMinigames,
     devAdvanceClock,
     simTeleport,
+    /** The Base's position (it is on everyone's map): where a test sends its simulated players for a meeting. */
+    baseOf: () => useGame.getState().view?.lobby.map.base,
   };
 }
 

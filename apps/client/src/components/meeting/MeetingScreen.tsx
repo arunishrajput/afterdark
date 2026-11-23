@@ -223,7 +223,7 @@ function Vote({ meeting, spectator }: { meeting: MeetingView; spectator: boolean
                 aria-pressed={chosen}
                 disabled={locked}
                 onClick={() => setPicked(c.id)}
-                className={`min-h-16 w-full rounded-2xl border px-3 py-2 text-lg font-semibold transition ${chosen ? 'border-accent bg-accent/15 shadow-[0_0_14px_var(--accent-glow)]' : 'border-white/10 bg-surface'} ${c.id === 'skip' ? 'col-span-2 text-muted' : ''}`}
+                className={`min-h-16 w-full rounded-2xl border px-3 py-2 text-lg font-semibold transition ${chosen ? 'border-accent bg-accent text-bg shadow-[0_0_14px_var(--accent-glow)]' : 'border-white/10 bg-surface'} ${c.id === 'skip' ? 'col-span-2 text-muted' : ''}`}
               >
                 {c.label}
               </button>

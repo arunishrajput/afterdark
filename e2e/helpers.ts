@@ -160,6 +160,7 @@ interface Actions {
   devAdvanceClock(seconds: number): Promise<{ ok: boolean }>;
   devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
   simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
+  baseOf(): { lat: number; lng: number } | undefined;
 }
 
 /** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
@@ -207,6 +208,15 @@ export async function simTeleport(page: Page, to: { lat: number; lng: number }) 
     to,
   );
   expect(res.ok).toBe(true);
+}
+
+/** Hop the simulated player onto the Base (it is on every player's map), for a meeting. */
+export async function simTeleportToBase(page: Page) {
+  const base = await page.evaluate(() =>
+    (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.baseOf(),
+  );
+  if (!base) throw new Error('no Base in the view');
+  await simTeleport(page, base);
 }
 
 /**
