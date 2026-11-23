@@ -13,6 +13,7 @@ import type { ViewEmitter } from '../rooms/ViewEmitter';
 import type { GatewayContext } from './context';
 import { validated } from './handler';
 import { registerAbilityHandlers } from './handlers/abilities';
+import { registerCoopHandlers } from './handlers/coop';
 import { registerGameHandlers } from './handlers/game';
 import { registerLobbyHandlers } from './handlers/lobby';
 import { registerLocationHandlers } from './handlers/location';
@@ -99,6 +100,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     registerGameHandlers(ctx, socket);
     registerTaskHandlers(ctx, socket);
     registerAbilityHandlers(ctx, socket);
+    registerCoopHandlers(ctx, socket);
     registerMeetingHandlers(ctx, socket);
 
     socket.on('disconnect', (reason) => {

@@ -1,4 +1,4 @@
-/** Imposter abilities. Infect and cancelling it carry nothing (the server picks the target); Fake Task carries the pin. */
+/** Imposter abilities. Infect and cancelling it carry nothing (the server picks the target); Fake Task carries the pin; Camouflage carries nothing. */
 import { fakeTaskSchema, gameCommandSchema } from '@afterdark/shared';
 
 import { type GatewayContext, requireBinding, run, runForReply } from '../context';
@@ -32,6 +32,16 @@ export function registerAbilityHandlers(ctx: GatewayContext, socket: GameSocket)
       const { room, playerId } = requireBinding(ctx, socket);
       const reply = runForReply(room, { type: 'abilityTaskStop', playerId });
       if (reply.type !== 'taskStop') throw new HandlerError('INTERNAL', 'Unexpected reply');
+      return reply.ack;
+    }),
+  );
+
+  socket.on(
+    'ability:camouflage',
+    validated('ability:camouflage', gameCommandSchema, logger, () => {
+      const { room, playerId } = requireBinding(ctx, socket);
+      const reply = runForReply(room, { type: 'abilityCamouflage', playerId });
+      if (reply.type !== 'camouflage') throw new HandlerError('INTERNAL', 'Unexpected reply');
       return reply.ack;
     }),
   );

@@ -5,17 +5,28 @@
  * status, and a crew view has no `imposter` key at all (ROLES.md visibility
  * matrix, leak tests 1, 2 and 4).
  */
-import type { AbilityState, FakeView, GameView, ImposterView, MeView } from '@afterdark/shared';
+import {
+  type AbilityState,
+  type CoopView,
+  type FakeView,
+  type GameView,
+  type ImposterView,
+  type MeView,
+  puzzleFor,
+} from '@afterdark/shared';
 
 import { clockView, gameNow } from '../engine/clock';
 import type { PlayerState, RoomState } from '../engine/state';
 import { abilitiesOf } from '../engine/systems/abilities';
+import { camouflageEndsGameMs } from '../engine/systems/camouflage';
+import { sessionOfPlayer, slotOf, taskIdFor } from '../engine/systems/coop';
 import { meetingsLeft } from '../engine/systems/meetings';
 import { isActive } from '../engine/systems/players';
 import { projectRegionCounts } from '../engine/systems/regionCounts';
 import { spawnProgress } from '../engine/systems/spawn';
 import { isTaskLocked } from '../engine/systems/taskStop';
 import { compromisedCount } from '../engine/systems/victory';
+import { projectCamouflage } from './projectCamouflage';
 import { projectMeeting } from './projectMeeting';
 import { projectRerollReadyAt, projectTasks } from './projectTasks';
 
@@ -34,10 +45,27 @@ function deadlineAt(state: RoomState, gameMs: number, now: number): number {
 
 /** An imposter's class abilities with their ready times as constant server-epoch deadlines. */
 function projectAbilities(state: RoomState, p: PlayerState, now: number): AbilityState[] {
+  // Camouflage also shows its end while the disguise is on (an ally learns who is disguised, ROLES.md).
+  const disguiseEnd = camouflageEndsGameMs(state, p, now);
   return abilitiesOf(p).map(([id, a]) => ({
     id,
     readyAt: deadlineAt(state, a.readyAtGameMs, now),
+    ...(id === 'camouflage' && disguiseEnd !== undefined
+      ? { activeUntil: deadlineAt(state, disguiseEnd, now) }
+      : {}),
   }));
+}
+
+/** The viewer's own started co-op session: the same shape whoever the other side is (ADR-005). */
+function projectCoop(state: RoomState, me: PlayerState, now: number): CoopView | undefined {
+  const s = sessionOfPlayer(state, me.id);
+  if (!s) return undefined;
+  return {
+    taskId: taskIdFor(s, me.id),
+    phase: s.phase === 'active' ? 'active' : 'waiting',
+    endsAt: deadlineAt(state, s.expiresAtGameMs, now),
+    ...(s.phase === 'active' && s.pins ? { puzzle: puzzleFor(s.pins, slotOf(s, me.id)) } : {}),
+  };
 }
 
 /** The Phantom's own fakes: the ones waiting in the queue, then the ones a crew slot holds (ROLES.md). Only their own are ever listed. */
@@ -52,6 +80,11 @@ function projectFakes(state: RoomState, me: PlayerState): FakeView[] {
       .map((t) => ({ id: t.id, lat: t.lat, lng: t.lng, assigned: true })),
   );
   return [...held, ...queued];
+}
+
+function camouflageField(state: RoomState, me: PlayerState, now: number) {
+  const camouflage = projectCamouflage(state, me, now, (gameMs) => deadlineAt(state, gameMs, now));
+  return camouflage ? { camouflage } : {};
 }
 
 /**
@@ -77,6 +110,7 @@ function projectImposter(state: RoomState, me: PlayerState, now: number): Impost
     },
     abilities: projectAbilities(state, me, now),
     fakes: projectFakes(state, me),
+    ...camouflageField(state, me, now),
     compromisedIds: affected.map((p) => p.id),
     exposures: affected
       .filter((p) => p.infection === 'exposed')
@@ -156,8 +190,10 @@ export function projectGame(state: RoomState, viewerId: string, now: number): Ga
   const meeting = projectMeeting(state, viewerId);
   if (meeting) game.meeting = meeting;
   if (state.phase === 'playing' && me?.role) {
-    // The viewer's own cards: an imposter gets an empty list (Phase 10 adds their partner slot).
+    // The viewer's own cards: crew their slots plus the partner card; an imposter only the partner card (TASKS §5.2).
     game.tasks = projectTasks(state, me);
+    const coop = projectCoop(state, me, now);
+    if (coop) game.coop = coop;
     const rerollReadyAt = projectRerollReadyAt(state, me, now);
     if (rerollReadyAt !== undefined) game.rerollReadyAt = rerollReadyAt;
   }
