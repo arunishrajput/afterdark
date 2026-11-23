@@ -146,3 +146,6 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `forfeitAfterS` | 180 | — | 🔒 | A side with no connected active players for this long loses. |
 | `viewThrottleMs` | 200 | — | 🔒 | At most 5 view snapshots per second per player. |
 | `radarIntervalMs` | 1000 | — | 🔒 | How often nearby/all dots are sent. |
+| `clockSyncSamples` | 5 | — | 🔒 | `time:ping` round trips per clock sync; the lowest-RTT sample sets the offset. |
+| `clockSyncIntervalMs` | 30000 | — | 🔒 | How often the client re-syncs its server-clock offset. |
+| `ackTimeoutMs` | 5000 | — | 🔒 | Client gives up waiting for an ack after this. |

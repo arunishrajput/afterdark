@@ -134,6 +134,9 @@ export const gameConfigSchema = z.strictObject({
   forfeitAfterS: positiveInt(),
   viewThrottleMs: positiveInt(),
   radarIntervalMs: positiveInt(),
+  clockSyncSamples: positiveInt(),
+  clockSyncIntervalMs: positiveInt(),
+  ackTimeoutMs: positiveInt(),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;

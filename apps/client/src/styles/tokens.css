@@ -1,0 +1,37 @@
+/*
+ * Theme tokens (docs/UI_UX.md §1). The theme is chosen by `data-theme` on
+ * <html>: `crew`, `imposter` or `neutral` (lobby, meetings, results).
+ */
+:root,
+[data-theme='neutral'] {
+  --bg: #07080a;
+  --surface: #14161b;
+  --accent: #e6e8ee;
+  --accent-glow: rgba(230, 232, 238, 0.25);
+  --text: #f2f3f5;
+  --muted: #8e929c;
+  --danger: #ff5a5a;
+  --infected: transparent;
+}
+
+[data-theme='crew'] {
+  --bg: #05070d;
+  --surface: #0e1424;
+  --accent: #2e8bff;
+  --accent-glow: rgba(46, 139, 255, 0.45);
+  --text: #e8eeff;
+  --muted: #8a94b3;
+  --danger: #ff5a5a;
+  --infected: transparent;
+}
+
+[data-theme='imposter'] {
+  --bg: #0d0505;
+  --surface: #1f0b0b;
+  --accent: #ff3b3b;
+  --accent-glow: rgba(255, 59, 59, 0.45);
+  --text: #ffecec;
+  --muted: #b38a8a;
+  --danger: #ffb020;
+  --infected: #7cff4f;
+}

@@ -18,13 +18,10 @@ const FAKE_NOW = 1_700_000_000_000;
 const ACK_TIMEOUT_MS = 2000;
 
 /** `emitWithAck` behind `.timeout()` is typed `any` by socket.io-client; pin it. */
-const ping = (socket: ClientSocket, payload: unknown): Promise<Ack<TimePingAck>> =>
-  (
-    socket.timeout(ACK_TIMEOUT_MS).emitWithAck as (
-      ev: 'time:ping',
-      p: unknown,
-    ) => Promise<Ack<TimePingAck>>
-  )('time:ping', payload);
+const ping = async (socket: ClientSocket, payload: unknown): Promise<Ack<TimePingAck>> =>
+  (await socket
+    .timeout(ACK_TIMEOUT_MS)
+    .emitWithAck('time:ping', payload as { clientTs: number })) as Ack<TimePingAck>;
 
 describe('server (in-process)', () => {
   let server: GameServer;

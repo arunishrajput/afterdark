@@ -12,3 +12,4 @@ blob-report/
 *.tsbuildinfo
 .vite/
 .claude/settings.local.json
+.playwright-mcp/

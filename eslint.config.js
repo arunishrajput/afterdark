@@ -23,7 +23,10 @@ export default defineConfig(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          // Tooling configs that sit outside every package's tsconfig.json.
+          allowDefaultProject: ['apps/client/vite.config.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

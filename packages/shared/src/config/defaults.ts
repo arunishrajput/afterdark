@@ -131,4 +131,7 @@ export const DEFAULT_CONFIG = {
   forfeitAfterS: 180,
   viewThrottleMs: 200,
   radarIntervalMs: 1000,
+  clockSyncSamples: 5,
+  clockSyncIntervalMs: 30_000,
+  ackTimeoutMs: 5000,
 } as const satisfies GameConfig;
