@@ -126,6 +126,7 @@ export const gameConfigSchema = z.strictObject({
   lockDigits: int(3, 5),
   lockDigitMax: int(3, 9),
   lockMaxGuesses: positiveInt(),
+  coopPinDigits: int(3, 6),
 
   // Points
   points: pointsSchema,

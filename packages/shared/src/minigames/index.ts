@@ -13,6 +13,8 @@ import {
 } from './types';
 import { wires } from './wires';
 
+export type { CoopPinAnswer, CoopPinParams, CoopPins, CoopPuzzle, CoopSlot } from './coopPin';
+export { coopPinAnswerSchema, generateCoopPins, puzzleFor, verifyCoopPin } from './coopPin';
 export type { LockAction, LockCode, LockFeedback, LockPuzzle, LockState } from './lock';
 export { lock, rollCode, scoreGuess } from './lock';
 export type {

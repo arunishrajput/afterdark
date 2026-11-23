@@ -108,6 +108,7 @@ export const DEFAULT_CONFIG = {
   lockDigits: 3,
   lockDigitMax: 5,
   lockMaxGuesses: 8,
+  coopPinDigits: 4,
 
   // Points (SCORING.md)
   points: {

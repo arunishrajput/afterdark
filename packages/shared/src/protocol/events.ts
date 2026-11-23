@@ -1,6 +1,9 @@
 /** Event names and typed Socket.IO maps (mirrors docs/PROTOCOL.md). */
 import type { KickReason } from '../types/domain';
 import type {
+  CamouflageAck,
+  CoopJoinAck,
+  CoopSubmitAck,
   FakeTaskAck,
   GameEvent,
   InfectAck,
@@ -106,6 +109,11 @@ export interface ClientToServerEvents {
   'ability:cancelInfect': (payload: GameCommandPayload, ack: AckCallback) => void;
   'ability:taskStop': (payload: GameCommandPayload, ack: AckCallback<TaskStopAck>) => void;
   'ability:fakeTask': (payload: FakeTaskPayload, ack: AckCallback<FakeTaskAck>) => void;
+  'ability:camouflage': (payload: GameCommandPayload, ack: AckCallback<CamouflageAck>) => void;
+  'coop:start': (payload: TaskRefPayload, ack: AckCallback) => void;
+  'coop:join': (payload: TaskRefPayload, ack: AckCallback<CoopJoinAck>) => void;
+  'coop:submit': (payload: TaskSubmitPayload, ack: AckCallback<CoopSubmitAck>) => void;
+  'coop:cancel': (payload: TaskRefPayload, ack: AckCallback) => void;
   'meeting:call': (payload: MeetingCommandPayload, ack: AckCallback) => void;
   'meeting:skipDiscussion': (payload: MeetingCommandPayload, ack: AckCallback) => void;
   'meeting:vote': (payload: MeetingVotePayload, ack: AckCallback) => void;

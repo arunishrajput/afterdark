@@ -103,6 +103,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `lockDigits` | 3 | 3–5 | 🔒 | Length of the Lock Breaker code. |
 | `lockDigitMax` | 5 | 3–9 | 🔒 | Highest digit used (digits run 0 to this). |
 | `lockMaxGuesses` | 8 | — | 🔒 | Guesses before the lock re-rolls its code. |
+| `coopPinDigits` | 4 | 3–6 | 🔒 | Length of each PIN in the co-op PIN Relay. |
 
 ## Points
 Rules: [SCORING.md](SCORING.md).

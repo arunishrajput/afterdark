@@ -7,6 +7,7 @@ import type { GameConfigEditable } from '../config/schema';
 import type { TaskPointSource } from '../geo/pool';
 import type { SectionId } from '../geo/sections';
 import type { LatLng, MultiPolygonCoords, Position, Ring } from '../geo/types';
+import type { CoopPuzzle } from '../minigames/coopPin';
 import type { LockAction, LockFeedback, LockPuzzle } from '../minigames/lock';
 import type { WiresAnswer, WiresPuzzle } from '../minigames/wires';
 import type { EndReason, ImposterClass, Phase, PlayerStatus, Role, Winner } from './domain';
@@ -147,7 +148,7 @@ export interface MeetingView {
   outcome?: MeetingOutcome;
 }
 
-/** Solo today; `coop` arrives in Phase 10. */
+/** A co-op card is either the owner's own slot or the partner slot (TASKS §5). */
 export type TaskKind = 'solo' | 'coop';
 
 /**
@@ -165,6 +166,7 @@ export type TaskCard =
       regionId: string;
       regionName: string;
       section: SectionId;
+      /** Co-op cards only: the other participant's secret tag (TASKS §5). */
       partnerTag?: string;
     }
   | {
@@ -178,6 +180,8 @@ export type TaskCard =
       lat: number;
       lng: number;
       atPin: boolean;
+      /** Co-op cards only: the other participant has started a session that the viewer has not joined yet. */
+      partnerWaiting?: boolean;
     };
 
 /** The puzzle the server sends when a task is opened: never the solution. */
@@ -192,6 +196,39 @@ export type TaskActionAck = { feedback: LockFeedback };
 export type TaskSubmitAck = { result: 'success' | 'wrong' | 'fooled'; points: number };
 
 export type TaskAnswerBody = WiresAnswer | number[];
+
+/** The ack of `coop:join`: the PIN the joiner must show. */
+export interface CoopJoinAck {
+  puzzle: CoopPuzzle;
+}
+
+/**
+ * `waiting`: my half is right, my partner's is not in yet. `success`: the task is done,
+ * `points` is my personal credit. `wrong` locks submitting for `taskWrongLockoutS`.
+ */
+export interface CoopSubmitAck {
+  result: 'success' | 'waiting' | 'wrong';
+  points: number;
+}
+
+/** The ack of `ability:camouflage`: when the disguise ends (server epoch ms; it can be extended through a co-op). */
+export interface CamouflageAck {
+  endsAt: number;
+}
+
+/**
+ * The viewer's own co-op session, once one has been started (TASKS §5). The same shape
+ * for a real partner and a camouflaged stand-in: nothing says who the other side is.
+ * `taskId` is the viewer's own card id, or the join id a stand-in was offered.
+ */
+export interface CoopView {
+  taskId: string;
+  phase: 'waiting' | 'active';
+  /** Server epoch ms when the task expires (game time; constant while the clock runs). */
+  endsAt: number;
+  /** `active` only: the PIN the viewer must show their partner. */
+  puzzle?: CoopPuzzle;
+}
 
 /**
  * Public game state. Every player gets the same values (ROLES.md visibility
@@ -219,6 +256,8 @@ export interface GameView {
   tasks?: TaskCard[];
   /** `playing`, crew only: server epoch ms when the viewer may reroll again; absent when they may now. */
   rerollReadyAt?: number;
+  /** The viewer's own started co-op session, if any (private to its participants). */
+  coop?: CoopView;
   /** While a Task Stop lock runs (public, ROLES.md): nobody can open or submit a task until `until`. Says nothing about who. */
   taskLock?: { until: number };
   /** `ended` only. */
@@ -307,6 +346,19 @@ export interface ExposureView {
   incubationEndsAt?: number;
 }
 
+/**
+ * A camouflaged imposter's crew disguise (RULES §7.4, imposter-only): the local crew
+ * look, decoy cards and, when a crew member waits at a pin nearby, the offer to stand in.
+ */
+export interface CamouflageView {
+  /** Server epoch ms when the disguise ends (later while a co-op runs, up to the extension cap). */
+  until: number;
+  /** Plausible cards the server made up: real sections, never real task ids. */
+  decoyTasks: TaskCard[];
+  /** A waiting co-op session within reach whose partner has not joined: `taskId` goes to `coop:join`. */
+  join?: { taskId: string };
+}
+
 /** Imposter-only information. A crew view has no `imposter` key at all. */
 export interface ImposterView {
   classes: ImposterClass[];
@@ -316,6 +368,8 @@ export interface ImposterView {
   abilities: AbilityState[];
   /** The Phantom's own fakes, queued or handed out (empty for everyone else). */
   fakes: FakeView[];
+  /** Present only while Camouflage is active. */
+  camouflage?: CamouflageView;
   /** Everyone exposed or infected, whichever imposter caused it (ROLES.md). */
   compromisedIds: string[];
   /** The subset still incubating; the rest of `compromisedIds` are infected. */
@@ -399,6 +453,8 @@ export type GameEvent =
       type: 'task.reset';
       reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting' | 'sabotage';
     }
+  /** Private (Phase 10): a co-op task ran out of time, lost a participant or was closed by a stand-in's completion. The same message for all three. */
+  | { type: 'task.expired' }
   /** Private: a task was replaced because its point was reported unsafe (by anyone). */
   | { type: 'task.removed'; reason: 'unsafe' }
   /** Public (Phase 7): a crew member just became compromised. Says nothing about who. */
