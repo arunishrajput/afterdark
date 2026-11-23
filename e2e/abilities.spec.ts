@@ -7,6 +7,7 @@ import {
   joinLobby,
   lobbyWithBots,
   newPlayer,
+  setConfig,
   setMinigames,
   simTeleport,
   startAndReveal,
@@ -108,6 +109,8 @@ test('a Phantom plants a fake, a Saboteur jams the game, and the crew player is 
   const host = await newPlayer(browser);
   const code = await lobbyWithBots(host, 3);
   await enableTestMode(host, { everyone: true, allAbilities: true });
+  // The settings form saves the old co-op chance back: switch it off again (random co-op cards would change these flows).
+  await setConfig(host, { coopChance: 0 });
   await setMinigames(host, ['wires']);
   const guest = await newPlayer(browser);
   await joinLobby(guest, code, 'Guest');

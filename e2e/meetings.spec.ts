@@ -6,6 +6,7 @@ import {
   joinLobby,
   lobbyWithBots,
   newPlayer,
+  setConfig,
   simTeleportToBase,
   startAndReveal,
 } from './helpers';
@@ -35,6 +36,8 @@ test('a meeting runs gather → discuss → vote → result, with the match time
   const host = await newPlayer(browser);
   const code = await lobbyWithBots(host, 3);
   await enableTestMode(host, { everyone: true });
+  // The settings form saves the old co-op chance back: switch it off again (random co-op cards would change these flows).
+  await setConfig(host, { coopChance: 0 });
   const a = await newPlayer(browser);
   const b = await newPlayer(browser);
   await joinLobby(a, code, 'Guest A');

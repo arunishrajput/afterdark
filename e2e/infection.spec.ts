@@ -8,6 +8,7 @@ import {
   joinLobby,
   lobbyWithBots,
   newPlayer,
+  setConfig,
   simTeleport,
   startAndReveal,
 } from './helpers';
@@ -32,6 +33,8 @@ test('imposter infects: channel, exposed, incubation, infected; crew sees only t
   const host = await newPlayer(browser);
   const code = await lobbyWithBots(host, 3);
   await enableTestMode(host, { everyone: true });
+  // The settings form saves the old co-op chance back: switch it off again (random co-op cards would change these flows).
+  await setConfig(host, { coopChance: 0 });
   const guest = await newPlayer(browser);
   const frames = captureFrames(guest);
   await joinLobby(guest, code, 'Guest');

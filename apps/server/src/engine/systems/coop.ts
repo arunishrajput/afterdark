@@ -21,7 +21,7 @@ import type { CoopSession, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { applyRecovery } from './abilities';
 import { isCamouflaged } from './camouflage';
-import { heldTasks, makeCoop } from './coopPairing';
+import { heldTasks, makeCoop, pairedAlready } from './coopPairing';
 import { fixQuality, requireGoodFix } from './location';
 import { findPlayer } from './players';
 import { refillSlots, taskRng } from './tasks';
@@ -239,7 +239,7 @@ function removeSession(state: RoomState, s: CoopSession): void {
 }
 
 /**
- * `dev:forceCoop` (test mode, host, playing): the owner's first solo card becomes a co-op task with
+ * `dev:forceCoop` (test mode, host, playing): the owner's first suitable solo card becomes a co-op task with
  * `partnerId`, under the usual eligibility rules. Lets a test pair two chosen players.
  */
 export function forceCoop(
@@ -254,12 +254,25 @@ export function forceCoop(
   if (state.phase !== 'playing' || !state.game) throw new RuleError('WRONG_PHASE', 'Not playing');
   const owner = findPlayer(state, ownerId);
   const partner = findPlayer(state, partnerId);
-  const base = owner.tasks?.find((t) => t.kind === 'solo' && !t.fake);
-  if (owner.role !== 'crew' || !base)
+  const candidates = (owner.tasks ?? []).filter((t) => t.kind === 'solo' && !t.fake);
+  if (owner.role !== 'crew' || candidates.length === 0) {
     throw new RuleError('NOT_ALLOWED', 'The owner needs a solo task');
-  const card = makeCoop(state, owner, base, now, partner);
-  if (!card) throw new RuleError('NOT_ALLOWED', 'That partner is not eligible');
-  owner.tasks = (owner.tasks ?? []).map((t) => (t.id === base.id ? card : t));
+  }
+  // The first card whose point the partner does not also hold (the draw can put two players on one point).
+  for (const base of candidates) {
+    const card = makeCoop(state, owner, base, now, partner);
+    if (!card) continue;
+    owner.tasks = (owner.tasks ?? []).map((t) => (t.id === base.id ? card : t));
+    return;
+  }
+  const why = !partner.connected
+    ? 'is not connected'
+    : partner.partnerTask
+      ? 'already has a partner card'
+      : pairedAlready(state, ownerId, partnerId)
+        ? 'is already paired with that owner'
+        : 'holds a task at every candidate point';
+  throw new RuleError('NOT_ALLOWED', `That partner ${why}`);
 }
 
 // ── Interruptions ───────────────────────────────────────────────────────────

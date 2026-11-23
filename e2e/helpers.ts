@@ -89,7 +89,7 @@ export async function forceCoop(host: Page, ownerId: string, partnerId: string) 
       ),
     [ownerId, partnerId],
   );
-  expect(res.ok).toBe(true);
+  expect(res, `dev:forceCoop answered ${JSON.stringify(res)}`).toMatchObject({ ok: true });
 }
 
 interface TestMap {
@@ -201,7 +201,10 @@ interface Actions {
   devAdvanceClock(seconds: number): Promise<{ ok: boolean }>;
   devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
   simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
-  devForceCoop(ownerId: string, partnerId: string): Promise<{ ok: boolean }>;
+  devForceCoop(
+    ownerId: string,
+    partnerId: string,
+  ): Promise<{ ok: boolean; code?: string; message?: string }>;
   devUpdateConfig(patch: Record<string, unknown>): Promise<{ ok: boolean }>;
   myIds(): { me: string | undefined; tag: string | undefined; players: string[] };
   baseOf(): { lat: number; lng: number } | undefined;

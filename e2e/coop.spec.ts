@@ -9,6 +9,7 @@ import {
   myIds,
   newPlayer,
   pinPosition,
+  setConfig,
   setMinigames,
   simTeleport,
   spotInHighlight,
@@ -29,9 +30,12 @@ const ABILITY_WAIT_S = 65;
 const isImposter = async (p: Page) =>
   /IMPOSTER/.test((await p.getByTestId('role-chip').textContent()) ?? '');
 
-/** Stage 1 → 2 → at the pin for the card shown at `cardIndex` (highlight index follows the card order). */
-async function reachPin(page: Page, card: ReturnType<Page['locator']>, highlight: number) {
+/** Stage 1 → 2 → at the pin for `card` (the section highlights are drawn in card order, all cards still at Stage 1). */
+async function reachPin(page: Page, card: ReturnType<Page['locator']>) {
   await expect(card).toHaveAttribute('data-stage', 'assigned');
+  const highlight = await card.evaluate((el) =>
+    Array.from(el.parentElement?.children ?? []).indexOf(el),
+  );
   await simTeleport(page, await spotInHighlight(page, highlight));
   await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 25_000 });
   await simTeleport(page, await pinPosition(page, 0));
@@ -65,6 +69,8 @@ test('two crew complete a co-op; a camouflaged imposter stands in for a real par
   const host = await newPlayer(browser);
   const code = await lobbyWithBots(host, 1);
   await enableTestMode(host, { everyone: true, allAbilities: true });
+  // The settings form saves the old co-op chance back: switch it off again (random co-op cards would change these flows).
+  await setConfig(host, { coopChance: 0 });
   await setMinigames(host, ['wires']);
   const guests: Page[] = [];
   for (const name of ['Guest1', 'Guest2', 'Guest3']) {
@@ -98,9 +104,8 @@ test('two crew complete a co-op; a camouflaged imposter stands in for a real par
   await expect(cardA.getByTestId('task-label')).toContainText(/^Find [A-Z]+-\d{2} ·/);
   await expect(cardB).toContainText('Requested by a teammate');
   await a.screenshot({ path: `${SHOT}-coop-card.png` });
-  const cardsB = await b.getByTestId('task-card').count();
-  // Both walk to the same section and then the pin (A's card is the first, B's the last).
-  await Promise.all([reachPin(a, cardA, 0), reachPin(b, cardB, cardsB - 1)]);
+  // Both walk to the same section and then the pin.
+  await Promise.all([reachPin(a, cardA), reachPin(b, cardB)]);
   await a.getByTestId('coop-start').click();
   await expect(a.getByTestId('coop-waiting')).toContainText('Waiting for');
   await a.screenshot({ path: `${SHOT}-coop-waiting.png` });
@@ -121,7 +126,7 @@ test('two crew complete a co-op; a camouflaged imposter stands in for a real par
   const cardAReq = a.locator('[data-testid="task-card"][data-requested="true"]');
   await expect(cardC).toHaveCount(1);
   await expect(cardAReq).toHaveCount(1);
-  await reachPin(c, cardC, 0);
+  await reachPin(c, cardC);
   await c.getByTestId('coop-start').click();
   await expect(c.getByTestId('coop-waiting')).toBeVisible();
   const pin = await pinPosition(c, 0);
