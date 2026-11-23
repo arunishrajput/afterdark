@@ -21,12 +21,32 @@ See [PROGRESS.md](PROGRESS.md). The project is being built in phases, listed in 
 | Engineering | [Architecture](docs/ARCHITECTURE.md) · [Protocol](docs/PROTOCOL.md) · [UI/UX](docs/UI_UX.md) · [Testing](docs/TESTING.md) · [Decisions](docs/DECISIONS.md) |
 | Process | [CLAUDE.md](CLAUDE.md) · [Build plan](docs/BUILD_PLAN.md) · [Manual setup](docs/MANUAL_SETUP.md) |
 
-## Quickstart (available after Phase 0)
+[![CI](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml/badge.svg)](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml)
+
+## Quickstart
+Requires Node 24+ (see `.nvmrc`) and pnpm 11 (`corepack enable` picks up the pinned version).
 ```bash
 pnpm install
-pnpm dev        # server :3000, client :5173
+pnpm dev        # server :3000 + client :5173 → open http://127.0.0.1:5173
 pnpm verify     # lint + typecheck + test + build
+pnpm e2e        # Playwright (first run: pnpm exec playwright install chromium)
 ```
+You should see **AfterDark · Connected ✓** with a ping in milliseconds.
+
+## Development
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Game server (`tsx watch`, :3000) and Vite client (:5173) in parallel. Vite proxies `/socket.io` to the server. |
+| `pnpm test` / `pnpm test:watch` | Vitest across `packages/*`, `apps/*`, `tools/*`. |
+| `pnpm lint` / `pnpm format` | ESLint (type-aware) + Prettier check / autofix. |
+| `pnpm typecheck` | `tsc --noEmit` in every package. |
+| `pnpm build` | Bundles the server (tsup) and the client (Vite). |
+| `pnpm e2e` | Playwright smoke tests; starts the dev servers if they aren't running. |
+| `pnpm tunnel` | HTTPS quick tunnel to the dev client with cloudflared, for testing GPS on a real phone. |
+
+**Testing on a phone:** phone browsers only allow GPS on HTTPS pages. Run `pnpm dev`, then `pnpm tunnel` in a second terminal, and open the `https://….trycloudflare.com` URL it prints on your phone. The URL changes each time. Full steps: [MANUAL_SETUP.md](docs/MANUAL_SETUP.md#phase-2-onward-testing-on-your-real-phone-optional-but-recommended).
+
+**Layout:** `apps/client` (React PWA), `apps/server` (authoritative Socket.IO server), `packages/shared` (config, protocol schemas, RNG, IDs), `e2e/` (Playwright). See [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Credits
 Map data © OpenStreetMap contributors, tiles © CARTO.
