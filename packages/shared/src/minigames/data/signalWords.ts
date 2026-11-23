@@ -1,0 +1,20 @@
+/**
+ * Words for Signal Decode (TASKS §4): common, family-friendly, 4 or 5 letters,
+ * upper case. The generator checks every puzzle against this whole list, so a
+ * puzzle's partial key plus pattern always leaves exactly one word.
+ */
+export const SIGNAL_WORDS: readonly string[] = [
+  'ANGEL', 'APPLE', 'BADGE', 'BAKER', 'BEACH', 'BEARD', 'BERRY', 'BIRDS', 'BLAZE', 'BREAD',
+  'BRICK', 'BRUSH', 'CABIN', 'CANDY', 'CARGO', 'CHAIR', 'CHESS', 'CLOUD', 'CLOCK', 'CORAL',
+  'CRANE', 'DAISY', 'DANCE', 'DREAM', 'EAGLE', 'EARTH', 'FAIRY', 'FEAST', 'FLAME', 'FLUTE',
+  'FROST', 'GHOST', 'GLOBE', 'GRAPE', 'GRASS', 'HEART', 'HONEY', 'HORSE', 'JELLY', 'JOKER',
+  'LEMON', 'LIGHT', 'LLAMA', 'MAGIC', 'MANGO', 'MAPLE', 'MOUSE', 'MUSIC', 'NIGHT', 'OCEAN',
+  'OLIVE', 'PANDA', 'PEARL', 'PIANO', 'PLANT', 'QUEEN', 'RADIO', 'RIVER', 'ROBOT', 'SALAD',
+  'SHARK', 'SMILE', 'SNAKE', 'SPOON', 'STARS', 'STORM', 'SUGAR', 'TABLE', 'TIGER', 'TOAST',
+  'TRAIN', 'TULIP', 'WATER', 'WHALE', 'WORLD', 'ZEBRA',
+  'BEAR', 'BELL', 'BIRD', 'BOAT', 'BOOK', 'CAKE', 'CAVE', 'CITY', 'CLAY', 'COIN',
+  'CORN', 'DUCK', 'DUNE', 'FARM', 'FERN', 'FISH', 'FROG', 'GAME', 'GOAT', 'GOLD',
+  'HAWK', 'JUMP', 'KITE', 'LAMP', 'LEAF', 'LION', 'MOON', 'NEST', 'PARK', 'PLAY',
+  'RAIN', 'RING', 'ROCK', 'ROSE', 'SAIL', 'SEED', 'SHIP', 'SNOW', 'SOUP', 'STAR',
+  'TENT', 'TREE', 'WAVE', 'WIND', 'WOLF', 'ZERO',
+];
