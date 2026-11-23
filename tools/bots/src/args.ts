@@ -1,7 +1,12 @@
 /** Command-line options for `pnpm bots` (TESTING.md §5). */
 import { parseArgs } from 'node:util';
 
-import { BOT_IMPOSTER_BEHAVIOURS, type BotImposterBehaviour } from '@afterdark/shared';
+import {
+  BOT_IMPOSTER_BEHAVIOURS,
+  BOT_MEETING_MODES,
+  type BotImposterBehaviour,
+  type BotMeetingMode,
+} from '@afterdark/shared';
 
 export interface BotArgs {
   url: string;
@@ -13,6 +18,8 @@ export interface BotArgs {
   seed: number;
   /** `chase`: imposter bots hunt crew and infect. `wander` (default): they only walk. */
   imposterBehaviour: BotImposterBehaviour;
+  /** `random`: each bot calls one meeting at a random time. Bots always join and vote in meetings others call. */
+  meetings: BotMeetingMode;
 }
 
 const DEFAULT_URL = 'http://localhost:3000';
@@ -21,7 +28,7 @@ const MAX_COUNT = 11;
 const MAX_SPEED_FACTOR = 8;
 const DEFAULT_SEED = 1;
 
-export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [--count ${DEFAULT_COUNT}] [--speed 1] [--seed 1] [--imposter-behaviour wander|chase]
+export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [--count ${DEFAULT_COUNT}] [--speed 1] [--seed 1] [--imposter-behaviour wander|chase] [--meetings off|random]
 
   --code   lobby code to join (required)
   --url    server URL (default ${DEFAULT_URL})
@@ -29,7 +36,8 @@ export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [
   --speed  walking-speed multiplier (default 1 = 1.4 m/s)
   --seed   random seed for the walks (default ${DEFAULT_SEED})
   --imposter-behaviour  chase: imposter bots hunt the nearest crew dot on their radar and infect
-                        (set the lobby's visibility to Everyone so they can see far); wander: just walk (default)`;
+                        (set the lobby's visibility to Everyone so they can see far); wander: just walk (default)
+  --meetings  random: each bot calls one meeting at a random time (off by default; bots always join and vote in meetings)`;
 
 export function parseBotArgs(argv: readonly string[]): BotArgs {
   // `pnpm bots -- --code X` can leave a literal `--` in front of the options.
@@ -43,6 +51,7 @@ export function parseBotArgs(argv: readonly string[]): BotArgs {
       speed: { type: 'string', default: '1' },
       seed: { type: 'string', default: String(DEFAULT_SEED) },
       'imposter-behaviour': { type: 'string', default: 'wander' },
+      meetings: { type: 'string', default: 'off' },
     },
     strict: true,
   });
@@ -62,5 +71,7 @@ export function parseBotArgs(argv: readonly string[]): BotArgs {
   if (!imposterBehaviour) {
     throw new Error(`--imposter-behaviour must be one of: ${BOT_IMPOSTER_BEHAVIOURS.join(', ')}`);
   }
-  return { url: values.url ?? DEFAULT_URL, code, count, speed, seed, imposterBehaviour };
+  const meetings = BOT_MEETING_MODES.find((m) => m === values.meetings);
+  if (!meetings) throw new Error(`--meetings must be one of: ${BOT_MEETING_MODES.join(', ')}`);
+  return { url: values.url ?? DEFAULT_URL, code, count, speed, seed, imposterBehaviour, meetings };
 }

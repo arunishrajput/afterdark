@@ -7,10 +7,13 @@
  * and finishes it with the test-mode shortcut (`dev:autoComplete`). Imposters wander,
  * or with `imposterBehaviour: 'chase'` hunt the nearest crew-looking dot on their radar
  * (so the lobby needs visibility Everyone to see far), `ability:infect` when close,
- * follow during the channel and walk away afterwards.
+ * follow during the channel and walk away afterwards. In a meeting every bot walks to the Base, skips
+ * the discussion and votes at random (Skip with `botVoteSkipPercent`; an imposter never votes for an
+ * ally). With `meetings: 'random'` a bot also calls one meeting, at a random time into play.
  */
 import {
   type BotImposterBehaviour,
+  type BotMeetingMode,
   BotWalker,
   ChaseBrain,
   type ClientToServerEvents,
@@ -36,6 +39,7 @@ const BOT_ACCURACY_M = 5;
 /** Bots start scattered this far around the Base. */
 const START_SCATTER_M = 10;
 const MS_PER_S = 1000;
+const RETRY_CALL_MS = 10_000;
 
 export interface BotOptions {
   url: string;
@@ -44,6 +48,7 @@ export interface BotOptions {
   seed: number;
   speed: number;
   imposterBehaviour?: BotImposterBehaviour;
+  meetings?: BotMeetingMode;
   log: (line: string) => void;
 }
 
@@ -60,6 +65,10 @@ export class Bot {
   /** serverTime ≈ Date.now() + offsetMs */
   private offsetMs = 0;
   private lastPhase: string | undefined;
+  /** Real ms when this bot calls its meeting (`meetings: 'random'`), set when play starts. */
+  private callAt: number | undefined;
+  /** The stage this bot last acted in, so each action is sent once per stage. */
+  private actedIn: string | undefined;
   /** The card being worked and where its section spot is (found once per card). */
   private job:
     { taskId: string; spot: LatLng | undefined; opened?: boolean; doneAt?: number } | undefined;
@@ -230,6 +239,51 @@ export class Bot {
     }
   }
 
+  /** In a meeting: walk to the Base, skip the discussion, vote once. Returns where to walk, or `stay`. */
+  private async meet(view: PlayerView): Promise<LatLng | 'stay' | undefined> {
+    const meeting = view.game?.meeting;
+    if (view.lobby.phase !== 'playing') return undefined;
+    if (!meeting) {
+      this.actedIn = undefined;
+      return this.maybeCall(view);
+    }
+    if (view.me.status !== 'active') return 'stay';
+    const key = `${meeting.calledBy}|${meeting.stage}`;
+    if (meeting.stage === 'discuss' && this.actedIn !== key) {
+      this.actedIn = key;
+      await this.call('meeting:skipDiscussion', {});
+    } else if (meeting.stage === 'vote' && meeting.myVote === undefined && this.actedIn !== key) {
+      this.actedIn = key;
+      await this.call('meeting:vote', { target: this.voteOf(view) });
+    }
+    const base = view.lobby.map.base;
+    return meeting.gathered.includes(view.me.id) || !base ? 'stay' : base;
+  }
+
+  /** A random active player (not itself, not an ally), or Skip. */
+  private voteOf(view: PlayerView): string {
+    if (this.rng.next() * 100 < DEFAULT_CONFIG.botVoteSkipPercent) return 'skip';
+    const allies = new Set((view.me.imposter?.allies ?? []).map((a) => a.playerId));
+    const candidates = (view.game?.meeting?.roster ?? []).filter(
+      (r) => r.status === 'active' && r.playerId !== view.me.id && !allies.has(r.playerId),
+    );
+    return candidates[this.rng.int(0, candidates.length - 1)]?.playerId ?? 'skip';
+  }
+
+  /** `meetings: 'random'`: call the one meeting this bot has, once its random time has come. */
+  private async maybeCall(view: PlayerView): Promise<undefined> {
+    if (this.o.meetings !== 'random' || view.me.status !== 'active') return undefined;
+    if ((view.game?.meetingsLeft ?? 0) === 0) return undefined;
+    const { botMeetingMinS: min, botMeetingMaxS: max } = DEFAULT_CONFIG;
+    this.callAt ??= Date.now() + ((min + this.rng.next() * (max - min)) * MS_PER_S) / this.o.speed;
+    if (Date.now() < this.callAt) return undefined;
+    // A refused call (too early, a cooldown) is tried again in a few seconds.
+    const res = await this.call('meeting:call', {});
+    if (res.ok) this.o.log(`${this.o.name}: called a meeting`);
+    else this.callAt = Date.now() + RETRY_CALL_MS;
+    return undefined;
+  }
+
   /** One tick: move, report the position, ready up in the lobby, and work on a task. */
   private async step(): Promise<void> {
     const view = this.view;
@@ -240,10 +294,14 @@ export class Bot {
     const walker = this.walkerFor(view);
     if (!walker) return;
     const { spawn } = view.me;
-    const work = this.target(view);
+    const meet = await this.meet(view);
+    const inMeeting = view.game?.meeting !== undefined;
+    const work = inMeeting ? undefined : this.target(view);
     const working = work?.card.stage === 'pin' && work.card.atPin;
-    const hunt = await this.hunt(view, walker);
-    if (working) walker.stay();
+    const hunt = inMeeting ? undefined : await this.hunt(view, walker);
+    if (meet === 'stay') walker.stay();
+    else if (meet) walker.step(meet);
+    else if (working) walker.stay();
     else if (hunt) walker.step(hunt.to);
     else {
       walker.step(view.lobby.phase === 'spawning' && spawn && !spawn.reached ? spawn : work?.goal);

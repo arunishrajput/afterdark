@@ -22,6 +22,7 @@ async function main(): Promise<void> {
       seed: args.seed,
       speed: args.speed,
       imposterBehaviour: args.imposterBehaviour,
+      meetings: args.meetings,
       log,
     });
     if (await bot.start()) bots.push(bot);

@@ -11,6 +11,7 @@ describe('parseBotArgs', () => {
       speed: 1,
       seed: 1,
       imposterBehaviour: 'wander',
+      meetings: 'off',
     });
     expect(() => parseBotArgs([])).toThrow('--code is required');
   });
@@ -37,5 +38,10 @@ describe('parseBotArgs', () => {
 
   it('rejects unknown options', () => {
     expect(() => parseBotArgs(['--code', 'A', '--bogus', '1'])).toThrow();
+  });
+
+  it('accepts --meetings random and rejects other values', () => {
+    expect(parseBotArgs(['--code', 'A', '--meetings', 'random']).meetings).toBe('random');
+    expect(() => parseBotArgs(['--code', 'A', '--meetings', 'always'])).toThrow('--meetings');
   });
 });
