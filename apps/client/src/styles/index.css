@@ -68,3 +68,85 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Map (Leaflet) ───────────────────────────────────────────────────────── */
+.leaflet-container {
+  background: var(--bg);
+  font-family: var(--font-sans);
+}
+.leaflet-container a {
+  color: var(--muted);
+}
+.leaflet-control-attribution {
+  background: rgb(7 8 10 / 0.7) !important;
+  color: var(--muted) !important;
+  font-size: 10px;
+}
+
+.self-marker,
+.radar-marker {
+  background: none;
+  border: 0;
+}
+.self-dot {
+  position: absolute;
+  inset: 6px;
+  border-radius: 9999px;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+.self-dot--oob {
+  background: var(--danger);
+  box-shadow: 0 0 18px var(--danger);
+}
+.self-heading {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+.self-heading::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-bottom: 10px solid var(--accent);
+}
+.radar-dot {
+  width: 14px;
+  height: 14px;
+  margin: 1px;
+  border-radius: 9999px;
+  background: #cfd3dc;
+  border: 2px solid rgb(0 0 0 / 0.6);
+  box-shadow: 0 0 8px rgb(207 211 220 / 0.55);
+}
+.radar-dot--oob {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+.radar-dot--stale {
+  opacity: 0.4;
+  box-shadow: none;
+}
+/* Dots glide between radar frames; not while the map itself zooms. */
+.radar-marker {
+  transition: transform 1s linear;
+}
+.leaflet-zoom-anim .radar-marker,
+.leaflet-dragging .radar-marker {
+  transition: none;
+}
+
+/* Geoman toolbar on a dark map */
+.leaflet-pm-toolbar .leaflet-buttons-control-button {
+  min-width: 36px;
+  min-height: 36px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-marker {
+    transition: none;
+  }
+}
