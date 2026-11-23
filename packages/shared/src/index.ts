@@ -19,7 +19,9 @@ export {
 export type { BoundaryInput, BoundaryRejection, BoundaryResult } from './geo/boundary';
 export { circleToRing, pointInRing, polygonAreaM2, validateBoundary } from './geo/boundary';
 export { bearingDeg, distanceM, offsetByMeters } from './geo/distance';
-export type { LatLng, Position } from './geo/types';
+export type { BBox, BestCandidateOptions } from './geo/sampling';
+export { areaBBox, areaContains, sampleBestCandidate, sampleUniform } from './geo/sampling';
+export type { LatLng, MultiPolygonCoords, PolygonCoords, Position, Ring } from './geo/types';
 export { toLatLng, toPosition } from './geo/types';
 export { ID_ALPHABET, randomId, randomString } from './ids';
 export type {
