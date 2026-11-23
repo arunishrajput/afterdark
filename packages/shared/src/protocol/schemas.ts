@@ -148,3 +148,68 @@ export type LobbySetBoundaryPayload = z.infer<typeof lobbySetBoundarySchema>;
 
 export const devTeleportSchema = latLngSchema;
 export type DevTeleportPayload = z.infer<typeof devTeleportSchema>;
+
+// ── Phase 3: regions, task points, no-go zones, Base ────────────────────────
+
+/** Protocol sanity limits (game limits live in CONFIG). */
+const MAX_NOGO_ZONES = 20;
+const MAX_NOGO_VERTICES = 200;
+const MIN_NOGO_VERTICES = 3;
+const MAX_POINTS_ADDED_PER_CALL = 20;
+const MAX_POINTS_REMOVED_PER_CALL = 200;
+const MAX_SEED = 0xffff_ffff;
+const MIN_REGIONS_SETTING = 2;
+const MAX_REGIONS_SETTING = 6;
+
+/** Region and task-point ids are short server-made tokens such as `r2` and `p17`. */
+const SETUP_ID_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
+const setupIdSchema = z.string().regex(SETUP_ID_PATTERN);
+
+/** Letters, digits, space and a few marks (NFC, trimmed, spaces collapsed). */
+const REGION_NAME_CHARSET = /^[\p{L}\p{M}\p{N} _.'-]+$/u;
+const REGION_NAME_RAW_MAX = 64;
+
+export const regionNameSchema = z
+  .string()
+  .max(REGION_NAME_RAW_MAX)
+  .transform((s) => s.normalize('NFC').trim().replace(/ {2,}/g, ' '))
+  .refine((s) => REGION_NAME_CHARSET.test(s), { message: "Letters, digits, space, _ . ' - only" })
+  .refine((s) => [...s].length <= DEFAULT_CONFIG.regionNameMaxLen, {
+    message: `At most ${DEFAULT_CONFIG.regionNameMaxLen} characters`,
+  });
+
+export const lobbyRegenerateRegionsSchema = z.strictObject({
+  regionCount: z
+    .union([z.literal('auto'), z.number().int().min(MIN_REGIONS_SETTING).max(MAX_REGIONS_SETTING)])
+    .optional(),
+  seed: z.number().int().min(0).max(MAX_SEED).optional(),
+});
+export type LobbyRegenerateRegionsPayload = z.infer<typeof lobbyRegenerateRegionsSchema>;
+
+export const lobbyRenameRegionSchema = z.strictObject({
+  regionId: setupIdSchema,
+  name: regionNameSchema,
+});
+export type LobbyRenameRegionPayload = z.infer<typeof lobbyRenameRegionSchema>;
+
+export const lobbyEditTaskPointsSchema = z.strictObject({
+  add: z.array(latLngSchema).max(MAX_POINTS_ADDED_PER_CALL).optional(),
+  remove: z.array(setupIdSchema).max(MAX_POINTS_REMOVED_PER_CALL).optional(),
+  regenerate: z.boolean().optional(),
+});
+export type LobbyEditTaskPointsPayload = z.infer<typeof lobbyEditTaskPointsSchema>;
+
+export const lobbySetNoGoZonesSchema = z.strictObject({
+  zones: z
+    .array(
+      z
+        .array(z.tuple([lngSchema, latSchema]))
+        .min(MIN_NOGO_VERTICES)
+        .max(MAX_NOGO_VERTICES),
+    )
+    .max(MAX_NOGO_ZONES),
+});
+export type LobbySetNoGoZonesPayload = z.infer<typeof lobbySetNoGoZonesSchema>;
+
+export const lobbySetBaseSchema = latLngSchema;
+export type LobbySetBasePayload = z.infer<typeof lobbySetBaseSchema>;

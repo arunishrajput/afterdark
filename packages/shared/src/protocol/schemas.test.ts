@@ -4,10 +4,15 @@ import {
   devTeleportSchema,
   lobbyCodeSchema,
   lobbyCreateSchema,
+  lobbyEditTaskPointsSchema,
   lobbyJoinSchema,
   lobbyKickSchema,
   lobbyLeaveSchema,
+  lobbyRegenerateRegionsSchema,
+  lobbyRenameRegionSchema,
+  lobbySetBaseSchema,
   lobbySetBoundarySchema,
+  lobbySetNoGoZonesSchema,
   lobbySetReadySchema,
   lobbyUpdateConfigSchema,
   locUpdateSchema,
@@ -200,5 +205,68 @@ describe('Phase 2 schemas', () => {
   it('devTeleport takes a lat/lng only', () => {
     expect(devTeleportSchema.safeParse({ lat: 1, lng: 2 }).success).toBe(true);
     expect(devTeleportSchema.safeParse({ lat: 1, lng: 2, x: 1 }).success).toBe(false);
+  });
+
+  describe('Phase 3 setup payloads', () => {
+    it('regenerateRegions takes an optional count (auto or 2–6) and seed', () => {
+      expect(lobbyRegenerateRegionsSchema.safeParse({}).success).toBe(true);
+      expect(lobbyRegenerateRegionsSchema.safeParse({ regionCount: 'auto', seed: 5 }).success).toBe(
+        true,
+      );
+      for (const bad of [
+        { regionCount: 1 },
+        { regionCount: 7 },
+        { regionCount: 2.5 },
+        { seed: -1 },
+        { x: 1 },
+      ]) {
+        expect(lobbyRegenerateRegionsSchema.safeParse(bad).success).toBe(false);
+      }
+    });
+
+    it('renameRegion normalises the name and enforces the length and charset', () => {
+      const parsed = lobbyRenameRegionSchema.parse({ regionId: 'r1', name: '  The   Quad ' });
+      expect(parsed.name).toBe('The Quad');
+      expect(lobbyRenameRegionSchema.safeParse({ regionId: 'r1', name: '' }).success).toBe(false);
+      expect(
+        lobbyRenameRegionSchema.safeParse({ regionId: 'r1', name: 'x'.repeat(21) }).success,
+      ).toBe(false);
+      expect(
+        lobbyRenameRegionSchema.safeParse({ regionId: 'r1', name: 'x'.repeat(20) }).success,
+      ).toBe(true);
+      expect(lobbyRenameRegionSchema.safeParse({ regionId: 'r1', name: '<b>' }).success).toBe(
+        false,
+      );
+      expect(lobbyRenameRegionSchema.safeParse({ regionId: 'a b', name: 'ok' }).success).toBe(
+        false,
+      );
+    });
+
+    it('editTaskPoints limits how much one call may add or remove', () => {
+      const pt = { lat: 1, lng: 2 };
+      expect(
+        lobbyEditTaskPointsSchema.safeParse({ add: [pt], remove: ['p1'], regenerate: true })
+          .success,
+      ).toBe(true);
+      expect(lobbyEditTaskPointsSchema.safeParse({ add: Array(21).fill(pt) }).success).toBe(false);
+      expect(lobbyEditTaskPointsSchema.safeParse({ add: [{ lat: 91, lng: 0 }] }).success).toBe(
+        false,
+      );
+      expect(lobbyEditTaskPointsSchema.safeParse({ remove: ['../x'] }).success).toBe(false);
+    });
+
+    it('setNoGoZones takes up to 20 zones of 3–200 corners; setBase a lat/lng', () => {
+      const tri = [
+        [0, 0],
+        [0, 1],
+        [1, 1],
+      ];
+      expect(lobbySetNoGoZonesSchema.safeParse({ zones: [] }).success).toBe(true);
+      expect(lobbySetNoGoZonesSchema.safeParse({ zones: [tri] }).success).toBe(true);
+      expect(lobbySetNoGoZonesSchema.safeParse({ zones: [tri.slice(0, 2)] }).success).toBe(false);
+      expect(lobbySetNoGoZonesSchema.safeParse({ zones: Array(21).fill(tri) }).success).toBe(false);
+      expect(lobbySetBaseSchema.safeParse({ lat: 1, lng: 2 }).success).toBe(true);
+      expect(lobbySetBaseSchema.safeParse({ lat: 1 }).success).toBe(false);
+    });
   });
 });

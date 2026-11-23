@@ -48,6 +48,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `regionSampleCount` | 400 | — | 🔒 | Random points sampled in the playable area to run k-means on when splitting it into regions. |
 | `regionKmeansIterations` | 20 | — | 🔒 | k-means iterations for the region split. |
 | `minRegionAreaRatio` | 0.1 | — | 🔒 | A region smaller than this fraction of the average region is dropped, and the split re-runs with one region fewer. |
+| `regionNameMaxLen` | 20 | — | 🔒 | Longest region name the host can type (in characters). |
 | `sectionCentreRatio` | 0.35 | — | 🔒 | The Centre section is the inner 35% of the region's radius. |
 | `minSectionAreaM2` | 400 | — | 🔒 | Smaller sections get no tasks. |
 | `taskPointsPerSection` | 3 | — | 🔒 | Target number of auto-generated candidate points per section. |

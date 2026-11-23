@@ -64,6 +64,7 @@ export const gameConfigSchema = z.strictObject({
   regionSampleCount: positiveInt(),
   regionKmeansIterations: positiveInt(),
   minRegionAreaRatio: fraction(),
+  regionNameMaxLen: positiveInt(),
   sectionCentreRatio: fraction(),
   minSectionAreaM2: positive(),
   taskPointsPerSection: positiveInt(),

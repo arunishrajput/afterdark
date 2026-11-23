@@ -30,6 +30,8 @@ export {
   unionAll,
   unionAreas,
 } from './geo/plane';
+export type { PoolConfig, RegionSections, TaskPoint, TaskPointSource } from './geo/pool';
+export { generateAutoPoints, sectionBigEnough } from './geo/pool';
 export type { RegionConfig, RegionShape } from './geo/regions';
 export { MIN_REGIONS, partitionRegions, playableArea, resolveRegionCount } from './geo/regions';
 export type { BBox, BestCandidateOptions } from './geo/sampling';
@@ -46,6 +48,8 @@ export {
 } from './geo/sections';
 export type { LatLng, MultiPolygonCoords, PolygonCoords, Position, Ring } from './geo/types';
 export { toLatLng, toPosition } from './geo/types';
+export type { ZoneResult } from './geo/zones';
+export { validateNoGoZone } from './geo/zones';
 export { ID_ALPHABET, randomId, randomString } from './ids';
 export type {
   Ack,
@@ -63,10 +67,15 @@ export type {
   DevTeleportPayload,
   ErrorCode,
   LobbyCreatePayload,
+  LobbyEditTaskPointsPayload,
   LobbyJoinPayload,
   LobbyKickPayload,
   LobbyLeavePayload,
+  LobbyRegenerateRegionsPayload,
+  LobbyRenameRegionPayload,
+  LobbySetBasePayload,
   LobbySetBoundaryPayload,
+  LobbySetNoGoZonesPayload,
   LobbySetReadyPayload,
   LobbyUpdateConfigPayload,
   LocUpdatePayload,
@@ -79,14 +88,20 @@ export {
   ERROR_CODES,
   lobbyCodeSchema,
   lobbyCreateSchema,
+  lobbyEditTaskPointsSchema,
   lobbyJoinSchema,
   lobbyKickSchema,
   lobbyLeaveSchema,
+  lobbyRegenerateRegionsSchema,
+  lobbyRenameRegionSchema,
+  lobbySetBaseSchema,
   lobbySetBoundarySchema,
+  lobbySetNoGoZonesSchema,
   lobbySetReadySchema,
   lobbyUpdateConfigSchema,
   locUpdateSchema,
   playerIdSchema,
+  regionNameSchema,
   sessionResumeSchema,
   timePingSchema,
   tokenSchema,
@@ -94,6 +109,7 @@ export {
 } from './protocol/schemas';
 export type { Rng } from './rng';
 export { createRng, hashSeed, mulberry32 } from './rng';
+export { bucketLabel } from './rules/buckets';
 export type { SetupIssue, SetupSummary } from './rules/setup';
 export { pointsNeeded, summarizeSetup, validateSetup } from './rules/setup';
 export type { StartBlocker } from './rules/start';
@@ -105,6 +121,7 @@ export type {
   DotFlag,
   GameConfigPublic,
   GameEvent,
+  GameView,
   LobbyView,
   LocationQuality,
   LocationView,
@@ -113,4 +130,8 @@ export type {
   PlayerView,
   PublicPlayer,
   RadarPayload,
+  RegionCount,
+  RegionPublic,
+  SectionStat,
+  TaskPointPublic,
 } from './types/view';

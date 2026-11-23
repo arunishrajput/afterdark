@@ -45,6 +45,7 @@ export const DEFAULT_CONFIG = {
   regionSampleCount: 400,
   regionKmeansIterations: 20,
   minRegionAreaRatio: 0.1,
+  regionNameMaxLen: 20,
   sectionCentreRatio: 0.35,
   minSectionAreaM2: 400,
   taskPointsPerSection: 3,

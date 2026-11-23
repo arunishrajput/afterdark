@@ -3,8 +3,6 @@
  * origin (its pole of inaccessibility) and radius ρ, so "North-East of Region A"
  * is measured from Region A, never from the whole map.
  */
-import polylabel from 'polylabel';
-
 import { createRng } from '../rng';
 import { bearingDeg, distanceM } from './distance';
 import {
@@ -15,6 +13,7 @@ import {
   planarCentroid,
   planeAt,
 } from './plane';
+import { polylabel } from './polylabel';
 import type { RegionShape } from './regions';
 import { areaBBox, areaContains, sampleUniform } from './sampling';
 import type { LatLng, MultiPolygonCoords, Position, Ring } from './types';

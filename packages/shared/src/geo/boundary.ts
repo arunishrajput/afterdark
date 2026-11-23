@@ -44,7 +44,7 @@ export function pointInRing(p: LatLng, ring: Position[]): boolean {
 }
 
 /** Drops consecutive duplicates and the closing point, so a ring is its distinct vertices. */
-function distinctVertices(coords: Position[]): Position[] {
+export function distinctVertices(coords: Position[]): Position[] {
   const out: Position[] = [];
   for (const c of coords) {
     const prev = out.at(-1);

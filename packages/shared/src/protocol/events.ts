@@ -5,10 +5,15 @@ import type {
   DevTeleportPayload,
   ErrorCode,
   LobbyCreatePayload,
+  LobbyEditTaskPointsPayload,
   LobbyJoinPayload,
   LobbyKickPayload,
   LobbyLeavePayload,
+  LobbyRegenerateRegionsPayload,
+  LobbyRenameRegionPayload,
+  LobbySetBasePayload,
   LobbySetBoundaryPayload,
+  LobbySetNoGoZonesPayload,
   LobbySetReadyPayload,
   LobbyUpdateConfigPayload,
   LocUpdatePayload,
@@ -61,6 +66,11 @@ export interface ClientToServerEvents {
     payload: LobbySetBoundaryPayload,
     ack: AckCallback<LobbySetBoundaryAck>,
   ) => void;
+  'lobby:regenerateRegions': (payload: LobbyRegenerateRegionsPayload, ack: AckCallback) => void;
+  'lobby:renameRegion': (payload: LobbyRenameRegionPayload, ack: AckCallback) => void;
+  'lobby:editTaskPoints': (payload: LobbyEditTaskPointsPayload, ack: AckCallback) => void;
+  'lobby:setNoGoZones': (payload: LobbySetNoGoZonesPayload, ack: AckCallback) => void;
+  'lobby:setBase': (payload: LobbySetBasePayload, ack: AckCallback) => void;
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
 }
 

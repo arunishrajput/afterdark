@@ -4,7 +4,9 @@
  * ROLES.md visibility matrix and covered by a leak test.
  */
 import type { GameConfigEditable } from '../config/schema';
-import type { Position } from '../geo/types';
+import type { TaskPointSource } from '../geo/pool';
+import type { SectionId } from '../geo/sections';
+import type { LatLng, MultiPolygonCoords, Position, Ring } from '../geo/types';
 import type { Phase, PlayerStatus } from './domain';
 
 /**
@@ -23,10 +25,55 @@ export interface PublicPlayer {
   status: PlayerStatus;
 }
 
-/** Public setup data: every player sees the map (MAP_AND_REGIONS §1). Phase 3 adds regions, points, Base. */
+/** One of a region's 9 sections: its area and whether tasks can be sent there. */
+export interface SectionStat {
+  id: SectionId;
+  areaM2: number;
+  usable: boolean;
+}
+
+/** A region with its compass frame. Section polygons are not sent: clients derive them from this (`sectionShapes`). */
+export interface RegionPublic {
+  id: string;
+  name: string;
+  /** `[lng, lat]` multi-polygon (several parts when a no-go zone splits the region). */
+  area: MultiPolygonCoords;
+  origin: LatLng;
+  rhoM: number;
+  areaM2: number;
+  sections: SectionStat[];
+}
+
+/** A task point as the lobby shows it for safety review. Never sent once the game has started. */
+export interface TaskPointPublic {
+  id: string;
+  lat: number;
+  lng: number;
+  regionId: string;
+  section: SectionId;
+  source: TaskPointSource;
+}
+
+/** Public setup data: every player sees the map (MAP_AND_REGIONS §1). */
 export interface MapSetupPublic {
   /** The playable boundary, once the host has set one. */
   boundary?: { ring: Position[]; areaM2: number };
+  regions: RegionPublic[];
+  /** Lobby only: the pool is hidden during play. */
+  taskPoints: TaskPointPublic[];
+  noGo: Ring[];
+  base?: LatLng;
+}
+
+/** Players per region, bucketed (`regionCountBuckets` labels), recounted every `regionCountRefreshS`. */
+export interface RegionCount {
+  regionId: string;
+  bucket: string;
+}
+
+/** Phase 3 only has the counts; Phase 4 adds the clock, score and the rest (PROTOCOL › PlayerView). */
+export interface GameView {
+  regionCounts: RegionCount[];
 }
 
 export type LocationQuality = 'good' | 'weak' | 'stale';
@@ -71,6 +118,8 @@ export interface PlayerView {
   serverNow: number;
   lobby: LobbyView;
   me: MeView;
+  /** Present once the lobby has a region layout (counts are shown in the lobby for testing). */
+  game?: GameView;
 }
 
 export type DotFlag = 'oob' | 'stale' | 'ally' | 'exposed' | 'infected';
