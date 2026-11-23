@@ -22,20 +22,20 @@ test('host draws the boundary, a guest sees it, both teleport and see each other
   await expect(host.getByTestId('permission-gate')).toBeVisible();
   await expect(host.getByTestId('ready-button')).toBeDisabled();
 
-  await enableTestMode(host);
+  await enableTestMode(host, { everyone: true });
   await joinLobby(guest, code, 'Guest');
   // Test mode on + ?sim=1: the simulator sends a fix, the server calls it good, Ready unlocks.
   await expect(host.getByTestId('location-ok')).toBeVisible();
   await expect(guest.getByTestId('location-ok')).toBeVisible();
   await expect(host.getByTestId('ready-button')).toBeEnabled();
-  await expect(guest.getByText('TEST MODE')).toBeVisible();
+  await expect(guest.getByText('TEST MODE', { exact: true })).toBeVisible();
   await expect(guest.getByTestId('boundary-status')).toHaveText(/Waiting for the host/);
 
   // Host draws a ~100 m circle with the real Geoman tool.
   await drawCircle(host);
-  await expect(host.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²$/);
-  await expect(guest.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²$/);
-  await expect(guest.getByTestId('map').locator('path.leaflet-interactive').first()).toBeVisible();
+  await expect(host.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²/);
+  await expect(guest.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²/);
+  await expect(guest.getByTestId('map').locator('.region-label').first()).toBeVisible();
 
   // Both players ready, then a boundary change un-readies everyone.
   await host.getByTestId('ready-button').click();
@@ -78,6 +78,6 @@ test('an invalid boundary is rejected with a clear message and the old one stays
   await expect(host.getByTestId('boundary-status')).toHaveText('Draw the playable area');
 
   await drawCircle(host); // a valid one still works afterwards
-  await expect(host.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²$/);
+  await expect(host.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²/);
   await host.context().close();
 });

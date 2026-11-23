@@ -116,7 +116,9 @@ export function SetupLayers({
       ))}
       {points.map((p) => (
         <Marker
-          key={p.id}
+          // `interactive` is fixed when Leaflet creates the marker, so entering or leaving the
+          // points step must make new markers.
+          key={`${p.id}:${deletable ? 'tap' : 'view'}`}
           position={[p.lat, p.lng]}
           icon={pointIcon(regionColor(indexOf.get(p.regionId) ?? 0), {
             host: p.source === 'host',

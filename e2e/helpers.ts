@@ -36,12 +36,21 @@ export async function joinLobby(page: Page, code: string, name: string, query = 
   await expect(page.getByTestId('lobby-code')).toHaveText(code);
 }
 
-/** Host: Settings → Test mode on → Save. Everyone's simulator starts once they see the flag. */
-export async function enableTestMode(host: Page) {
+/**
+ * Host: Settings → Test mode on → Save. Everyone's simulator starts once they see the flag.
+ * `everyone: true` also sets "Who you see on the map" to Everyone (the default only shows players within 40 m).
+ */
+export async function enableTestMode(host: Page, opts: { everyone?: boolean } = {}) {
   await host.getByRole('button', { name: 'Edit' }).click();
   await host.getByTestId('setting-testMode').check();
+  if (opts.everyone) {
+    await host
+      .getByRole('radiogroup', { name: 'Who you see on the map' })
+      .getByRole('radio', { name: 'Everyone' })
+      .click();
+  }
   await host.getByTestId('settings-save').click();
-  await expect(host.getByText('TEST MODE')).toBeVisible();
+  await expect(host.getByText('TEST MODE', { exact: true })).toBeVisible();
 }
 
 interface TestMap {
