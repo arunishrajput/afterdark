@@ -16,6 +16,11 @@ export {
   gameConfigSchema,
   HOST_CONFIG_TIER,
 } from './config/schema';
+export type { BoundaryInput, BoundaryRejection, BoundaryResult } from './geo/boundary';
+export { circleToRing, pointInRing, polygonAreaM2, validateBoundary } from './geo/boundary';
+export { bearingDeg, distanceM, offsetByMeters } from './geo/distance';
+export type { LatLng, Position } from './geo/types';
+export { toLatLng, toPosition } from './geo/types';
 export { ID_ALPHABET, randomId, randomString } from './ids';
 export type {
   Ack,
