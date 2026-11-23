@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 03, Regions, sections & task points** → [docs/phases/PHASE-03-regions-task-points.md](docs/phases/PHASE-03-regions-task-points.md)
+**◐ IN PROGRESS: Phase 03, Regions, sections & task points** (started 2026-11-23, resume at task 03.1) → [docs/phases/PHASE-03-regions-task-points.md](docs/phases/PHASE-03-regions-task-points.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
@@ -14,7 +14,7 @@
 | 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ✅ DONE | 2026-11-23 | `phase-00-done` |
 | 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ✅ DONE | 2026-11-23 | `phase-01-done` |
 | 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ✅ DONE | 2026-11-23 | `phase-02-done` |
-| 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ▶ NEXT | | |
+| 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ☐ NOT STARTED | | |
 | 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ☐ NOT STARTED | | |
 | 06 | [Deploy & first field test](docs/phases/PHASE-06-deploy-field-test.md) | ☐ NOT STARTED | | |
