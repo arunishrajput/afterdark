@@ -4,7 +4,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './App';
-import { devSetMinigames, simTeleport } from './net/actions';
+import { devAdvanceClock, devSetMinigames, simTeleport } from './net/actions';
 import { startConnection } from './net/socket';
 
 const root = document.getElementById('root');
@@ -16,6 +16,7 @@ startConnection();
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {
   (window as unknown as { __afterdarkActions?: object }).__afterdarkActions = {
     devSetMinigames,
+    devAdvanceClock,
     simTeleport,
   };
 }

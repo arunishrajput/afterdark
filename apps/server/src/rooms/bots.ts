@@ -6,10 +6,16 @@
  * `BotWalker`, the same code the bot CLI uses. A crew bot also does tasks (Phase 5):
  * it walks to its first task's pin (it reads the pin from the room state, as test
  * tooling may), opens the task there, waits `botTaskMinS`–`botTaskMaxS` seconds and
- * finishes it with the test-mode shortcut.
+ * finishes it with the test-mode shortcut. An imposter bot only walks, unless the room's
+ * bots were added with `imposterBehaviour: 'chase'` (Phase 7): then it hunts the nearest
+ * healthy crew member (it reads positions from the room state, as test tooling may),
+ * infects through the real `infectStart` command, follows during the channel and walks
+ * away afterwards so the incubation can begin.
  */
 import {
+  type BotImposterBehaviour,
   BotWalker,
+  ChaseBrain,
   createRng,
   hashSeed,
   type LatLng,
@@ -17,7 +23,9 @@ import {
   type Rng,
 } from '@afterdark/shared';
 
+import { gameNow } from '../engine/clock';
 import type { PlayerState, RoomState } from '../engine/state';
+import { fixQuality } from '../engine/systems/location';
 import { isOutOfBounds } from '../engine/systems/zone';
 import type { Room } from './Room';
 
@@ -30,6 +38,8 @@ const MS_PER_S = 1000;
 interface Bot {
   walker: BotWalker;
   rng: Rng;
+  /** Imposter bots on `chase` hunt with this. */
+  brain: ChaseBrain;
   /** Real ms when this bot finishes the task it has open. */
   doneAt?: number;
 }
@@ -37,14 +47,16 @@ interface Bot {
 export class BotDriver {
   private readonly bots = new Map<string, Bot>();
   private nextNo = 1;
+  private imposterBehaviour: BotImposterBehaviour = 'wander';
 
   constructor(
     private readonly room: Room,
     private readonly newId: () => string,
   ) {}
 
-  /** Adds up to `count` bots; returns how many joined (the lobby may fill up). */
-  add(count: number): number {
+  /** Adds up to `count` bots; returns how many joined (the lobby may fill up). `behaviour` applies to every imposter bot in the room. */
+  add(count: number, behaviour?: BotImposterBehaviour): number {
+    if (behaviour) this.imposterBehaviour = behaviour;
     let added = 0;
     for (let i = 0; i < count; i++) {
       const playerId = this.newId();
@@ -71,15 +83,17 @@ export class BotDriver {
       (rng.next() * 2 - 1) * START_SCATTER_M,
       (rng.next() * 2 - 1) * START_SCATTER_M,
     );
+    const allowed = (at: LatLng) =>
+      this.room.state.boundary !== undefined && !isOutOfBounds(this.room.state, at);
     const bot: Bot = {
       rng,
+      brain: new ChaseBrain({ infectionRadiusM: state.config.infectionRadiusM, rng, allowed }),
       walker: new BotWalker({
         start,
         rng,
         config: state.config,
         // Judged against the room's current setup, which the host can still change.
-        allowed: (at: LatLng) =>
-          this.room.state.boundary !== undefined && !isOutOfBounds(this.room.state, at),
+        allowed,
         home: base,
       }),
     };
@@ -103,9 +117,11 @@ export class BotDriver {
       if (!bot) continue;
       const spawn = state.phase === 'spawning' && p.spawn && !p.spawn.reached ? p.spawn : undefined;
       const task = state.phase === 'playing' ? p.tasks?.[0] : undefined;
+      const hunt = this.hunt(bot, state, p, now);
       // At a revealed pin the bot stays put to work; before that it heads for the task.
       const working = task?.stage === 'pin' && task.atPin;
       if (working) bot.walker.stay();
+      else if (hunt) bot.walker.step(hunt.to);
       else bot.walker.step(spawn ?? (task ? { lat: task.lat, lng: task.lng } : undefined));
       const at = bot.walker.fix();
       this.room.dispatch({
@@ -119,6 +135,43 @@ export class BotDriver {
       }
       if (fresh) this.work(bot, fresh, now);
     }
+  }
+
+  /**
+   * A chasing imposter bot's decision for this step (undefined for everyone else): where to walk, and
+   * `infectStart` when it is close enough. The command can still be refused (cooldown, GPS), which is fine: it retries.
+   */
+  private hunt(
+    bot: Bot,
+    state: RoomState,
+    p: PlayerState,
+    now: number,
+  ): { to: LatLng | undefined } | undefined {
+    if (this.imposterBehaviour !== 'chase' || p.role !== 'imposter' || !p.infect || !p.loc) return;
+    if (state.phase !== 'playing' || !state.game) return;
+    const targets = state.players
+      // Only players the server would accept as a target: a stale human is not worth chasing.
+      .filter(
+        (x) =>
+          x.role === 'crew' &&
+          !x.left &&
+          x.infection === undefined &&
+          x.loc &&
+          fixQuality(x.loc, now, state.config) === 'good',
+      )
+      .map((x) => ({ lat: x.loc?.lat ?? 0, lng: x.loc?.lng ?? 0 }));
+    const action = bot.brain.decide({
+      here: bot.walker.pos,
+      targets,
+      ready: gameNow(state.game.clock, now) >= p.infect.readyAtGameMs,
+      channelling: p.infect.channel !== undefined,
+      completed: p.infect.completed,
+    });
+    if (action.type === 'infect') {
+      this.room.dispatch({ type: 'infectStart', playerId: p.id });
+      return { to: bot.walker.pos };
+    }
+    return { to: action.to };
   }
 
   /** Open the task at the pin, then finish it after a random wait. */

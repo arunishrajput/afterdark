@@ -220,12 +220,21 @@ export type LobbySetBasePayload = z.infer<typeof lobbySetBaseSchema>;
 export const gameCommandSchema = z.strictObject({});
 export type GameCommandPayload = z.infer<typeof gameCommandSchema>;
 
-/** `dev:addBots` (test mode, host): how many in-process bots to add. The room's player cap is the real limit. */
+/** `dev:addBots` (test mode, host): how many in-process bots to add and how imposter bots play. The room's player cap is the real limit. */
 const MAX_BOTS_PER_CALL = 11;
 export const devAddBotsSchema = z.strictObject({
   count: z.number().int().min(1).max(MAX_BOTS_PER_CALL),
+  /** How imposter bots play (default `wander`: they walk and never infect). Applies to the whole room. */
+  imposterBehaviour: z.enum(['wander', 'chase']).optional(),
 });
 export type DevAddBotsPayload = z.infer<typeof devAddBotsSchema>;
+
+/** `dev:advanceClock` (test mode, host, playing): move game time forward, so cooldowns, incubation and the match end can be reached in a test. */
+const MAX_ADVANCE_S = 600;
+export const devAdvanceClockSchema = z.strictObject({
+  seconds: z.number().int().min(1).max(MAX_ADVANCE_S),
+});
+export type DevAdvanceClockPayload = z.infer<typeof devAdvanceClockSchema>;
 
 // ── Phase 5: tasks ──────────────────────────────────────────────────────────
 

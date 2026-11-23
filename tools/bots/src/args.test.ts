@@ -10,6 +10,7 @@ describe('parseBotArgs', () => {
       count: 7,
       speed: 1,
       seed: 1,
+      imposterBehaviour: 'wander',
     });
     expect(() => parseBotArgs([])).toThrow('--code is required');
   });
@@ -23,6 +24,15 @@ describe('parseBotArgs', () => {
     expect(() => parseBotArgs(['--code', 'A', '--count', '12'])).toThrow('--count');
     expect(() => parseBotArgs(['--code', 'A', '--speed', '0'])).toThrow('--speed');
     expect(() => parseBotArgs(['--code', 'A', '--speed', '99'])).toThrow('--speed');
+  });
+
+  it('takes an imposter behaviour', () => {
+    expect(parseBotArgs(['--code', 'A', '--imposter-behaviour', 'chase']).imposterBehaviour).toBe(
+      'chase',
+    );
+    expect(() => parseBotArgs(['--code', 'A', '--imposter-behaviour', 'kill'])).toThrow(
+      '--imposter-behaviour',
+    );
   });
 
   it('rejects unknown options', () => {

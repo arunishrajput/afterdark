@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   devAddBotsSchema,
+  devAdvanceClockSchema,
   devTeleportSchema,
   gameCommandSchema,
   lobbyCodeSchema,
@@ -212,6 +213,20 @@ describe('Phase 2 schemas', () => {
   it('devTeleport takes a lat/lng only', () => {
     expect(devTeleportSchema.safeParse({ lat: 1, lng: 2 }).success).toBe(true);
     expect(devTeleportSchema.safeParse({ lat: 1, lng: 2, x: 1 }).success).toBe(false);
+  });
+
+  it('devAdvanceClock takes whole seconds from 1 to 600', () => {
+    expect(devAdvanceClockSchema.safeParse({ seconds: 60 }).success).toBe(true);
+    for (const bad of [0, 601, 1.5, -5]) {
+      expect(devAdvanceClockSchema.safeParse({ seconds: bad }).success).toBe(false);
+    }
+    expect(devAdvanceClockSchema.safeParse({ seconds: 5, extra: 1 }).success).toBe(false);
+  });
+
+  it('devAddBots takes an optional imposter behaviour', () => {
+    expect(devAddBotsSchema.safeParse({ count: 3 }).success).toBe(true);
+    expect(devAddBotsSchema.safeParse({ count: 3, imposterBehaviour: 'chase' }).success).toBe(true);
+    expect(devAddBotsSchema.safeParse({ count: 3, imposterBehaviour: 'kill' }).success).toBe(false);
   });
 
   describe('Phase 3 setup payloads', () => {

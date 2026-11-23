@@ -76,3 +76,85 @@ export class BotWalker {
     return jittered(this.pos, this.o.rng, this.o.config.botJitterM);
   }
 }
+
+// ── Imposter bots (Phase 7) ──────────────────────────────────────────────────
+
+/** How an imposter bot plays (`dev:addBots`, `--imposter-behaviour`). */
+export const BOT_IMPOSTER_BEHAVIOURS = ['wander', 'chase'] as const;
+export type BotImposterBehaviour = (typeof BOT_IMPOSTER_BEHAVIOURS)[number];
+
+/** Bots stop this much inside the infection radius, so GPS jitter does not flip them out of range. */
+const CHASE_MARGIN_M = 3;
+/** After an infection the bot walks this far past the radius before it hunts again. */
+const RETREAT_EXTRA_M = 12;
+const RETREAT_BEARINGS = 8;
+const FULL_TURN = Math.PI * 2;
+
+export interface ChaseInput {
+  here: LatLng;
+  /** Where healthy crew-looking players are (the server's state for in-process bots, radar dots over a socket). */
+  targets: readonly LatLng[];
+  /** Infect is off cooldown. */
+  ready: boolean;
+  /** A channel is running. */
+  channelling: boolean;
+  /** Infections this imposter has completed so far: a rise means "walk away now". */
+  completed: number;
+}
+
+export type ChaseAction = { type: 'go'; to: LatLng | undefined } | { type: 'infect' };
+
+/**
+ * The imposter bots' "chase" brain (TESTING §5): walk to the nearest target, start
+ * Infect when close, keep following during the channel, then walk away so the
+ * incubation can start. Pure apart from the `Rng`; the same code runs in-process and in the CLI.
+ */
+export class ChaseBrain {
+  private seen = 0;
+  private retreat: { from: LatLng; to: LatLng } | undefined;
+
+  constructor(
+    private readonly o: {
+      infectionRadiusM: number;
+      rng: Rng;
+      allowed: (p: LatLng) => boolean;
+    },
+  ) {}
+
+  decide(i: ChaseInput): ChaseAction {
+    if (i.completed > this.seen) {
+      this.seen = i.completed;
+      this.retreat = this.retreatFrom(i.here);
+    }
+    const away = this.o.infectionRadiusM + RETREAT_EXTRA_M;
+    if (this.retreat) {
+      if (distanceM(this.retreat.from, i.here) < away - 1)
+        return { type: 'go', to: this.retreat.to };
+      this.retreat = undefined;
+    }
+    let nearest: { at: LatLng; d: number } | undefined;
+    for (const t of i.targets) {
+      const d = distanceM(i.here, t);
+      if (!nearest || d < nearest.d) nearest = { at: t, d };
+    }
+    if (!nearest) return { type: 'go', to: undefined };
+    if (!i.channelling && i.ready && nearest.d <= this.o.infectionRadiusM - CHASE_MARGIN_M) {
+      return { type: 'infect' };
+    }
+    return { type: 'go', to: nearest.at };
+  }
+
+  /** A spot `infectionRadiusM + 12 m` away in a random allowed direction (any direction if none is allowed). */
+  private retreatFrom(from: LatLng): { from: LatLng; to: LatLng } {
+    const away = this.o.infectionRadiusM + RETREAT_EXTRA_M;
+    const start = this.o.rng.next() * FULL_TURN;
+    let fallback: LatLng | undefined;
+    for (let k = 0; k < RETREAT_BEARINGS; k++) {
+      const b = start + (k * FULL_TURN) / RETREAT_BEARINGS;
+      const to = offsetByMeters(from, away * Math.sin(b) * 1.2, away * Math.cos(b) * 1.2);
+      fallback ??= to;
+      if (this.o.allowed(to)) return { from, to };
+    }
+    return { from, to: fallback ?? from };
+  }
+}

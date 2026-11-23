@@ -11,6 +11,7 @@ import type {
 } from '../types/view';
 import type {
   DevAddBotsPayload,
+  DevAdvanceClockPayload,
   DevSetMinigamesPayload,
   DevTeleportPayload,
   ErrorCode,
@@ -100,6 +101,7 @@ export interface ClientToServerEvents {
   'ability:cancelInfect': (payload: GameCommandPayload, ack: AckCallback) => void;
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
   'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
+  'dev:advanceClock': (payload: DevAdvanceClockPayload, ack: AckCallback) => void;
   'dev:autoComplete': (payload: TaskRefPayload, ack: AckCallback) => void;
   'dev:setMinigames': (payload: DevSetMinigamesPayload, ack: AckCallback) => void;
 }

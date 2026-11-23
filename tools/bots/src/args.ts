@@ -1,6 +1,8 @@
 /** Command-line options for `pnpm bots` (TESTING.md §5). */
 import { parseArgs } from 'node:util';
 
+import { BOT_IMPOSTER_BEHAVIOURS, type BotImposterBehaviour } from '@afterdark/shared';
+
 export interface BotArgs {
   url: string;
   code: string;
@@ -9,6 +11,8 @@ export interface BotArgs {
   speed: number;
   /** Seed of the bots' walks, so a run can be repeated. */
   seed: number;
+  /** `chase`: imposter bots hunt crew and infect. `wander` (default): they only walk. */
+  imposterBehaviour: BotImposterBehaviour;
 }
 
 const DEFAULT_URL = 'http://localhost:3000';
@@ -17,13 +21,15 @@ const MAX_COUNT = 11;
 const MAX_SPEED_FACTOR = 8;
 const DEFAULT_SEED = 1;
 
-export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [--count ${DEFAULT_COUNT}] [--speed 1] [--seed 1]
+export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [--count ${DEFAULT_COUNT}] [--speed 1] [--seed 1] [--imposter-behaviour wander|chase]
 
   --code   lobby code to join (required)
   --url    server URL (default ${DEFAULT_URL})
   --count  how many bots (1-${MAX_COUNT}, default ${DEFAULT_COUNT})
   --speed  walking-speed multiplier (default 1 = 1.4 m/s)
-  --seed   random seed for the walks (default ${DEFAULT_SEED})`;
+  --seed   random seed for the walks (default ${DEFAULT_SEED})
+  --imposter-behaviour  chase: imposter bots hunt the nearest crew dot on their radar and infect
+                        (set the lobby's visibility to Everyone so they can see far); wander: just walk (default)`;
 
 export function parseBotArgs(argv: readonly string[]): BotArgs {
   // `pnpm bots -- --code X` can leave a literal `--` in front of the options.
@@ -36,6 +42,7 @@ export function parseBotArgs(argv: readonly string[]): BotArgs {
       count: { type: 'string', default: String(DEFAULT_COUNT) },
       speed: { type: 'string', default: '1' },
       seed: { type: 'string', default: String(DEFAULT_SEED) },
+      'imposter-behaviour': { type: 'string', default: 'wander' },
     },
     strict: true,
   });
@@ -51,5 +58,9 @@ export function parseBotArgs(argv: readonly string[]): BotArgs {
   }
   const seed = Number(values.seed);
   if (!Number.isInteger(seed) || seed < 0) throw new Error('--seed must be a whole number');
-  return { url: values.url ?? DEFAULT_URL, code, count, speed, seed };
+  const imposterBehaviour = BOT_IMPOSTER_BEHAVIOURS.find((b) => b === values['imposter-behaviour']);
+  if (!imposterBehaviour) {
+    throw new Error(`--imposter-behaviour must be one of: ${BOT_IMPOSTER_BEHAVIOURS.join(', ')}`);
+  }
+  return { url: values.url ?? DEFAULT_URL, code, count, speed, seed, imposterBehaviour };
 }

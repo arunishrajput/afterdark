@@ -96,6 +96,9 @@ export const reportUnsafe = (taskId: string) => request('task:reportUnsafe', { t
 /** Test mode only: finish the open task as if it was solved. */
 export const devAutoComplete = (taskId: string) => request('dev:autoComplete', { taskId });
 
+/** Test mode, host, playing only: jump game time forward (cooldowns, incubation, the match end). */
+export const devAdvanceClock = (seconds: number) => request('dev:advanceClock', { seconds });
+
 /** Test mode, host, lobby only: limit which minigames new tasks can be (to test one game at a time). */
 export const devSetMinigames = (types: SoloMinigameType[]) =>
   request('dev:setMinigames', { types });

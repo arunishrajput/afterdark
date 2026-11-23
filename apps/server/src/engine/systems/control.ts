@@ -67,3 +67,19 @@ export function setMinigames(state: RoomState, playerId: string, types: SoloMini
     throw new RuleError('INVALID_PAYLOAD', 'None of those games exist yet');
   state.config.minigamesEnabled = [...new Set(playable)];
 }
+
+const MS_PER_S = 1000;
+
+/**
+ * `dev:advanceClock` (test mode, host, playing): game time jumps forward by `seconds`, so every
+ * game-time deadline (cooldowns, channels, incubation, the match end) gets closer by that much.
+ * It exists so an end-to-end test can reach "Infect is ready" and "incubation is over" without
+ * waiting minutes (ADR-070). A paused game does not move.
+ */
+export function advanceClock(state: RoomState, playerId: string, seconds: number): void {
+  if (!state.config.testMode) throw new RuleError('NOT_ALLOWED', 'Test mode is off');
+  requireHost(state, playerId);
+  const { clock } = requirePlaying(state);
+  if (clock.reasons.length > 0) throw new RuleError('PAUSED', 'The clock is stopped');
+  clock.gameMs += seconds * MS_PER_S;
+}

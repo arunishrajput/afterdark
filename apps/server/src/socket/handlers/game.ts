@@ -1,5 +1,10 @@
 /** Host controls during a game, and the test-mode bots (PROTOCOL Phase 4). */
-import { devAddBotsSchema, devSetMinigamesSchema, gameCommandSchema } from '@afterdark/shared';
+import {
+  devAddBotsSchema,
+  devAdvanceClockSchema,
+  devSetMinigamesSchema,
+  gameCommandSchema,
+} from '@afterdark/shared';
 
 import { type GatewayContext, requireBinding, run } from '../context';
 import { HandlerError, validated } from '../handler';
@@ -25,7 +30,7 @@ export function registerGameHandlers(ctx: GatewayContext, socket: GameSocket): v
 
   socket.on(
     'dev:addBots',
-    validated('dev:addBots', devAddBotsSchema, logger, ({ count }) => {
+    validated('dev:addBots', devAddBotsSchema, logger, ({ count, imposterBehaviour }) => {
       const { room, playerId } = requireBinding(ctx, socket);
       const { state } = room;
       if (!state.config.testMode) throw new HandlerError('NOT_ALLOWED', 'Test mode is off');
@@ -35,7 +40,15 @@ export function registerGameHandlers(ctx: GatewayContext, socket: GameSocket): v
       if (state.players.length + count > state.config.maxPlayers) {
         throw new HandlerError('LOBBY_FULL', 'That would overfill the lobby');
       }
-      ctx.bots.get(room.code)?.add(count);
+      ctx.bots.get(room.code)?.add(count, imposterBehaviour);
+    }),
+  );
+
+  socket.on(
+    'dev:advanceClock',
+    validated('dev:advanceClock', devAdvanceClockSchema, logger, ({ seconds }) => {
+      const { room, playerId } = requireBinding(ctx, socket);
+      run(room, { type: 'devAdvanceClock', playerId, seconds });
     }),
   );
 

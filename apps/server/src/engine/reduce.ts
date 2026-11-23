@@ -114,6 +114,9 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
       case 'infectCancel':
         infection.cancelInfect(draft, cmd.playerId);
         break;
+      case 'devAdvanceClock':
+        control.advanceClock(draft, cmd.playerId, cmd.seconds);
+        break;
       case 'devSetMinigames':
         control.setMinigames(draft, cmd.playerId, cmd.types);
         break;

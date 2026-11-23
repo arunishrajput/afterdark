@@ -49,6 +49,8 @@ export type Command =
   | { type: 'infectCancel'; playerId: string }
   /** Test mode only (`dev:autoComplete`): finish an open task as if solved. */
   | { type: 'devAutoComplete'; playerId: string; taskId: string }
+  /** Test mode only (`dev:advanceClock`): jump game time forward. */
+  | { type: 'devAdvanceClock'; playerId: string; seconds: number }
   /** Test mode only (`dev:setMinigames`): restrict the types new tasks can be. */
   | { type: 'devSetMinigames'; playerId: string; types: SoloMinigameType[] };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { BotWalker, jittered, stepToward } from './bots';
+import { BotWalker, ChaseBrain, jittered, stepToward } from './bots';
 import { DEFAULT_CONFIG } from './config/defaults';
 import { distanceM, offsetByMeters } from './geo/distance';
 import { createRng } from './rng';
@@ -79,5 +79,68 @@ describe('BotWalker', () => {
     };
     expect(run(5)).toEqual(run(5));
     expect(run(5)).not.toEqual(run(6));
+  });
+});
+
+describe('ChaseBrain (imposter bots)', () => {
+  const brain = (allowed = (_p: { lat: number; lng: number }) => true) =>
+    new ChaseBrain({ infectionRadiusM: 8, rng: createRng(3), allowed });
+  const input = (over: Partial<Parameters<ChaseBrain['decide']>[0]> = {}) => ({
+    here: HOME,
+    targets: [offsetByMeters(HOME, 40, 0), offsetByMeters(HOME, 12, 0)],
+    ready: true,
+    channelling: false,
+    completed: 0,
+    ...over,
+  });
+
+  it('walks to the nearest target', () => {
+    expect(brain().decide(input())).toEqual({ type: 'go', to: offsetByMeters(HOME, 12, 0) });
+  });
+
+  it('wanders when no target is known', () => {
+    expect(brain().decide(input({ targets: [] }))).toEqual({ type: 'go', to: undefined });
+  });
+
+  it('infects only when ready and inside the radius minus the margin', () => {
+    const close = [offsetByMeters(HOME, 4, 0)];
+    expect(brain().decide(input({ targets: close }))).toEqual({ type: 'infect' });
+    expect(brain().decide(input({ targets: close, ready: false }))).toMatchObject({ type: 'go' });
+    const edge = [offsetByMeters(HOME, 7, 0)]; // inside 8 m but within the jitter margin
+    expect(brain().decide(input({ targets: edge }))).toMatchObject({ type: 'go' });
+  });
+
+  it('keeps following the target during the channel instead of starting another', () => {
+    const t = [offsetByMeters(HOME, 4, 0)];
+    expect(brain().decide(input({ targets: t, channelling: true }))).toEqual({
+      type: 'go',
+      to: t[0],
+    });
+  });
+
+  it('walks away after a completed infection, then hunts again', () => {
+    const b = brain();
+    const t = [offsetByMeters(HOME, 2, 0)];
+    const first = b.decide(input({ targets: t, completed: 1 }));
+    expect(first.type).toBe('go');
+    const goal = first.type === 'go' ? first.to : undefined;
+    expect(goal && distanceM(HOME, goal)).toBeGreaterThan(20);
+    // Still near the spot: keep retreating. Far enough: back to the hunt.
+    expect(b.decide(input({ targets: t, completed: 1, here: offsetByMeters(HOME, 5, 0) }))).toEqual(
+      first,
+    );
+    const far = goal ?? HOME;
+    expect(
+      b.decide(input({ targets: [offsetByMeters(far, 30, 0)], completed: 1, here: far })),
+    ).toEqual({
+      type: 'go',
+      to: offsetByMeters(far, 30, 0),
+    });
+  });
+
+  it('picks a retreat spot inside the allowed area when one exists', () => {
+    const inside = (p: { lat: number; lng: number }) => p.lng >= HOME.lng; // only east of HOME
+    const a = brain(inside).decide(input({ targets: [HOME], completed: 1 }));
+    expect(a.type === 'go' && a.to && inside(a.to)).toBe(true);
   });
 });

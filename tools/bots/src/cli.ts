@@ -21,6 +21,7 @@ async function main(): Promise<void> {
       name: `bot-${i}`,
       seed: args.seed,
       speed: args.speed,
+      imposterBehaviour: args.imposterBehaviour,
       log,
     });
     if (await bot.start()) bots.push(bot);

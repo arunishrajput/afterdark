@@ -4,11 +4,15 @@
  * In play a crew bot works through its first task card the way a player does: it
  * finds a spot inside the card's section from the region polygons, holds there until
  * the pin appears, walks to the pin, opens the task, waits `botTaskMinS`–`botTaskMaxS`
- * and finishes it with the test-mode shortcut (`dev:autoComplete`). Imposters wander
- * (no infecting yet: Phase 7+).
+ * and finishes it with the test-mode shortcut (`dev:autoComplete`). Imposters wander,
+ * or with `imposterBehaviour: 'chase'` hunt the nearest crew-looking dot on their radar
+ * (so the lobby needs visibility Everyone to see far), `ability:infect` when close,
+ * follow during the channel and walk away afterwards.
  */
 import {
+  type BotImposterBehaviour,
   BotWalker,
+  ChaseBrain,
   type ClientToServerEvents,
   createRng,
   DEFAULT_CONFIG,
@@ -18,6 +22,7 @@ import {
   type PlayerView,
   pointInRing,
   pointInSection,
+  type RadarPayload,
   type Rng,
   type ServerToClientEvents,
   type TaskCard,
@@ -38,6 +43,7 @@ export interface BotOptions {
   name: string;
   seed: number;
   speed: number;
+  imposterBehaviour?: BotImposterBehaviour;
   log: (line: string) => void;
 }
 
@@ -45,6 +51,10 @@ export class Bot {
   private readonly socket: BotSocket;
   private readonly rng: Rng;
   private view: PlayerView | undefined;
+  private radar: RadarPayload | undefined;
+  private brain: ChaseBrain | undefined;
+  /** Infections completed so far, counted from `infect.completed` events (the chase brain walks away on a rise). */
+  private completed = 0;
   private walker: BotWalker | undefined;
   private timer: ReturnType<typeof setInterval> | undefined;
   /** serverTime ≈ Date.now() + offsetMs */
@@ -58,6 +68,10 @@ export class Bot {
     this.rng = createRng(hashSeed(`${o.seed}|${o.name}`));
     this.socket = io(o.url, { transports: ['websocket'], reconnection: true });
     this.socket.on('view', (v) => this.onView(v));
+    this.socket.on('radar', (r) => (this.radar = r));
+    this.socket.on('event', (e) => {
+      if (e.type === 'infect.completed') this.completed++;
+    });
   }
 
   private async call<E extends keyof ClientToServerEvents>(
@@ -142,6 +156,44 @@ export class Bot {
     return this.walker;
   }
 
+  /** The imposter's hunt this step (undefined for crew, for wandering imposters and outside play). */
+  private async hunt(
+    view: PlayerView,
+    walker: BotWalker,
+  ): Promise<{ to: LatLng | undefined } | undefined> {
+    const infect = view.me.imposter?.infect;
+    if (this.o.imposterBehaviour !== 'chase' || !infect || view.lobby.phase !== 'playing') return;
+    this.brain ??= new ChaseBrain({
+      infectionRadiusM: view.lobby.config.infectionRadiusM,
+      rng: this.rng,
+      allowed: (p: LatLng) => this.allowed(view, p),
+    });
+    const targets = (this.radar?.dots ?? []).filter(
+      (d) =>
+        !d.flags.some((f) => f === 'ally' || f === 'exposed' || f === 'infected' || f === 'stale'),
+    );
+    const action = this.brain.decide({
+      here: walker.pos,
+      targets,
+      ready: infect.readyAt <= Date.now() + this.offsetMs,
+      channelling: infect.channel !== undefined,
+      completed: this.completed,
+    });
+    if (action.type === 'infect') {
+      const res = await this.call('ability:infect', {});
+      if (res.ok) this.o.log(`${this.o.name}: infecting`);
+      return { to: walker.pos };
+    }
+    return { to: action.to };
+  }
+
+  private allowed(view: PlayerView, p: LatLng): boolean {
+    const { boundary, noGo } = view.lobby.map;
+    return (
+      !!boundary && pointInRing(p, boundary.ring) && !noGo.some((zone) => pointInRing(p, zone))
+    );
+  }
+
   /** The card to work on and the place to walk to for it, or nothing when the bot is just wandering. */
   private target(view: PlayerView): { card: TaskCard; goal: LatLng | undefined } | undefined {
     const card = view.game?.tasks?.[0];
@@ -190,7 +242,9 @@ export class Bot {
     const { spawn } = view.me;
     const work = this.target(view);
     const working = work?.card.stage === 'pin' && work.card.atPin;
+    const hunt = await this.hunt(view, walker);
     if (working) walker.stay();
+    else if (hunt) walker.step(hunt.to);
     else {
       walker.step(view.lobby.phase === 'spawning' && spawn && !spawn.reached ? spawn : work?.goal);
     }

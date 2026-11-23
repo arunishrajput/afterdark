@@ -508,3 +508,37 @@ describe('V3: imposters win by infection (RULES §12)', () => {
     expect(tick(s, now + S).state.phase).toBe('playing');
   });
 });
+
+describe('dev:advanceClock (test mode only, ADR-070)', () => {
+  it('moves every game-time deadline: the cooldown ends and the match end gets closer', () => {
+    const { state, now } = toPlaying(newLobby({ players: 6 }));
+    const imp = byRole(state, 'imposter')[0]?.id ?? '';
+    const jumped = run(
+      state,
+      { type: 'devAdvanceClock', playerId: 'host', seconds: 60 },
+      now,
+    ).state;
+    expect(
+      (get(jumped, imp).infect?.readyAtGameMs ?? 0) <= (jumped.game?.clock.gameMs ?? 0) + 60 * S,
+    ).toBe(true);
+    const victim = byRole(jumped, 'crew')[0]?.id ?? '';
+    const beside = moveTo(jumped, imp, near(jumped, victim, 3), now);
+    expect(errCode(reduce(beside, { type: 'infectStart', playerId: imp }, now))).toBe('OK');
+    // The match ends 60 s sooner.
+    const end = now + (CFG.playTimeMin * 60 - 60) * S;
+    expect(tick(jumped, end).state.phase).toBe('ended');
+  });
+
+  it('is refused outside test mode, for non-hosts, while paused and outside play', () => {
+    const { state, now } = toPlaying(newLobby({ players: 6 }));
+    const advance = (s: RoomState, playerId: string) =>
+      errCode(reduce(s, { type: 'devAdvanceClock', playerId, seconds: 5 }, now));
+    expect(advance(state, 'p1')).toBe('NOT_HOST');
+    const off = structuredClone(state);
+    off.config.testMode = false;
+    expect(advance(off, 'host')).toBe('NOT_ALLOWED');
+    expect(advance(newLobby(), 'host')).toBe('WRONG_PHASE');
+    const paused = run(state, { type: 'pause', playerId: 'host' }, now).state;
+    expect(advance(paused, 'host')).toBe('PAUSED'); // the pause check in reduce comes first
+  });
+});

@@ -1,5 +1,5 @@
-export type { BotWalkerOptions } from './bots';
-export { BotWalker, jittered, stepToward } from './bots';
+export type { BotImposterBehaviour, BotWalkerOptions, ChaseAction, ChaseInput } from './bots';
+export { BOT_IMPOSTER_BEHAVIOURS, BotWalker, ChaseBrain, jittered, stepToward } from './bots';
 export { DEFAULT_CONFIG } from './config/defaults';
 export type {
   EditableConfigKey,
@@ -129,6 +129,7 @@ export type {
 export {
   boundaryInputSchema,
   devAddBotsSchema,
+  devAdvanceClockSchema,
   devSetMinigamesSchema,
   devTeleportSchema,
   ERROR_CODES,
