@@ -1,5 +1,7 @@
 import { type Browser, expect, type Page } from '@playwright/test';
 
+const MIN_STREET_ZOOM = 15;
+
 /** Where the simulated players start (also the demo area). */
 export const HOME = { lat: 28.6139, lng: 77.209 };
 /** `?sim=1` plus a start position: the GPS simulator takes over once the lobby is in test mode. */
@@ -43,6 +45,8 @@ export async function enableTestMode(host: Page) {
 }
 
 interface TestMap {
+  setZoom(z: number): void;
+  getZoom(): number;
   getCenter(): { lat: number; lng: number };
   latLngToContainerPoint(p: [number, number]): { x: number; y: number };
   getContainer(): HTMLElement;
@@ -65,6 +69,14 @@ export async function mapPoint(page: Page, dLng = 0, dLat = 0) {
 
 /** Host draws a circle with the real Geoman circle tool: click the centre, then click the edge. */
 export async function drawCircle(host: Page, radiusDegLng = 0.001) {
+  // The map centres on the player (street level) once their first fix arrives; wait for that.
+  await expect
+    .poll(() =>
+      host.evaluate(
+        () => (window as unknown as { __afterdarkMap?: TestMap }).__afterdarkMap?.getZoom() ?? 0,
+      ),
+    )
+    .toBeGreaterThanOrEqual(MIN_STREET_ZOOM);
   await host.locator('.leaflet-pm-icon-circle').click();
   const centre = await mapPoint(host);
   const edge = await mapPoint(host, radiusDegLng);
@@ -73,4 +85,21 @@ export async function drawCircle(host: Page, radiusDegLng = 0.001) {
   await host.mouse.move((centre.x + edge.x) / 2, edge.y, { steps: 4 });
   await host.mouse.move(edge.x, edge.y, { steps: 4 });
   await host.mouse.click(edge.x, edge.y);
+}
+
+/** Zoom the map out so points well outside the boundary are on screen. */
+export async function zoomTo(page: Page, zoom: number) {
+  await page.evaluate((z) => {
+    const map = (window as unknown as { __afterdarkMap?: TestMap }).__afterdarkMap;
+    map?.setZoom(z);
+  }, zoom);
+  await page.waitForTimeout(500); // the zoom animation
+}
+
+/** Press and hold on a map point long enough to trigger the simulator's long-press teleport. */
+export async function longPress(page: Page, at: { x: number; y: number }) {
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await page.waitForTimeout(900);
+  await page.mouse.up();
 }

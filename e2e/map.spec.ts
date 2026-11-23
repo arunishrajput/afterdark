@@ -1,6 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-import { createLobby, drawCircle, enableTestMode, joinLobby, mapPoint, newPlayer } from './helpers';
+import {
+  createLobby,
+  drawCircle,
+  enableTestMode,
+  joinLobby,
+  longPress,
+  mapPoint,
+  newPlayer,
+  zoomTo,
+} from './helpers';
 
 test('host draws the boundary, a guest sees it, both teleport and see each other move; Ready needs a fix', async ({
   browser,
@@ -37,11 +46,7 @@ test('host draws the boundary, a guest sees it, both teleport and see each other
   const dot = guest.locator('.radar-marker');
   await expect(dot).toHaveCount(1);
   const before = await dot.evaluate((el) => (el as HTMLElement).style.transform);
-  const target = await mapPoint(host, 0.0004, 0.0002);
-  await host.mouse.move(target.x, target.y);
-  await host.mouse.down();
-  await host.waitForTimeout(900); // long-press
-  await host.mouse.up();
+  await longPress(host, await mapPoint(host, 0.0004, 0.0002));
   await expect(async () => {
     const after = await dot.evaluate((el) => (el as HTMLElement).style.transform);
     expect(after).not.toBe(before);
@@ -50,6 +55,29 @@ test('host draws the boundary, a guest sees it, both teleport and see each other
   // The dot has no name anywhere in the DOM.
   await expect(guest.getByTestId('map')).not.toContainText('Host');
 
+  // Walk out of the area: the host's own marker turns red with a banner, and the guest's dot gets the oob flag.
+  await expect(host.locator('.self-dot--oob')).toHaveCount(0);
+  await zoomTo(host, 16);
+  await longPress(host, await mapPoint(host, 0.0016, 0));
+  await expect(host.locator('.self-dot--oob')).toHaveCount(1);
+  await expect(host.getByText('You are outside the playable area.')).toBeVisible();
+  await expect(guest.locator('.radar-dot--oob')).toHaveCount(1);
+
   await host.context().close();
   await guest.context().close();
+});
+
+test('an invalid boundary is rejected with a clear message and the old one stays', async ({
+  browser,
+}) => {
+  const host = await newPlayer(browser);
+  await createLobby(host, 'Host');
+  await enableTestMode(host); // the simulator puts the map at street level
+  await drawCircle(host, 0.0002); // about 19 m: far below the minimum area
+  await expect(host.getByText(/Too small/)).toBeVisible();
+  await expect(host.getByTestId('boundary-status')).toHaveText('Draw the playable area');
+
+  await drawCircle(host); // a valid one still works afterwards
+  await expect(host.getByTestId('boundary-status')).toHaveText(/^Area [\d,]+ m²$/);
+  await host.context().close();
 });
