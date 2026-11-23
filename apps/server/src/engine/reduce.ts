@@ -1,8 +1,8 @@
 /** `reduce(state, cmd, now)`: the single entry point for player commands. Pure. */
 import type { RoomState } from './state';
 import * as abilities from './systems/abilities';
-import * as coop from './systems/coop';
 import * as control from './systems/control';
+import * as coop from './systems/coop';
 import { advance } from './systems/game';
 import * as infection from './systems/infection';
 import * as lobby from './systems/lobby';

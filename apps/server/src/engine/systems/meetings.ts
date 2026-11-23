@@ -12,12 +12,12 @@ import { gameNow, pauseClock, resumeClock } from '../clock';
 import type { MeetingState, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { applyPostMeetingGrace } from './abilities';
+import { endAllCamouflage } from './camouflage';
+import { resetCoops } from './coop';
 import { countVotes, eject, SKIP } from './ejection';
 import { cancelAllChannels } from './infection';
 import { fixQuality } from './location';
 import { activePlayers, findPlayer } from './players';
-import { endAllCamouflage } from './camouflage';
-import { resetCoops } from './coop';
 import { resetAllOpen } from './tasks';
 
 const MS_PER_S = 1000;

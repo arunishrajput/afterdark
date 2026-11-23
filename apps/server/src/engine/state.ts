@@ -5,10 +5,10 @@
  */
 import {
   type AbilityId,
+  type CoopPins,
   DEFAULT_CONFIG,
   type EndReason,
   type GameConfig,
-  type CoopPins,
   hashSeed,
   type ImposterClass,
   type LatLng,

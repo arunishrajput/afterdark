@@ -8,12 +8,12 @@
  */
 import {
   type CoopJoinAck,
-  type CoopSlot,
   coopPinAnswerSchema,
+  type CoopSlot,
+  type CoopSubmitAck,
   distanceM,
   generateCoopPins,
   puzzleFor,
-  type CoopSubmitAck,
 } from '@afterdark/shared';
 
 import { gameNow } from '../clock';
@@ -21,9 +21,9 @@ import type { CoopSession, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { applyRecovery } from './abilities';
 import { isCamouflaged } from './camouflage';
+import { heldTasks } from './coopPairing';
 import { fixQuality, requireGoodFix } from './location';
 import { findPlayer } from './players';
-import { heldTasks } from './coopPairing';
 import { refillSlots, taskRng } from './tasks';
 import { requireTasksUnlocked } from './taskStop';
 import { isZoneLocked } from './zone';
@@ -76,12 +76,7 @@ function requireAtPin(state: RoomState, p: PlayerState, s: CoopSession, now: num
 const busy = () => new RuleError('NOT_ALLOWED', 'That co-op task is busy right now');
 
 /** `coop:start`: at the pin, the first of the two opens a waiting session. */
-export function startCoop(
-  state: RoomState,
-  playerId: string,
-  taskId: string,
-  now: number,
-): void {
+export function startCoop(state: RoomState, playerId: string, taskId: string, now: number): void {
   const game = requireRunning(state, now);
   const p = findPlayer(state, playerId);
   if (p.left || p.spectator) throw new RuleError('NOT_ALLOWED', 'You are not in the game');

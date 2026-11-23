@@ -243,7 +243,8 @@ describe('bots drive a game to an imposter win (acceptance, V3)', () => {
     };
     await human.ok('lobby:updateConfig', {
       patch: {
-        testMode: true, coopChance: 0,
+        testMode: true,
+        coopChance: 0,
         infectionChannelS: 5,
         incubationS: 0,
         infectionWinPercent: 40,

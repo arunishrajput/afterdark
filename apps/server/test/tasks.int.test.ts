@@ -304,7 +304,9 @@ describe('bots drive a whole game to a crew win (acceptance)', () => {
       ts.clock.now += s * S;
       room.tick();
     };
-    await human.ok('lobby:updateConfig', { patch: { testMode: true, coopChance: 0, targetScore: 40 } });
+    await human.ok('lobby:updateConfig', {
+      patch: { testMode: true, coopChance: 0, targetScore: 40 },
+    });
     await human.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },
     });
