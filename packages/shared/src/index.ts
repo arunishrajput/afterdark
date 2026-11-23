@@ -20,10 +20,48 @@ export type {
   Ack,
   AckCallback,
   ClientToServerEvents,
+  KickedPayload,
+  LobbyCreateAck,
+  LobbyJoinAck,
   ServerToClientEvents,
+  SessionResumeAck,
   TimePingAck,
 } from './protocol/events';
-export type { ErrorCode, TimePingPayload } from './protocol/schemas';
-export { ERROR_CODES, timePingSchema } from './protocol/schemas';
+export type {
+  ErrorCode,
+  LobbyCreatePayload,
+  LobbyJoinPayload,
+  LobbyKickPayload,
+  LobbyLeavePayload,
+  LobbySetReadyPayload,
+  LobbyUpdateConfigPayload,
+  SessionResumePayload,
+  TimePingPayload,
+} from './protocol/schemas';
+export {
+  ERROR_CODES,
+  lobbyCodeSchema,
+  lobbyCreateSchema,
+  lobbyJoinSchema,
+  lobbyKickSchema,
+  lobbyLeaveSchema,
+  lobbySetReadySchema,
+  lobbyUpdateConfigSchema,
+  playerIdSchema,
+  sessionResumeSchema,
+  timePingSchema,
+  tokenSchema,
+  usernameSchema,
+} from './protocol/schemas';
 export type { Rng } from './rng';
 export { createRng, hashSeed, mulberry32 } from './rng';
+export type { KickReason, Phase, PlayerStatus } from './types/domain';
+export { PHASES } from './types/domain';
+export type {
+  GameConfigPublic,
+  GameEvent,
+  LobbyView,
+  MeView,
+  PlayerView,
+  PublicPlayer,
+} from './types/view';
