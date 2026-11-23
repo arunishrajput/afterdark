@@ -42,7 +42,7 @@ export async function joinLobby(page: Page, code: string, name: string, query = 
  */
 export async function enableTestMode(
   host: Page,
-  opts: { everyone?: boolean; allAbilities?: boolean; coop?: number } = {},
+  opts: { everyone?: boolean; allAbilities?: boolean } = {},
 ) {
   await host.getByRole('button', { name: 'Edit' }).click();
   await host.getByTestId('setting-testMode').check();
@@ -60,8 +60,6 @@ export async function enableTestMode(
   }
   await host.getByTestId('settings-save').click();
   await expect(host.getByText('TEST MODE', { exact: true })).toBeVisible();
-  // Co-op tasks are random, so every older spec runs with them off; a co-op spec pairs players with `forceCoop`.
-  await setConfig(host, { coopChance: opts.coop ?? 0 });
 }
 
 /** Test hook: change host settings without the form (host, lobby). */
@@ -175,6 +173,8 @@ export async function lobbyWithBots(page: Page, bots: number): Promise<string> {
     }
     await expect(page.getByTestId('roster-row')).toHaveCount(bots + 1);
   }
+  // Co-op tasks are random, so game specs run with them off; a co-op spec pairs players with `forceCoop`.
+  await setConfig(page, { coopChance: 0 });
   return code;
 }
 
