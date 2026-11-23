@@ -1,5 +1,6 @@
 import {
   DEFAULT_CONFIG,
+  distanceM,
   type GameConfig,
   type LatLng,
   offsetByMeters,
@@ -413,6 +414,28 @@ describe('Fake Task (RULES §7.3, TASKS §7, E13–E16)', () => {
     );
     // Nothing was spent by any rejection.
     expect(get(f.state, f.a).abilities!.fakeTask!.readyAtGameMs).toBe(COOLDOWN_MS);
+  });
+
+  it('accepts a spot between 15 m and 30 m from a task point: the point rule is the reach radius, not 30 m (ADR-078)', () => {
+    const f = ready();
+    let near: LatLng | undefined;
+    for (let dx = -200; dx <= 200 && !near; dx += 5) {
+      for (let dy = -200; dy <= 200 && !near; dy += 5) {
+        const at = offsetByMeters({ lat: 28.6139, lng: 77.209 }, dx, dy);
+        const nearest = Math.min(
+          ...f.state.setup.taskPoints.filter((p) => !p.disabled).map((p) => distanceM(p, at)),
+        );
+        try {
+          checkFakeTask(f.state, get(f.state, f.a), at);
+          if (nearest >= CFG.fakeTaskMinPointDistanceM && nearest < CFG.fakeTaskMinDistanceM)
+            near = at;
+        } catch {
+          /* outside, in a no-go zone or too close: not a candidate */
+        }
+      }
+    }
+    expect(near, 'a spot in the 15–30 m band exists').toBeDefined();
+    expect(errCode(reduce(f.state, fake(f.a, near as LatLng), f.now))).toBe('OK');
   });
 
   it('allows at most fakeTaskMaxActive per Phantom, queued or assigned, and frees a slot when one is done (E14, E16)', () => {

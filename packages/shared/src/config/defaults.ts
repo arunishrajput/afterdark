@@ -140,6 +140,7 @@ export const DEFAULT_CONFIG = {
   fakeTaskCooldownS: 120,
   fakeTaskMaxActive: 2,
   fakeTaskMinDistanceM: 30,
+  fakeTaskMinPointDistanceM: 15,
   camouflageCooldownS: 120,
   camouflageDurationS: 45,
   camouflageCoopExtensionMaxS: 120,

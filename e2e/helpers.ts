@@ -40,13 +40,22 @@ export async function joinLobby(page: Page, code: string, name: string, query = 
  * Host: Settings → Test mode on → Save. Everyone's simulator starts once they see the flag.
  * `everyone: true` also sets "Who you see on the map" to Everyone (the default only shows players within 40 m).
  */
-export async function enableTestMode(host: Page, opts: { everyone?: boolean } = {}) {
+export async function enableTestMode(
+  host: Page,
+  opts: { everyone?: boolean; allAbilities?: boolean } = {},
+) {
   await host.getByRole('button', { name: 'Edit' }).click();
   await host.getByTestId('setting-testMode').check();
   if (opts.everyone) {
     await host
       .getByRole('radiogroup', { name: 'Who you see on the map' })
       .getByRole('radio', { name: 'Everyone' })
+      .click();
+  }
+  if (opts.allAbilities) {
+    await host
+      .getByRole('radiogroup', { name: 'Imposter abilities' })
+      .getByRole('radio', { name: 'All three' })
       .click();
   }
   await host.getByTestId('settings-save').click();
@@ -161,6 +170,7 @@ interface Actions {
   devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
   simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
   baseOf(): { lat: number; lng: number } | undefined;
+  fakesOf(): { id: string; lat: number; lng: number; assigned: boolean }[];
 }
 
 /** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
@@ -208,6 +218,13 @@ export async function simTeleport(page: Page, to: { lat: number; lng: number }) 
     to,
   );
   expect(res.ok).toBe(true);
+}
+
+/** A Phantom's own fakes, read from their view (the pin positions are theirs to know). */
+export async function fakesOf(page: Page) {
+  return page.evaluate(() =>
+    (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.fakesOf(),
+  );
 }
 
 /** Hop the simulated player onto the Base (it is on every player's map), for a meeting. */

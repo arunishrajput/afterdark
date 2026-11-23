@@ -139,7 +139,8 @@ Rules: [SCORING.md](SCORING.md).
 | `taskStopLockS` | 30 | 10–60 | ⚙️ | All tasks locked. Minigames in progress are reset. |
 | `fakeTaskCooldownS` | 120 | — | 🔒 | Phantom |
 | `fakeTaskMaxActive` | 2 | — | 🔒 | Per Phantom. Counts both queued and assigned-but-unfinished fakes. |
-| `fakeTaskMinDistanceM` | 30 | — | 🔒 | Minimum distance from any other candidate point or fake task. |
+| `fakeTaskMinDistanceM` | 30 | — | 🔒 | Minimum distance between two fake tasks (queued or held), whoever planted them. |
+| `fakeTaskMinPointDistanceM` | 15 | — | 🔒 | Minimum distance from any pool task point (the crew's reach radius, so standing at a fake is never also standing at a real pin). ADR-078: 30 m left almost no valid spot (0% of a 100 m-radius area). |
 | `camouflageCooldownS` | 120 | — | 🔒 | Camouflage |
 | `camouflageDurationS` | 45 | — | 🔒 | |
 | `camouflageCoopExtensionMaxS` | 120 | — | 🔒 | Most extra time added while the imposter is in a co-op task. |

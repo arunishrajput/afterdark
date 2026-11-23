@@ -236,7 +236,7 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
                   disabled={!canDismiss}
                   onClick={onClose}
                 >
-                  {canDismiss ? 'Dismiss' : '…'}
+                  Dismiss
                 </Button>
               </div>
             ) : (

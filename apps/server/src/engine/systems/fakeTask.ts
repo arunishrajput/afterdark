@@ -35,10 +35,13 @@ export function checkFakeTask(state: RoomState, actor: PlayerState, at: LatLng):
   if (isOutOfBounds(state, at)) {
     throw new RuleError('OUT_OF_BOUNDS', 'Pin it inside the play area, away from no-go zones');
   }
-  const minM = state.config.fakeTaskMinDistanceM;
-  const points = state.setup.taskPoints.filter((p) => !p.disabled);
-  if ([...points, ...liveFakes(state)].some((o) => distanceM(o, at) < minM)) {
-    throw new RuleError('NOT_ALLOWED', 'Too close to another task point');
+  // Far enough from a real pin that standing at the fake is never also standing at a task (ADR-078).
+  const { fakeTaskMinPointDistanceM: pointM, fakeTaskMinDistanceM: fakeM } = state.config;
+  if (state.setup.taskPoints.some((p) => !p.disabled && distanceM(p, at) < pointM)) {
+    throw new RuleError('NOT_ALLOWED', 'Too close to a task point');
+  }
+  if (liveFakes(state).some((f) => distanceM(f, at) < fakeM)) {
+    throw new RuleError('NOT_ALLOWED', 'Too close to another fake task');
   }
   if (!sectionOf(at, state.setup.regions, state.config.sectionCentreRatio)) {
     throw new RuleError('OUT_OF_BOUNDS', 'Pin it inside the play area');

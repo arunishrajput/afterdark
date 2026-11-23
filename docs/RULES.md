@@ -102,7 +102,7 @@ It cannot be activated while a lock is already active, during a meeting, or whil
 
 ### 7.3 Phantom: Fake Task
 Cooldown `fakeTaskCooldownS` (120 s).
-- The Phantom pins a point inside the boundary, outside no-go zones, and at least `fakeTaskMinDistanceM` (30 m) from other task points and fakes.
+- The Phantom pins a point inside the boundary, outside no-go zones, at least `fakeTaskMinPointDistanceM` (15 m) from every task point, and at least `fakeTaskMinDistanceM` (30 m) from other fakes (ADR-078).
 - The fake goes into a **queue**. The next crew slot that refills gets it instead of a real task. Which player gets it depends on who finishes a task next, so it is effectively random.
 - A fake task always uses a random solo minigame other than key fetch, and its region and section are worked out from the pinned point.
 - Its payload looks exactly like a real task's. Completing it shows **"You got fooled by a fake task!"** and awards **0 points**. Rerolling or reporting it removes it.
@@ -185,7 +185,7 @@ The server checks win conditions after **every** state change, in strict process
 | E10 | Infected crew member completes tasks | Points count normally. They are never told. |
 | E11 | Task Stop while a player is on a minigame's final step | The minigame resets. Any submission during the lock is rejected with "Systems jammed". |
 | E12 | Task Stop pressed while a lock is already active | The button is disabled. |
-| E13 | Fake pin placed outside the boundary or in a no-go zone | Rejected. No cooldown is used. |
+| E13 | Fake pin placed outside the boundary, in a no-go zone, or too close to a task point or another fake | Rejected. No cooldown is used. |
 | E14 | Fake queue is full (2 active for that Phantom) | The button is disabled until a fake is completed or removed. |
 | E15 | Nobody refills a slot for a long time | The fake stays queued until someone does. |
 | E16 | Fake task rerolled or reported | It is removed. The Phantom's slot is freed. |

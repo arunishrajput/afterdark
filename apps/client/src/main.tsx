@@ -21,6 +21,8 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {
     simTeleport,
     /** The Base's position (it is on everyone's map): where a test sends its simulated players for a meeting. */
     baseOf: () => useGame.getState().view?.lobby.map.base,
+    /** A Phantom's own fakes (where a test sends the crew player who will be fooled). */
+    fakesOf: () => useGame.getState().view?.me.imposter?.fakes ?? [],
   };
 }
 

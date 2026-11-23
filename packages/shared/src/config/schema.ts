@@ -147,6 +147,7 @@ export const gameConfigSchema = z.strictObject({
   fakeTaskCooldownS: positiveInt(),
   fakeTaskMaxActive: positiveInt(),
   fakeTaskMinDistanceM: positive(),
+  fakeTaskMinPointDistanceM: positive(),
   camouflageCooldownS: positiveInt(),
   camouflageDurationS: positiveInt(),
   camouflageCoopExtensionMaxS: positiveInt(),
