@@ -20,7 +20,8 @@
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "e2e": "playwright test",
     "tunnel": "cloudflared tunnel --url http://localhost:5173",
-    "bots": "pnpm --filter @afterdark/bots start"
+    "bots": "pnpm --filter @afterdark/bots start",
+    "bots:simulate": "pnpm --filter @afterdark/server simulate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

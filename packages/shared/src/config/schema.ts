@@ -37,6 +37,17 @@ const minigameWeightsSchema = z.strictObject({
   keyfetch: count(),
 });
 
+/** Bot work time multiplier per solo type: slower games take a bot longer (Phase 11 balance script). */
+const botTaskTimeScaleSchema = z.strictObject({
+  wires: positive(),
+  lock: positive(),
+  pattern: positive(),
+  signal: positive(),
+  slide: positive(),
+  crossword: positive(),
+  keyfetch: positive(),
+});
+
 const soloTypeSchema = z.enum([
   'wires',
   'lock',
@@ -199,9 +210,13 @@ export const gameConfigSchema = z.strictObject({
   botWanderLegM: positive(),
   botTaskMinS: positive(),
   botTaskMaxS: positive(),
+  botTaskTimeScale: botTaskTimeScaleSchema,
   botVoteSkipPercent: z.number().int().min(0).max(100),
   botMeetingMinS: positive(),
   botMeetingMaxS: positive(),
+  botMeetingCallPercent: z.number().int().min(0).max(100),
+  botVoteSuspicionPercent: z.number().int().min(0).max(100),
+  botChaseSightM: positive(),
   botFakeScatterM: positive(),
   botStandInRangeM: positive(),
 });

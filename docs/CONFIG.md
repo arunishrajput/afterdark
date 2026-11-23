@@ -194,8 +194,12 @@ Used by the bot CLI and the in-process bots from `dev:addBots` (TESTING §5, ADR
 | `botWanderLegM` | 60 | — | 🔒 | Longest random leg a bot walks while wandering. |
 | `botTaskMinS` | 10 | — | 🔒 | A crew bot at its pin waits at least this long (game-free real seconds) before finishing the task. |
 | `botTaskMaxS` | 30 | — | 🔒 | …and at most this long. |
+| `botTaskTimeScale` | wires 0.8, lock 1.4, pattern 0.9, signal 1.2, slide 1.6, crossword 2, keyfetch 0.8 | — | 🔒 | Multiplies that wait per game type, so a bot takes longer over a harder game (Key Fetch: per leg). |
 | `botVoteSkipPercent` | 30 | 0–100 | 🔒 | Chance that a bot votes Skip instead of a random active player. |
 | `botMeetingMinS` | 150 | — | 🔒 | With bots added with `meetings: 'random'`: each bot calls its meeting once, at a random game time between this many seconds into play… |
 | `botMeetingMaxS` | 400 | — | 🔒 | …and this many. |
+| `botMeetingCallPercent` | 100 | 0–100 | 🔒 | With `meetings: 'random'`: the chance that a bot ever calls a meeting (the balance script uses a low value, since people call few). |
+| `botVoteSuspicionPercent` | 0 | 0–100 | 🔒 | Chance that a crew bot's vote, when it does not Skip, goes to a real imposter (a stand-in for human deduction). 0 is the old random vote. |
+| `botChaseSightM` | 100000 | — | 🔒 | A chasing imposter bot only hunts crew within this distance of itself (the default sees everyone; the balance script uses the nearby radius). |
 | `botFakeScatterM` | 120 | — | 🔒 | A `sabotage` imposter bot tries fake-task pins at random spots within this many metres of the Base (an invalid spot is refused and it tries another next step). |
 | `botStandInRangeM` | 50 | — | 🔒 | A `sabotage` imposter bot with Camouflage ready disguises itself and stands in when a crew member is waiting for a co-op partner within this many metres (about what it can walk in a disguise). |

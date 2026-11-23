@@ -34,6 +34,7 @@ import {
   type LatLng,
   offsetByMeters,
   type Rng,
+  type SoloMinigameType,
 } from '@afterdark/shared';
 
 import { gameNow } from '../engine/clock';
@@ -59,6 +60,8 @@ interface Bot {
   brain: ChaseBrain;
   /** Real ms when this bot finishes the task it has open. */
   doneAt?: number;
+  /** Key Fetch leg 1: real ms when the bot has held the key long enough to pick it up. */
+  pickAt?: number;
   /** Real ms when this bot types its co-op PIN. */
   coopDoneAt?: number;
   /** Game ms when this bot calls its meeting (`meetings: 'random'`). */
@@ -74,6 +77,8 @@ export class BotDriver {
   constructor(
     private readonly room: Room,
     private readonly newId: () => string,
+    /** Headless runs (the balance simulator) have no human to keep the bots online. */
+    private readonly headless = false,
   ) {}
 
   /** Adds up to `count` bots; returns how many joined (the lobby may fill up). `behaviour` applies to every imposter bot in the room. */
@@ -128,7 +133,7 @@ export class BotDriver {
   tick(state: RoomState, now: number): void {
     const bots = this.botsIn(state);
     if (bots.length === 0) return;
-    const humansOnline = state.players.some((p) => !p.bot && p.connected);
+    const humansOnline = this.headless || state.players.some((p) => !p.bot && p.connected);
     for (const p of bots) {
       // With nobody watching, bots go offline so an empty room can be swept (RULES §3.9).
       if (!humansOnline && p.connected) this.room.dispatch({ type: 'disconnect', playerId: p.id });
@@ -201,7 +206,8 @@ export class BotDriver {
           !x.left &&
           x.infection === undefined &&
           x.loc &&
-          fixQuality(x.loc, now, state.config) === 'good',
+          fixQuality(x.loc, now, state.config) === 'good' &&
+          distanceM(bot.walker.pos, x.loc) <= state.config.botChaseSightM,
       )
       .map((x) => ({ lat: x.loc?.lat ?? 0, lng: x.loc?.lng ?? 0 }));
     const action = bot.brain.decide({
@@ -325,8 +331,13 @@ export class BotDriver {
     const meeting = game.meeting;
     if (!meeting) {
       if (this.meetingMode !== 'random' || meetingsLeft(state, p) === 0) return;
-      const { botMeetingMinS: min, botMeetingMaxS: max } = state.config;
-      bot.callAtGameMs ??= (min + bot.rng.next() * (max - min)) * MS_PER_S;
+      const { botMeetingMinS: min, botMeetingMaxS: max, botMeetingCallPercent: callers } =
+        state.config;
+      // Decided once: some bots never call (people rarely do), the rest at a random game time.
+      bot.callAtGameMs ??=
+        bot.rng.next() * 100 < callers
+          ? (min + bot.rng.next() * (max - min)) * MS_PER_S
+          : Number.POSITIVE_INFINITY;
       if (gameNow(game.clock, now) >= bot.callAtGameMs) {
         this.room.dispatch({ type: 'meetingCall', playerId: p.id });
       }
@@ -343,30 +354,84 @@ export class BotDriver {
   private voteOf(bot: Bot, p: PlayerState): string {
     const state = this.room.state;
     if (bot.rng.next() * 100 < state.config.botVoteSkipPercent) return 'skip';
+    // A crew bot sometimes works out who the imposters are (a stand-in for human deduction).
+    if (p.role === 'crew' && bot.rng.next() * 100 < state.config.botVoteSuspicionPercent) {
+      const guilty = state.players.filter((x) => x.role === 'imposter' && isActive(x));
+      if (guilty.length > 0) return (bot.rng.pick(guilty) as PlayerState).id;
+    }
     const candidates = state.players.filter(
       (x) => x.id !== p.id && isActive(x) && !(p.role === 'imposter' && x.role === 'imposter'),
     );
     return candidates[bot.rng.int(0, candidates.length - 1)]?.id ?? 'skip';
   }
 
-  /** Open the task at the pin, then finish it after a random wait. */
+  /** A random wait of `botTaskMinS` to `botTaskMaxS`, scaled for the game type. */
+  private workMs(bot: Bot, type: SoloMinigameType): number {
+    const { botTaskMinS, botTaskMaxS, botTaskTimeScale } = this.room.state.config;
+    const waitS = botTaskMinS + bot.rng.next() * (botTaskMaxS - botTaskMinS);
+    return waitS * botTaskTimeScale[type] * MS_PER_S;
+  }
+
+  /** Open the task at the pin, then finish it after a random wait (Key Fetch is played for real, both legs). */
   private work(bot: Bot, p: PlayerState, now: number): void {
     if (this.room.state.phase !== 'playing' || this.room.state.game?.meeting) return;
     if (this.coop(bot, p, now)) return;
     const task = p.tasks?.find((t) => t.kind === 'solo');
-    if (!task) return;
+    if (!task || task.type === 'coop_pin') return;
     if (!task.open) {
+      delete bot.pickAt;
       if (task.stage !== 'pin' || !task.atPin) return;
       const res = this.room.dispatch({ type: 'taskOpen', playerId: p.id, taskId: task.id });
       if (!res.ok) return;
-      const { botTaskMinS, botTaskMaxS } = this.room.state.config;
-      const waitS = botTaskMinS + bot.rng.next() * (botTaskMaxS - botTaskMinS);
-      bot.doneAt = now + waitS * MS_PER_S;
+      bot.doneAt = now + this.workMs(bot, task.type);
+      return;
+    }
+    if (task.type === 'keyfetch') {
+      this.workKey(bot, p, task, now);
       return;
     }
     if (bot.doneAt !== undefined && now >= bot.doneAt) {
       const res = this.room.dispatch({ type: 'devAutoComplete', playerId: p.id, taskId: task.id });
       if (res.ok) delete bot.doneAt;
     }
+  }
+
+  /**
+   * Key Fetch, through the real commands: grab and hold the key at Point 1 (`keyHoldS` of game time),
+   * pick it up (the server moves the card on), then at Point 2 turn it as the puzzle shows.
+   */
+  private workKey(bot: Bot, p: PlayerState, task: TaskState, now: number): void {
+    const { keyHoldS } = this.room.state.config;
+    if (!task.keyHeld) {
+      if (bot.pickAt === undefined) {
+        const res = this.room.dispatch({
+          type: 'taskAction',
+          playerId: p.id,
+          taskId: task.id,
+          action: { step: 'grab' },
+        });
+        // Hold a little longer than asked: game time and this step's real time need not agree to the millisecond.
+        if (res.ok) bot.pickAt = now + (keyHoldS + 1) * MS_PER_S;
+        return;
+      }
+      if (now < bot.pickAt) return;
+      this.room.dispatch({
+        type: 'taskAction',
+        playerId: p.id,
+        taskId: task.id,
+        action: { step: 'pickup' },
+      });
+      delete bot.pickAt;
+      return;
+    }
+    if (bot.doneAt === undefined || now < bot.doneAt) return;
+    const puzzle = task.open?.puzzle as { turns?: string[] } | undefined;
+    const res = this.room.dispatch({
+      type: 'taskSubmit',
+      playerId: p.id,
+      taskId: task.id,
+      answer: puzzle?.turns ?? [],
+    });
+    if (res.ok) delete bot.doneAt;
   }
 }

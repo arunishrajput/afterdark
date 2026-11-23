@@ -184,9 +184,22 @@ export const DEFAULT_CONFIG = {
   botWanderLegM: 60,
   botTaskMinS: 10,
   botTaskMaxS: 30,
+  /** Slower games take a bot longer: wait = random(botTaskMinS, botTaskMaxS) × scale. A Key Fetch scale applies to each leg. */
+  botTaskTimeScale: {
+    wires: 0.8,
+    lock: 1.4,
+    pattern: 0.9,
+    signal: 1.2,
+    slide: 1.6,
+    crossword: 2,
+    keyfetch: 0.8,
+  },
   botVoteSkipPercent: 30,
   botMeetingMinS: 150,
   botMeetingMaxS: 400,
+  botMeetingCallPercent: 100,
+  botVoteSuspicionPercent: 0,
+  botChaseSightM: 100_000,
   botFakeScatterM: 120,
   botStandInRangeM: 50,
 } as const satisfies GameConfig;
