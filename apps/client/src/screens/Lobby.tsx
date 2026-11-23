@@ -10,6 +10,7 @@ import { Roster } from '../components/lobby/Roster';
 import { SettingsSheet, SettingsSummary } from '../components/lobby/Settings';
 import { MapPanel } from '../components/MapPanel';
 import { Button } from '../components/ui/Button';
+import { VersionTag } from '../components/ui/VersionTag';
 import { leaveLobby, setReady } from '../net/actions';
 import { messageFor } from '../net/errors';
 import { SimPanel } from '../sim/SimPanel';
@@ -72,6 +73,8 @@ export function Lobby({ view }: { view: PlayerView }) {
 
       {lobby.testMode && me.isHost && <AddBots playerCount={lobby.players.length} />}
       {lobby.testMode && <SimPanel />}
+
+      <VersionTag className="text-center" />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-bg/90 backdrop-blur">
         <div className="mx-auto flex max-w-md gap-2 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

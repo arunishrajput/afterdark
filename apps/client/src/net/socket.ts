@@ -111,6 +111,10 @@ export function startConnection(): void {
     if (event.type === 'task.completed') g.signalTaskDone(event.points);
     playCue(event);
   });
+  socket.on('server:shutdown', () => {
+    // A deploy: Socket.IO reconnects by itself. Running lobbies are in memory and will not survive.
+    useGame.getState().pushToast('The server is restarting. Reconnecting…');
+  });
   socket.on('kicked', ({ reason }) => {
     const g = useGame.getState();
     if (reason === 'kicked') {

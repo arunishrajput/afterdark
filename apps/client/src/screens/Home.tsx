@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { ConnectionPill } from '../components/ui/ConnectionPill';
 import { Sheet } from '../components/ui/Sheet';
+import { VersionTag } from '../components/ui/VersionTag';
 
 export type Entry = { mode: 'create' } | { mode: 'join'; code: string };
 
@@ -70,6 +71,7 @@ export function Home({
           </Button>
           <ConnectionPill />
         </div>
+        <VersionTag className="text-center" />
       </div>
 
       <Sheet open={howTo} title="How to play" onClose={() => setHowTo(false)}>
