@@ -171,6 +171,8 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `tickIntervalMs` | 1000 | — | 🔒 | Server room tick (countdowns, timers, win checks). |
 | `socketEventsPerSecond` | 10 | — | 🔒 | Basic per-socket rate limit for client → server events; extra events get `RATE_LIMITED`. |
 | `locEventsPerSecond` | 2 | — | 🔒 | Separate per-socket limit for `loc:update` (which has no ack): extra fixes are dropped silently. It does not count against `socketEventsPerSecond`. |
+| `shutdownNoticeMs` | 1500 | — | 🔒 | On SIGTERM the server sends `server:shutdown` to every client and waits this long before closing, so phones can show "restarting" instead of an error. |
+| `slowCommandMs` | 50 | — | 🔒 | A command or room tick slower than this is logged at `warn` (with room code, command type and duration, never coordinates). |
 
 ## Bots (test mode)
 Used by the bot CLI and the in-process bots from `dev:addBots` (TESTING §5, ADR-056).

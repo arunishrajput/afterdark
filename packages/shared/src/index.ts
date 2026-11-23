@@ -95,6 +95,7 @@ export type {
   LobbyCreateAck,
   LobbyJoinAck,
   LobbySetBoundaryAck,
+  ServerShutdownPayload,
   ServerToClientEvents,
   SessionResumeAck,
   TimePingAck,

@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter @afterdark/server --filter @afterdark/client dev",
     "build": "pnpm -r --workspace-concurrency=1 build",
+    "start": "node apps/server/dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --max-warnings=0 && prettier --check .",

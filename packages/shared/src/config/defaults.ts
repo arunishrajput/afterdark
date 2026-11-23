@@ -165,6 +165,8 @@ export const DEFAULT_CONFIG = {
   tickIntervalMs: 1000,
   socketEventsPerSecond: 10,
   locEventsPerSecond: 2,
+  shutdownNoticeMs: 1500,
+  slowCommandMs: 50,
 
   // Bots (test mode)
   botSpeedMps: 1.4,

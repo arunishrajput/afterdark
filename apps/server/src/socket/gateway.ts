@@ -49,6 +49,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
   // The hooks run only once rooms exist, after `ctx` below is initialised.
   const rooms = new RoomManager({
     now,
+    logger,
     allowTestMode: deps.allowTestMode,
     ...(deps.codeSource ? { codeSource: deps.codeSource } : {}),
     ...(deps.saltSource ? { saltSource: deps.saltSource } : {}),

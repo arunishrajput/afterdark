@@ -73,6 +73,7 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `radar` | `{dots: AnonDot[], at}`, per player, volatile | every `radarIntervalMs` (1 s) on the room tick, during lobby and play (lobby: every other connected, located player) | 2 |
 | `event` | `GameEvent` (toast or overlay trigger) | as they happen | 1 |
 | `kicked` | `{reason: 'replaced' \| 'kicked'}`; the server then disconnects the socket | once | 1 |
+| `server:shutdown` | `{reason: 'restart'}`; sent to every connected client on SIGTERM (a deploy), `shutdownNoticeMs` before the server closes. Clients show a toast and let Socket.IO reconnect; the game state lives in memory, so a restart ends running lobbies | once (Phase 6) | 6 |
 
 **Radar visibility (Phase 3, ADR-047):** `playerVisibility` decides who appears in a viewer's `radar` frame: `nearby` (within `nearbyRadiusM` of the viewer's own fix), `regions` (no dots) or `all`. Dot flags are `oob` (boundary or no-go zone), `stale`, and, only for an active imposter viewing another imposter, `ally`; `exposed` and `infected` arrive in Phase 7.
 

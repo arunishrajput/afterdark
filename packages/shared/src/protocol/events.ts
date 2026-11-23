@@ -105,9 +105,15 @@ export interface KickedPayload {
   reason: KickReason;
 }
 
+/** Sent to every client just before a deploy or restart; the socket then reconnects by itself. */
+export interface ServerShutdownPayload {
+  reason: 'restart';
+}
+
 export interface ServerToClientEvents {
   view: (view: PlayerView) => void;
   radar: (payload: RadarPayload) => void;
   event: (event: GameEvent) => void;
   kicked: (payload: KickedPayload) => void;
+  'server:shutdown': (payload: ServerShutdownPayload) => void;
 }

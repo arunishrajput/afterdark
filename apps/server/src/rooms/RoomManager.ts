@@ -2,6 +2,7 @@
 import { DEFAULT_CONFIG, randomId } from '@afterdark/shared';
 
 import { createRoomState } from '../engine/state';
+import type { Logger } from '../logger';
 import { type CodeSource, cryptoCodeSource, generateLobbyCode } from './lobbyCode';
 import { Room } from './Room';
 
@@ -12,6 +13,9 @@ const RADAR_SALT_LENGTH = 24;
 export interface RoomManagerDeps {
   now: () => number;
   allowTestMode: boolean;
+  logger?: Logger;
+  /** Wall-clock timer for log durations (tests inject a fake). */
+  perfNow?: () => number;
   codeSource?: CodeSource;
   /** Secret for the rotating radar aliases of a new room (default: random). */
   saltSource?: () => string;
@@ -42,7 +46,11 @@ export class RoomManager {
         allowTestMode: this.deps.allowTestMode,
         radarSalt: this.deps.saltSource?.() ?? randomId(RADAR_SALT_LENGTH),
       }),
-      { now: this.deps.now },
+      {
+        now: this.deps.now,
+        ...(this.deps.logger ? { logger: this.deps.logger } : {}),
+        ...(this.deps.perfNow ? { perfNow: this.deps.perfNow } : {}),
+      },
     );
     this.rooms.set(code, room);
     this.deps.onCreate?.(room);
