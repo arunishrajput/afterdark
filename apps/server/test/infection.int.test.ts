@@ -297,10 +297,12 @@ describe('bots drive a game to an imposter win (acceptance, V3)', () => {
   }, 120_000);
 });
 
-/** If the human played crew, none of their frames may carry infection; if an imposter, the keys are theirs to have. */
+/** If the human played crew, none of their frames before the end may carry infection; if an imposter, the keys are theirs to have. */
 function assertHumanSawNoInfection(view: PlayerView, human: TestClient): void {
   if (view.me.role !== 'crew') return;
-  const frames = human.frames.join('\n');
+  // Up to the end of the game: the results screen reveals everything on purpose (Phase 12).
+  const end = human.frames.findIndex((f) => f.includes('"phase":"ended"'));
+  const frames = (end === -1 ? human.frames : human.frames.slice(0, end)).join('\n');
   for (const needle of [
     '"infected"',
     '"exposed"',

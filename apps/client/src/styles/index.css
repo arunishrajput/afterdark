@@ -521,3 +521,38 @@ textarea {
     animation: none;
   }
 }
+
+/* ── Results (Phase 12) ──────────────────────────────────────────────────── */
+/* The banner glows in the winner's colour; the title says who won, so colour is never the only cue. */
+.results-banner {
+  background: var(--surface);
+  border-color: rgb(255 255 255 / 0.15);
+}
+.results-banner-crew {
+  border-color: rgb(46 139 255 / 0.7);
+  box-shadow: 0 0 48px rgb(46 139 255 / 0.35);
+}
+.results-banner-imposters {
+  border-color: rgb(255 59 59 / 0.7);
+  box-shadow: 0 0 48px rgb(255 59 59 / 0.35);
+}
+/* "Who was who": each card turns over in turn (a still card for reduced motion). */
+.flip-in {
+  animation: flip-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: 50% 50%;
+}
+@keyframes flip-in {
+  from {
+    opacity: 0;
+    transform: perspective(600px) rotateY(90deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(600px) rotateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip-in {
+    animation: none;
+  }
+}

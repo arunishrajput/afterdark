@@ -9,11 +9,8 @@ const STEP = DEFAULT_CONFIG.walkStepM;
 /** Send a fix `eastM` metres east of HOME at `now` (ts = now). */
 function fixAt(state: RoomState, id: string, eastM: number, now: number, accuracy = 5): RoomState {
   const at = offsetByMeters(HOME, eastM, 0);
-  return run(
-    state,
-    { type: 'locUpdate', playerId: id, fix: { ...at, accuracy, ts: now } },
-    now,
-  ).state;
+  return run(state, { type: 'locUpdate', playerId: id, fix: { ...at, accuracy, ts: now } }, now)
+    .state;
 }
 
 const walked = (s: RoomState, id: string) => s.players.find((p) => p.id === id)?.walkedM ?? 0;

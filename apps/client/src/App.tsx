@@ -6,12 +6,12 @@ import { LocationProvider } from './components/LocationProvider';
 import { MeetingScreen } from './components/meeting/MeetingScreen';
 import { Toasts } from './components/ui/Toasts';
 import { useServerNow } from './hooks/useServerNow';
-import { Ended } from './screens/Ended';
 import { EntryForm } from './screens/EntryForm';
 import { Game } from './screens/Game';
 import { type Entry, Home } from './screens/Home';
 import { Lobby } from './screens/Lobby';
 import { NoticeScreen } from './screens/NoticeScreen';
+import { Results } from './screens/Results';
 import { RoleReveal } from './screens/RoleReveal';
 import { Spawn } from './screens/Spawn';
 import { Spectator } from './screens/Spectator';
@@ -42,7 +42,7 @@ function InGame({ view }: { view: PlayerView }) {
       if (view.game?.meeting) return <MeetingScreen view={view} meeting={view.game.meeting} />;
       return view.me.status === 'spectator' ? <Spectator view={view} /> : <Game view={view} />;
     case 'ended':
-      return <Ended view={view} />;
+      return <Results view={view} />;
   }
 }
 

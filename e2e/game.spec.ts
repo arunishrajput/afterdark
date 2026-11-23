@@ -70,12 +70,14 @@ test('1 human + 7 bots: spawn → crew reveal → HUD → pause → abort', asyn
     .poll(async () => page.getByTestId('match-timer').textContent(), { timeout: 5000 })
     .not.toBe(frozen);
 
-  // Abort ends the game with no winner.
+  // Abort ends the game with no winner and shows the results screen with the partial stats (Phase 12).
   await page.getByTestId('game-menu').click();
   await page.getByTestId('abort-game').click();
   await page.getByTestId('abort-confirm').click();
-  await expect(page.getByTestId('ended-title')).toHaveText('Game ended');
-  await expect(page.getByTestId('ended-reason')).toHaveText('The host ended the game.');
+  await expect(page.getByTestId('ended-title')).toHaveText('Aborted by host');
+  await expect(page.getByTestId('ended-reason')).toContainText('The host ended the game.');
+  await expect(page.getByTestId('who-card')).toHaveCount(8); // the partial stats are there
+  await page.screenshot({ path: `${SHOT}-aborted.png`, fullPage: true });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'neutral');
   await page.context().close();
 });
