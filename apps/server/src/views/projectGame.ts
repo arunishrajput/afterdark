@@ -9,9 +9,12 @@ import type { GameView, ImposterView, MeView } from '@afterdark/shared';
 
 import { clockView, gameNow } from '../engine/clock';
 import type { PlayerState, RoomState } from '../engine/state';
+import { meetingsLeft } from '../engine/systems/meetings';
+import { isActive } from '../engine/systems/players';
 import { projectRegionCounts } from '../engine/systems/regionCounts';
 import { spawnProgress } from '../engine/systems/spawn';
 import { compromisedCount } from '../engine/systems/victory';
+import { projectMeeting } from './projectMeeting';
 import { projectRerollReadyAt, projectTasks } from './projectTasks';
 
 const MS_PER_S = 1000;
@@ -34,7 +37,8 @@ function deadlineAt(state: RoomState, gameMs: number, now: number): number {
  */
 function projectImposter(state: RoomState, me: PlayerState, now: number): ImposterView {
   const channel = me.infect?.channel;
-  const affected = state.players.filter((p) => p.infection !== undefined);
+  // Exposed, infected and (RULES §8) wrongly ejected crew: the imposter's own count of who is compromised.
+  const affected = state.players.filter((p) => p.infection !== undefined || p.wronglyEjected);
   return {
     infect: {
       readyAt: deadlineAt(state, me.infect?.readyAtGameMs ?? 0, now),
@@ -59,7 +63,7 @@ function projectImposter(state: RoomState, me: PlayerState, now: number): Impost
       }),
     classes: [...(me.classes ?? [])],
     allies: state.players
-      .filter((p) => p.id !== me.id && p.role === 'imposter' && !p.left)
+      .filter((p) => p.id !== me.id && p.role === 'imposter' && isActive(p))
       .map((p) => ({
         playerId: p.id,
         username: p.username,
@@ -81,7 +85,8 @@ export function projectOwnGame(
   out.tag = me.tag;
   out.role = me.role;
   out.personalScore = me.personalScore ?? 0;
-  if (me.role === 'imposter' && !me.left) out.imposter = projectImposter(state, me, now);
+  // An ejected imposter loses the whole imposter block (ROLES.md › Spectator).
+  if (me.role === 'imposter' && isActive(me)) out.imposter = projectImposter(state, me, now);
   if (state.phase === 'playing') {
     const grace = state.config.zoneGraceS * MS_PER_S;
     const outSince = me.zone?.outSince;
@@ -116,8 +121,10 @@ export function projectGame(state: RoomState, viewerId: string, now: number): Ga
   game.compromised = compromisedCount(state);
   game.threshold = g.threshold;
   game.crewCount = g.originalCrewCount;
-  game.meetingsLeft = state.config.meetingsPerPlayer;
   const me = state.players.find((p) => p.id === viewerId);
+  if (me) game.meetingsLeft = isActive(me) ? meetingsLeft(state, me) : 0;
+  const meeting = projectMeeting(state, viewerId);
+  if (meeting) game.meeting = meeting;
   if (state.phase === 'playing' && me?.role) {
     // The viewer's own cards: an imposter gets an empty list (Phase 10 adds their partner slot).
     game.tasks = projectTasks(state, me);

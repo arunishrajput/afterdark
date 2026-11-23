@@ -13,6 +13,7 @@ import { type AnonDot, distanceM, type DotFlag, hashSeed } from '@afterdark/shar
 
 import type { RoomState } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
+import { isActive } from '../engine/systems/players';
 import { isOutOfBounds } from '../engine/systems/zone';
 
 const MS_PER_S = 1000;
@@ -32,12 +33,13 @@ export function buildRadar(state: RoomState, viewerId: string, now: number): Ano
   if (playerVisibility === 'regions') return [];
   const viewer = state.players.find((p) => p.id === viewerId);
   const viewerFix = viewer?.loc;
-  const viewerIsImposter = viewer?.role === 'imposter' && !viewer.left;
+  const viewerIsImposter = viewer?.role === 'imposter' && isActive(viewer);
   if (playerVisibility === 'nearby' && !viewerFix) return [];
   const epoch = Math.floor(now / (state.config.dotAliasRotateS * MS_PER_S));
   const dots: AnonDot[] = [];
   for (const p of state.players) {
-    if (p.id === viewerId || !p.connected || p.left || !p.loc) continue;
+    // A spectator is out of the game: no dot, whoever is looking.
+    if (p.id === viewerId || !p.connected || !isActive(p) || !p.loc) continue;
     if (playerVisibility === 'nearby' && viewerFix && distanceM(viewerFix, p.loc) > nearbyRadiusM) {
       continue;
     }

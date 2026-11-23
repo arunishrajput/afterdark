@@ -31,7 +31,7 @@ export function keysDeep(value: unknown, prefix = ''): string[] {
   return [...out].sort();
 }
 
-/** Every key path a view may contain (through Phase 7). Anything else fails the test. */
+/** Every key path a view may contain (through Phase 8). Anything else fails the test. */
 export const ALLOWED_VIEW_KEYS = new Set([
   'lobby',
   'lobby.code',
@@ -74,6 +74,7 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'lobby.players[].ready',
   'lobby.players[].connected',
   'lobby.players[].status',
+  'lobby.players[].revealedRole',
   'lobby.countdownEndsAt',
   'me',
   'me.id',
@@ -148,6 +149,29 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'game.tasks[].lng',
   'game.tasks[].atPin',
   'game.rerollReadyAt',
+  // Phase 8: the running meeting (the same shape for everyone; only `myVote` is the viewer's own).
+  'game.meeting',
+  'game.meeting.stage',
+  'game.meeting.endsAt',
+  'game.meeting.pausedAt',
+  'game.meeting.calledBy',
+  'game.meeting.gathered',
+  'game.meeting.roster',
+  'game.meeting.roster[].playerId',
+  'game.meeting.roster[].username',
+  'game.meeting.roster[].status',
+  'game.meeting.roster[].connected',
+  'game.meeting.progress',
+  'game.meeting.progress.done',
+  'game.meeting.progress.total',
+  'game.meeting.myVote',
+  'game.meeting.tallies',
+  'game.meeting.tallies[].target',
+  'game.meeting.tallies[].count',
+  'game.meeting.outcome',
+  'game.meeting.outcome.ejectedId',
+  'game.meeting.outcome.ejectedUsername',
+  'game.meeting.outcome.wasImposter',
 ]);
 
 /** Key names that must never appear in a lobby view, at any depth (before roles exist). */

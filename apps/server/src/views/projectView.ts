@@ -36,7 +36,9 @@ function projectPlayer(p: PlayerState, hostId: string): PublicPlayer {
     isHost: p.id === hostId,
     ready: p.ready,
     connected: p.connected,
-    status: 'active',
+    status: p.spectator ? 'spectator' : 'active',
+    // Public once ejected (ADR-019); never set for anyone else.
+    ...(p.spectator && p.revealedRole ? { revealedRole: p.revealedRole } : {}),
   };
 }
 
@@ -123,7 +125,7 @@ export function projectView(state: RoomState, playerId: string, now: number): Pl
       username: me.username,
       isHost: me.id === state.hostId,
       ready: me.ready,
-      status: 'active',
+      status: me.spectator ? 'spectator' : 'active',
       ...(location ? { location } : {}),
       ...projectOwnGame(state, me, now),
     },
