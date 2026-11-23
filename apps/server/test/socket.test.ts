@@ -33,6 +33,7 @@ describe('server (in-process)', () => {
       logger: createLogger({ level: 'silent', pretty: false }),
       now: () => FAKE_NOW,
       version: { sha: 'test-sha' },
+      allowTestMode: true,
     });
     await new Promise<void>((resolve) => server.httpServer.listen(0, resolve));
     const { port } = server.httpServer.address() as AddressInfo;

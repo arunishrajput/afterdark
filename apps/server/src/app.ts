@@ -5,7 +5,9 @@ import express from 'express';
 import { Server } from 'socket.io';
 
 import type { Logger } from './logger';
-import { registerGateway } from './socket/gateway';
+import type { CodeSource } from './rooms/lobbyCode';
+import type { RoomManager } from './rooms/RoomManager';
+import { createGateway } from './socket/gateway';
 import type { GameIo } from './socket/types';
 
 /** Socket.IO payload cap (PROTOCOL.md › Conventions: 16 KB). */
@@ -15,15 +17,21 @@ export interface ServerDeps {
   logger: Logger;
   now: () => number;
   version: { sha: string };
+  /** `ALLOW_TEST_MODE`: may hosts enable per-lobby test mode? */
+  allowTestMode: boolean;
+  /** Tests inject a seeded source for reproducible lobby codes. */
+  codeSource?: CodeSource;
 }
 
 export interface GameServer {
   httpServer: HttpServer;
   io: GameIo;
+  rooms: RoomManager;
   close(): Promise<void>;
 }
 
-export function createServer({ logger, now, version }: ServerDeps): GameServer {
+export function createServer(deps: ServerDeps): GameServer {
+  const { logger, now, version } = deps;
   const app = express();
   app.disable('x-powered-by');
 
@@ -36,13 +44,20 @@ export function createServer({ logger, now, version }: ServerDeps): GameServer {
 
   const httpServer = createHttpServer(app);
   const io: GameIo = new Server(httpServer, { maxHttpBufferSize: MAX_PAYLOAD_BYTES });
-  registerGateway(io, { logger, now });
+  const gateway = createGateway(io, {
+    logger,
+    now,
+    allowTestMode: deps.allowTestMode,
+    ...(deps.codeSource ? { codeSource: deps.codeSource } : {}),
+  });
 
   return {
     httpServer,
     io,
+    rooms: gateway.rooms,
     close: () =>
       new Promise<void>((resolve, reject) => {
+        gateway.close();
         // io.close() also closes the underlying HTTP server.
         void io.close((err) => (err ? reject(err) : resolve()));
       }),

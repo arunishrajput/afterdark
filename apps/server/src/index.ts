@@ -6,7 +6,12 @@ import { resolveSha } from './version';
 
 const env = parseEnv(process.env);
 const logger = createLogger({ level: env.LOG_LEVEL, pretty: env.NODE_ENV === 'development' });
-const server = createServer({ logger, now: Date.now, version: { sha: resolveSha(process.env) } });
+const server = createServer({
+  logger,
+  now: Date.now,
+  version: { sha: resolveSha(process.env) },
+  allowTestMode: env.ALLOW_TEST_MODE,
+});
 
 server.httpServer.listen(env.PORT, () => {
   logger.info(

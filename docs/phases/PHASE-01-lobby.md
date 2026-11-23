@@ -35,10 +35,10 @@
   - countdown: when everyone is ready and there are ≥ 4 players, set `countdownEndsAt = now + 5s`; any un-ready cancels it; when it expires, move to the placeholder phase `starting`
   - TDD for every rule in RULES §3
 - [x] **01.4 Rooms.** `RoomManager` (create, find, delete idle lobbies after 30 min) and `Room` (serialised command queue, 1 Hz ticker, emitter).
-- [ ] **01.5 Sessions.** `lobby:create` and `lobby:join` return a token. `session:resume` re-binds. When a newer socket arrives for the same player, the old one gets `kicked {reason:'replaced'}`. Track the connected/disconnected flag.
+- [x] **01.5 Sessions.** `lobby:create` and `lobby:join` return a token. `session:resume` re-binds. When a newer socket arrives for the same player, the old one gets `kicked {reason:'replaced'}`. Track the connected/disconnected flag.
 - [x] **01.6 View projection.** `views/projectView.ts` builds the lobby part of `PlayerView` from an allow-list. The emitter hashes each view and sends only changed views, throttled to 200 ms. Add `event` emission for `lobby.countdown`.
 - [x] **01.7 Leak-test harness.** Write `views/leak.test.ts` with the `keysDeep` helper and the fixture builder. For now it asserts that views contain no tokens or other players' secrets (tokens must **never** appear in any view). Later phases extend it.
-- [ ] **01.8 Socket gateway.** Handlers validate with zod, map to commands, and send acks with error codes. Add a basic per-socket rate limit (10 events/s).
+- [x] **01.8 Socket gateway.** Handlers validate with zod, map to commands, and send acks with error codes. Add a basic per-socket rate limit (10 events/s).
 - [ ] **01.9 Client store and net.** The Zustand store holds view, connection and clock offset (from `time:ping`, median of 5). Persist `{token, code}` in localStorage, wrapped in try/catch. Auto-resume on connect.
 - [ ] **01.10 Client screens.**
   - **Home:** Create / Join, `?code=` prefill, How-to-play placeholder.
