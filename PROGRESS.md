@@ -4,14 +4,14 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 00, Project Setup and Scaffolding** → [docs/phases/PHASE-00-setup.md](docs/phases/PHASE-00-setup.md)
+**◐ IN PROGRESS: Phase 00, Project Setup and Scaffolding** (started 2026-11-23) → [docs/phases/PHASE-00-setup.md](docs/phases/PHASE-00-setup.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
 ## Phase table
 | # | Phase | Status | Date | Tag / notes |
 |---|---|---|---|---|
-| 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ▶ NEXT | | |
+| 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ☐ NOT STARTED | | |
 | 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ☐ NOT STARTED | | |
 | 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ☐ NOT STARTED | | |
