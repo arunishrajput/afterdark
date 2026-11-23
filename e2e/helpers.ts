@@ -42,7 +42,7 @@ export async function joinLobby(page: Page, code: string, name: string, query = 
  */
 export async function enableTestMode(
   host: Page,
-  opts: { everyone?: boolean; allAbilities?: boolean } = {},
+  opts: { everyone?: boolean; allAbilities?: boolean; coop?: number } = {},
 ) {
   await host.getByRole('button', { name: 'Edit' }).click();
   await host.getByTestId('setting-testMode').check();
@@ -60,6 +60,38 @@ export async function enableTestMode(
   }
   await host.getByTestId('settings-save').click();
   await expect(host.getByText('TEST MODE', { exact: true })).toBeVisible();
+  // Co-op tasks are random, so every older spec runs with them off; a co-op spec pairs players with `forceCoop`.
+  await setConfig(host, { coopChance: opts.coop ?? 0 });
+}
+
+/** Test hook: change host settings without the form (host, lobby). */
+export async function setConfig(page: Page, patch: Record<string, unknown>) {
+  const res = await page.evaluate(
+    (p) =>
+      (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devUpdateConfig(p),
+    patch,
+  );
+  expect(res.ok).toBe(true);
+}
+
+/** Test hook: the viewer's own id and tag. */
+export async function myIds(page: Page) {
+  return page.evaluate(() =>
+    (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.myIds(),
+  );
+}
+
+/** Test hook (host, test mode, playing): turn the owner's first card into a co-op task with `partnerId`. */
+export async function forceCoop(host: Page, ownerId: string, partnerId: string) {
+  const res = await host.evaluate(
+    ([o, p]) =>
+      (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devForceCoop(
+        o as string,
+        p as string,
+      ),
+    [ownerId, partnerId],
+  );
+  expect(res.ok).toBe(true);
 }
 
 interface TestMap {
@@ -169,6 +201,9 @@ interface Actions {
   devAdvanceClock(seconds: number): Promise<{ ok: boolean }>;
   devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
   simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
+  devForceCoop(ownerId: string, partnerId: string): Promise<{ ok: boolean }>;
+  devUpdateConfig(patch: Record<string, unknown>): Promise<{ ok: boolean }>;
+  myIds(): { me: string | undefined; tag: string | undefined; players: string[] };
   baseOf(): { lat: number; lng: number } | undefined;
   fakesOf(): { id: string; lat: number; lng: number; assigned: boolean }[];
 }

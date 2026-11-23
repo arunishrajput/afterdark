@@ -21,7 +21,7 @@ import type { CoopSession, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { applyRecovery } from './abilities';
 import { isCamouflaged } from './camouflage';
-import { heldTasks } from './coopPairing';
+import { heldTasks, makeCoop } from './coopPairing';
 import { fixQuality, requireGoodFix } from './location';
 import { findPlayer } from './players';
 import { refillSlots, taskRng } from './tasks';
@@ -236,6 +236,30 @@ function completeCoop(
 
 function removeSession(state: RoomState, s: CoopSession): void {
   if (state.game) state.game.coops = state.game.coops.filter((c) => c.id !== s.id);
+}
+
+/**
+ * `dev:forceCoop` (test mode, host, playing): the owner's first solo card becomes a co-op task with
+ * `partnerId`, under the usual eligibility rules. Lets a test pair two chosen players.
+ */
+export function forceCoop(
+  state: RoomState,
+  hostId: string,
+  ownerId: string,
+  partnerId: string,
+  now: number,
+): void {
+  if (!state.config.testMode) throw new RuleError('NOT_ALLOWED', 'Test mode is off');
+  if (state.hostId !== hostId) throw new RuleError('NOT_HOST', 'Only the host can do that');
+  if (state.phase !== 'playing' || !state.game) throw new RuleError('WRONG_PHASE', 'Not playing');
+  const owner = findPlayer(state, ownerId);
+  const partner = findPlayer(state, partnerId);
+  const base = owner.tasks?.find((t) => t.kind === 'solo' && !t.fake);
+  if (owner.role !== 'crew' || !base)
+    throw new RuleError('NOT_ALLOWED', 'The owner needs a solo task');
+  const card = makeCoop(state, owner, base, now, partner);
+  if (!card) throw new RuleError('NOT_ALLOWED', 'That partner is not eligible');
+  owner.tasks = (owner.tasks ?? []).map((t) => (t.id === base.id ? card : t));
 }
 
 // ── Interruptions ───────────────────────────────────────────────────────────

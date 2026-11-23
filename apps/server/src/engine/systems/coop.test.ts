@@ -31,6 +31,7 @@ import {
   S,
   toPlaying,
 } from '../testkit';
+import type { Command } from '../types';
 import { eligiblePartners, heldTasks } from './coopPairing';
 
 describe('co-op generation (10.1, TASKS §5.1)', () => {
@@ -491,5 +492,37 @@ describe('crediting and recovery (10.4, SCORING › Co-op crediting)', () => {
     s = run(s, join(f.imp, p.partnerCard.id), f.now + S).state;
     const res = finish(s, p.session, p.ownerCard.id, f.imp, p.partnerCard.id, f.now + S);
     expect(get(res.state, f.imp).infect!.readyAtGameMs).toBe(infectReady);
+  });
+});
+
+describe('dev:forceCoop (test mode)', () => {
+  it('turns the owner’s first solo card into a co-op task with the named partner', () => {
+    const f = ready();
+    const res = run(
+      f.state,
+      { type: 'devForceCoop', playerId: 'host', ownerId: f.a, partnerId: f.imp },
+      f.now,
+    );
+    const c = res.state.game!.coops[0]!;
+    expect(c).toMatchObject({ ownerId: f.a, assignedId: f.imp, phase: 'idle' });
+    expect(get(res.state, f.imp).partnerTask).toMatchObject({ kind: 'coop', coopId: c.id });
+    expect(get(res.state, f.a).tasks).toHaveLength(CFG.taskSlots);
+    expect(get(res.state, f.a).tasks!.filter((t) => t.kind === 'coop')).toHaveLength(1);
+  });
+
+  it('is refused outside test mode, for a non-host, an imposter owner or an ineligible partner', () => {
+    const f = ready();
+    const cmd = (playerId: string, ownerId: string, partnerId: string): Command => ({
+      type: 'devForceCoop',
+      playerId,
+      ownerId,
+      partnerId,
+    });
+    expect(errCode(run0(f.state, cmd(f.a, f.a, f.b), f.now))).toBe('NOT_HOST');
+    expect(errCode(run0(f.state, cmd('host', f.imp, f.b), f.now))).toBe('NOT_ALLOWED');
+    expect(errCode(run0(f.state, cmd('host', f.a, f.a), f.now))).toBe('NOT_ALLOWED');
+    const off = structuredClone(f.state);
+    off.config.testMode = false;
+    expect(errCode(run0(off, cmd('host', f.a, f.b), f.now))).toBe('NOT_ALLOWED');
   });
 });

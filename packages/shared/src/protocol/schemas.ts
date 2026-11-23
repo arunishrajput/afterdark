@@ -243,6 +243,13 @@ export const devAdvanceClockSchema = z.strictObject({
 });
 export type DevAdvanceClockPayload = z.infer<typeof devAdvanceClockSchema>;
 
+/** `dev:forceCoop` (test mode, host, playing): turn the owner's first own card into a co-op task with a chosen partner, so a test need not wait for the random draw. */
+export const devForceCoopSchema = z.strictObject({
+  ownerId: playerIdSchema,
+  partnerId: playerIdSchema,
+});
+export type DevForceCoopPayload = z.infer<typeof devForceCoopSchema>;
+
 // ── Phase 8: meetings ───────────────────────────────────────────────────────
 
 /** `meeting:call` and `meeting:skipDiscussion` carry nothing: the server knows who and when. */

@@ -136,7 +136,7 @@ export function Game({ view }: { view: PlayerView }) {
         ) : (
           !disguise && <ImposterPanel view={view} onPlaceFake={() => setPlacing(true)} />
         ))}
-      {disguise && (
+      {disguise && controls && (
         <Sheet open={controls} title="Controls" onClose={() => setControls(false)}>
           <ImposterPanel
             view={view}
@@ -166,7 +166,9 @@ export function Game({ view }: { view: PlayerView }) {
                   .toUpperCase()}`
               : 'CREW'}
           </p>
-          <p className="font-mono text-sm text-muted">Tag {me.tag}</p>
+          <p data-testid="my-tag" className="font-mono text-sm text-muted">
+            Tag {me.tag}
+          </p>
           {imposter && !disguise && imposter.allies.length > 0 && (
             <p data-testid="allies-chip" className="text-xs text-muted">
               Allies: {imposter.allies.map((a) => `${a.username} (${a.tag})`).join(', ')}

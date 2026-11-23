@@ -41,15 +41,18 @@ export function makeCoop(
   owner: PlayerState,
   base: TaskState,
   now: number,
+  forced?: PlayerState,
 ): TaskState | undefined {
   const game = state.game;
   if (!game) return undefined;
   const fit = eligiblePartners(state, owner).filter(
     (q) => !heldTasks(q).some((t) => t.pointId !== undefined && t.pointId === base.pointId),
   );
-  if (fit.length === 0) return undefined;
+  // A test can name the partner; the same eligibility rules still apply.
+  const pool = forced ? fit.filter((q) => q.id === forced.id) : fit;
+  if (pool.length === 0) return undefined;
   const rng = taskRng(state);
-  const partner = rng.pick(fit);
+  const partner = rng.pick(pool);
   const id = newTaskId(rng);
   const coopFields = { kind: 'coop' as const, coopId: id, type: 'coop_pin' as const };
   const ownerTask: TaskState = { ...base, ...coopFields };

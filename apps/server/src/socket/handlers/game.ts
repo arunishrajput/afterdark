@@ -2,6 +2,7 @@
 import {
   devAddBotsSchema,
   devAdvanceClockSchema,
+  devForceCoopSchema,
   devSetMinigamesSchema,
   gameCommandSchema,
 } from '@afterdark/shared';
@@ -49,6 +50,14 @@ export function registerGameHandlers(ctx: GatewayContext, socket: GameSocket): v
     validated('dev:advanceClock', devAdvanceClockSchema, logger, ({ seconds }) => {
       const { room, playerId } = requireBinding(ctx, socket);
       run(room, { type: 'devAdvanceClock', playerId, seconds });
+    }),
+  );
+
+  socket.on(
+    'dev:forceCoop',
+    validated('dev:forceCoop', devForceCoopSchema, logger, ({ ownerId, partnerId }) => {
+      const { room, playerId } = requireBinding(ctx, socket);
+      run(room, { type: 'devForceCoop', playerId, ownerId, partnerId });
     }),
   );
 

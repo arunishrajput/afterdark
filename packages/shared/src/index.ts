@@ -155,6 +155,7 @@ export {
   boundaryInputSchema,
   devAddBotsSchema,
   devAdvanceClockSchema,
+  devForceCoopSchema,
   devSetMinigamesSchema,
   devTeleportSchema,
   ERROR_CODES,

@@ -124,6 +124,8 @@ export function TaskPanel({
             key={card.id}
             data-testid="task-card"
             data-stage={stage}
+            data-kind={card.kind}
+            data-requested={card.requested ? 'true' : undefined}
             className={`flex items-center gap-3 rounded-2xl border bg-surface px-3 py-2 ${stage === 'atPin' ? 'border-accent shadow-[0_0_14px_var(--accent-glow)]' : 'border-white/10'}`}
           >
             <button

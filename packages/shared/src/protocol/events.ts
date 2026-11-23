@@ -17,6 +17,7 @@ import type {
 import type {
   DevAddBotsPayload,
   DevAdvanceClockPayload,
+  DevForceCoopPayload,
   DevSetMinigamesPayload,
   DevTeleportPayload,
   ErrorCode,
@@ -121,6 +122,7 @@ export interface ClientToServerEvents {
   'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
   'dev:advanceClock': (payload: DevAdvanceClockPayload, ack: AckCallback) => void;
   'dev:autoComplete': (payload: TaskRefPayload, ack: AckCallback) => void;
+  'dev:forceCoop': (payload: DevForceCoopPayload, ack: AckCallback) => void;
   'dev:setMinigames': (payload: DevSetMinigamesPayload, ack: AckCallback) => void;
 }
 

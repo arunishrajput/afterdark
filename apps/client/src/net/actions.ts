@@ -139,3 +139,10 @@ export const coopSubmit = (taskId: string, pin: string) =>
   request('coop:submit', { taskId, answer: { pin } });
 /** Step out of the wait or the puzzle; the other side keeps waiting. */
 export const coopCancel = (taskId: string) => request('coop:cancel', { taskId });
+
+/** Test mode, host, playing: turn the owner's first card into a co-op task with a chosen partner (no waiting for the random draw). */
+export const devForceCoop = (ownerId: string, partnerId: string) =>
+  request('dev:forceCoop', { ownerId, partnerId });
+
+/** Test mode, host, lobby only: change host settings without the form (e2e uses it to switch co-op on or off). */
+export const devUpdateConfig = (patch: GameConfigEditablePatch) => updateConfig(patch);

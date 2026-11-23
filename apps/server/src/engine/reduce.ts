@@ -158,6 +158,9 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
       case 'meetingVote':
         meetings.castVote(draft, cmd.playerId, cmd.target);
         break;
+      case 'devForceCoop':
+        coop.forceCoop(draft, cmd.playerId, cmd.ownerId, cmd.partnerId, now);
+        break;
       case 'devAdvanceClock':
         control.advanceClock(draft, cmd.playerId, cmd.seconds);
         break;
