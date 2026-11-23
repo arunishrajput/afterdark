@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 07, Infection system** → [docs/phases/PHASE-07-infection.md](docs/phases/PHASE-07-infection.md)
+**◐ IN PROGRESS: Phase 07, Infection system (started 2026-11-23, at task 07.1)** → [docs/phases/PHASE-07-infection.md](docs/phases/PHASE-07-infection.md)
 
 **Live URL:** <https://afterdark-24gx.onrender.com> (Render free, Singapore; sleeps after ~15 min idle, first load up to ~1 min)
 
@@ -18,7 +18,7 @@
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ✅ DONE | 2026-11-23 | `phase-04-done` |
 | 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ✅ DONE | 2026-11-23 | `phase-05-done` |
 | 06 | [Deploy & first field test](docs/phases/PHASE-06-deploy-field-test.md) | ✅ DONE | 2026-11-23 | `phase-06-done` |
-| 07 | [Infection system](docs/phases/PHASE-07-infection.md) | ▶ NEXT | | |
+| 07 | [Infection system](docs/phases/PHASE-07-infection.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 08 | [Meetings & voting](docs/phases/PHASE-08-meetings-voting.md) | ☐ NOT STARTED | | |
 | 09 | [Abilities: Saboteur & Phantom](docs/phases/PHASE-09-abilities-saboteur-phantom.md) | ☐ NOT STARTED | | |
 | 10 | [Co-op tasks & Camouflage](docs/phases/PHASE-10-coop-camouflage.md) | ☐ NOT STARTED | | |
