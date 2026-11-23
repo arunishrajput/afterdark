@@ -41,7 +41,7 @@
   6. Buttons: Play again (host) or "Waiting for host…", and Leave.
 - [x] **12.6 Optional share result:** the Web Share API with a short text summary (no images).
 - [x] **12.7 Tests and E2E:** the integration test checks the ResultsView contents after a scripted game. The e2e test covers bots + 1 player → a crew win → the results screen → Play again → back in the lobby with the same boundary.
-- [ ] **12.8 Wrap up.** Update the docs. Commit, tag, push.
+- [x] **12.8 Wrap up.** Update the docs. Commit, tag, push.
 
 ## Acceptance criteria
 - The results screen accurately reflects the game (checked against the scripted game). No hidden data leaks before the game ends.
