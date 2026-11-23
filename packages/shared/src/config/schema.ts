@@ -187,3 +187,21 @@ export type GameConfigEditable = z.infer<typeof gameConfigEditableSchema>;
 /** Payload of `lobby:updateConfig`: any subset of editable keys, range-checked. */
 export const editableConfigPatchSchema = gameConfigEditableSchema.partial();
 export type GameConfigEditablePatch = z.infer<typeof editableConfigPatchSchema>;
+
+/**
+ * The numeric range of an editable key, read from the schema so UIs never
+ * hard-code limits. For `auto`-or-number keys it is the numeric option's range.
+ */
+export function editableNumberRange(
+  key: EditableConfigKey,
+): { min: number; max: number } | undefined {
+  const field: z.ZodType = gameConfigEditableSchema.shape[key];
+  const num =
+    field instanceof z.ZodNumber
+      ? field
+      : field instanceof z.ZodUnion
+        ? field.options.find((o): o is z.ZodNumber => o instanceof z.ZodNumber)
+        : undefined;
+  if (!num || num.minValue === null || num.maxValue === null) return undefined;
+  return { min: num.minValue, max: num.maxValue };
+}

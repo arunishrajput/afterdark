@@ -15,6 +15,23 @@
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --animate-toast-in: toast-in 180ms ease-out;
+  --animate-count-pop: count-pop 250ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes count-pop {
+  from {
+    opacity: 0.4;
+    transform: scale(1.25);
+  }
 }
 
 html {
@@ -29,6 +46,18 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
+  overscroll-behavior-y: none;
+  /* A faint top glow: the "night ops console" mood without scanline noise. */
+  background:
+    radial-gradient(120% 60% at 50% -10%, var(--accent-glow), transparent 60%) no-repeat,
+    var(--bg);
+}
+
+/* 16 px inputs stop iOS from zooming on focus. */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
 }
 
 @media (prefers-reduced-motion: reduce) {

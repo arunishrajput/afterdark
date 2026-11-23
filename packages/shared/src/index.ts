@@ -11,6 +11,7 @@ export type {
 export {
   EDITABLE_CONFIG_KEYS,
   editableConfigPatchSchema,
+  editableNumberRange,
   gameConfigEditableSchema,
   gameConfigSchema,
   HOST_CONFIG_TIER,

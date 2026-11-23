@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG } from './defaults';
 import {
   EDITABLE_CONFIG_KEYS,
   editableConfigPatchSchema,
+  editableNumberRange,
   gameConfigSchema,
   HOST_CONFIG_TIER,
 } from './schema';
@@ -56,5 +57,14 @@ describe('editable config', () => {
 
   it('a patch is range-checked', () => {
     expect(editableConfigPatchSchema.safeParse({ meetingVoteS: 10 }).success).toBe(false);
+  });
+});
+
+describe('editableNumberRange', () => {
+  it('reads ranges from the schema, including auto-or-number keys', () => {
+    expect(editableNumberRange('playTimeMin')).toEqual({ min: 10, max: 60 });
+    expect(editableNumberRange('meetingsPerPlayer')).toEqual({ min: 0, max: 3 });
+    expect(editableNumberRange('imposterCount')).toEqual({ min: 1, max: 3 });
+    expect(editableNumberRange('testMode')).toBeUndefined();
   });
 });
