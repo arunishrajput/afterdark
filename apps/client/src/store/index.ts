@@ -32,7 +32,15 @@ export interface Toast {
 /** A private task event the UI reacts to (a counter, so the same event twice still changes the store). */
 export interface TaskSignal {
   seq: number;
-  reason: 'range' | 'gps' | 'zone' | 'connection';
+  reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting';
+}
+
+/** The latest `meeting.called`: who called it and when it arrived (for the full-screen alarm). */
+export interface MeetingAlarm {
+  seq: number;
+  by: string;
+  /** Browser ms when the event arrived. */
+  at: number;
 }
 
 interface GameState {
@@ -48,6 +56,8 @@ interface GameState {
   taskReset: TaskSignal | undefined;
   /** The latest `task.completed`, for the +N float. */
   taskDone: { seq: number; points: number } | undefined;
+  /** The latest meeting call. */
+  meetingAlarm: MeetingAlarm | undefined;
   setView: (view: PlayerView) => void;
   setRadar: (radar: RadarPayload) => void;
   clearView: () => void;
@@ -56,6 +66,7 @@ interface GameState {
   pushToast: (text: string) => void;
   signalTaskReset: (reason: TaskSignal['reason']) => void;
   signalTaskDone: (points: number) => void;
+  signalMeetingAlarm: (by: string) => void;
   dismissToast: (id: number) => void;
 }
 
@@ -69,6 +80,7 @@ export const useGame = create<GameState>()((set) => ({
   toasts: [],
   taskReset: undefined,
   taskDone: undefined,
+  meetingAlarm: undefined,
   setView: (view) =>
     set((s) => {
       // Ignore a stale snapshot for the same player (views carry an increasing `v`).
@@ -84,6 +96,8 @@ export const useGame = create<GameState>()((set) => ({
     set((s) => ({ taskReset: { seq: (s.taskReset?.seq ?? 0) + 1, reason } })),
   signalTaskDone: (points) =>
     set((s) => ({ taskDone: { seq: (s.taskDone?.seq ?? 0) + 1, points } })),
+  signalMeetingAlarm: (by) =>
+    set((s) => ({ meetingAlarm: { seq: (s.meetingAlarm?.seq ?? 0) + 1, by, at: Date.now() } })),
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
@@ -92,6 +106,7 @@ const TASK_RESET_COPY = {
   gps: 'GPS signal lost. The task was reset.',
   zone: 'You left the zone. The task was reset.',
   connection: 'Connection lost. The task was reset.',
+  meeting: 'A meeting was called. The task was reset.',
 } as const;
 
 const INFECT_FAILED_COPY = {
@@ -135,11 +150,13 @@ export function toastFor(event: GameEvent): string | undefined {
       return 'Exposed. Walk away to start the incubation.';
     case 'infect.failed':
       return INFECT_FAILED_COPY[event.reason];
+    case 'meeting.called':
+    case 'meeting.result':
     case 'lobby.countdown':
     case 'game.spawnStarted':
     case 'game.rolesRevealed':
     case 'game.playStarted':
     case 'game.ended':
-      return undefined; // the screens change instead
+      return undefined; // the screens change instead (the meeting has its own alarm and result)
   }
 }

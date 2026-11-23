@@ -109,6 +109,7 @@ export function startConnection(): void {
     if (text) g.pushToast(text);
     if (event.type === 'task.reset') g.signalTaskReset(event.reason);
     if (event.type === 'task.completed') g.signalTaskDone(event.points);
+    if (event.type === 'meeting.called') g.signalMeetingAlarm(event.by);
     playCue(event);
   });
   socket.on('server:shutdown', () => {

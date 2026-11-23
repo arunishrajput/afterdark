@@ -103,6 +103,15 @@ export const devAdvanceClock = (seconds: number) => request('dev:advanceClock', 
 export const devSetMinigames = (types: SoloMinigameType[]) =>
   request('dev:setMinigames', { types });
 
+// ── Phase 8: meetings ───────────────────────────────────────────────────────
+
+/** Any active player: call an emergency meeting (the server checks the allowance, grace and cooldown). */
+export const callMeeting = () => request('meeting:call', {});
+/** Discuss stage: "Skip to vote". The stage ends early once every connected active player has. */
+export const skipDiscussion = () => request('meeting:skipDiscussion', {});
+/** Vote stage, once: a player id or `'skip'`. It cannot be changed after it is cast. */
+export const castVote = (target: string) => request('meeting:vote', { target });
+
 // ── Phase 7: infection (imposters) ──────────────────────────────────────────
 
 /** Starts a channel on the nearest healthy crew member within range; the server picks the target. */

@@ -11,6 +11,7 @@ import {
   ZoneGlow,
 } from '../components/game/Hud';
 import { ImposterPanel } from '../components/game/ImposterPanel';
+import { MeetingButton } from '../components/game/MeetingButton';
 import { TaskPanel } from '../components/game/TaskPanel';
 import { TaskPlayer } from '../components/game/TaskPlayer';
 import { useSelfPosition } from '../hooks/useSelfPosition';
@@ -111,10 +112,13 @@ export function Game({ view }: { view: PlayerView }) {
             </p>
           )}
         </div>
-        <p className="text-right font-mono text-sm tabular-nums" data-testid="personal-score">
-          <span className="text-muted">You </span>
-          {me.personalScore ?? 0}
-        </p>
+        <div className="flex flex-col items-end gap-2">
+          <p className="font-mono text-sm tabular-nums" data-testid="personal-score">
+            <span className="text-muted">You </span>
+            {me.personalScore ?? 0}
+          </p>
+          <MeetingButton left={game?.meetingsLeft ?? 0} paused={paused} />
+        </div>
       </section>
 
       {lobby.testMode && (

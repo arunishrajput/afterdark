@@ -18,6 +18,7 @@ const MESSAGES: Partial<Record<ClientErrorCode, string>> = {
   TASKS_LOCKED: 'Return to the zone to use tasks.',
   COOLDOWN: 'Not ready yet. Wait a moment.',
   PAUSED: 'The game is paused.',
+  MEETING_ACTIVE: 'A meeting is in progress.',
   RATE_LIMITED: 'Slow down a little and try again.',
   KICKED: 'You were removed from that lobby.',
   TIMEOUT: 'No answer from the server. Check your connection.',

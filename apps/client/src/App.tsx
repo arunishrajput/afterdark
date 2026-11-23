@@ -2,6 +2,7 @@ import type { PlayerView } from '@afterdark/shared';
 import { useEffect, useState } from 'react';
 
 import { LocationProvider } from './components/LocationProvider';
+import { MeetingScreen } from './components/meeting/MeetingScreen';
 import { Toasts } from './components/ui/Toasts';
 import { Ended } from './screens/Ended';
 import { EntryForm } from './screens/EntryForm';
@@ -11,6 +12,7 @@ import { Lobby } from './screens/Lobby';
 import { NoticeScreen } from './screens/NoticeScreen';
 import { RoleReveal } from './screens/RoleReveal';
 import { Spawn } from './screens/Spawn';
+import { Spectator } from './screens/Spectator';
 import { parseSimParams } from './sim/params';
 import { useGame } from './store';
 import { useLocation } from './store/location';
@@ -35,15 +37,18 @@ function InGame({ view }: { view: PlayerView }) {
     case 'reveal':
       return <RoleReveal view={view} />;
     case 'playing':
-      return <Game view={view} />;
+      if (view.game?.meeting) return <MeetingScreen view={view} meeting={view.game.meeting} />;
+      return view.me.status === 'spectator' ? <Spectator view={view} /> : <Game view={view} />;
     case 'ended':
       return <Ended view={view} />;
   }
 }
 
-/** Crew blue and imposter red only while playing; everything else (lobby, spawn, reveal, results) is neutral (UI_UX §1). */
+/** Crew blue and imposter red only while playing a normal screen; everything else (lobby, spawn, reveal, meetings, spectators, results) is neutral (UI_UX §1, ADR-028). */
 function themeOf(view: PlayerView | undefined): 'crew' | 'imposter' | 'neutral' {
-  return view?.lobby.phase === 'playing' && view.me.role ? view.me.role : 'neutral';
+  if (view?.lobby.phase !== 'playing' || !view.me.role) return 'neutral';
+  if (view.game?.meeting || view.me.status === 'spectator') return 'neutral';
+  return view.me.role;
 }
 
 function Screen() {

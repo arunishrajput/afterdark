@@ -10,7 +10,15 @@ const BUZZ_ARRIVE_MS = [200, 80, 200, 80, 300];
 const BUZZ_COMPROMISED_MS = [60, 40, 60, 40, 220];
 const BUZZ_EXPOSED_MS = [250];
 const BUZZ_FAILED_MS = [100, 50, 100];
-const CHIME_HZ = { revealed: 660, atPin: 880, done: 1040, glitch: 180, exposed: 520 } as const;
+const BUZZ_MEETING_MS = [400, 150, 400, 150, 600];
+const CHIME_HZ = {
+  revealed: 660,
+  atPin: 880,
+  done: 1040,
+  glitch: 180,
+  exposed: 520,
+  alarm: 740,
+} as const;
 const CHIME_S = 0.18;
 const CHIME_GAIN = 0.08;
 
@@ -68,6 +76,11 @@ export function playCue(event: GameEvent): void {
       break;
     case 'infect.failed':
       buzz(BUZZ_FAILED_MS);
+      break;
+    case 'meeting.called':
+      // Everyone, imposters included, gets the same alarm (MEETINGS §3).
+      buzz(BUZZ_MEETING_MS);
+      chime(CHIME_HZ.alarm, 'square');
       break;
     default:
       break;
