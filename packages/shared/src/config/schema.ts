@@ -68,6 +68,8 @@ export const gameConfigSchema = z.strictObject({
   minSectionAreaM2: positive(),
   taskPointsPerSection: positiveInt(),
   taskPointMinSpacingM: positive(),
+  minTaskPointsPerPlayer: positiveInt(),
+  minRegionsWithPoints: positiveInt(),
   baseRadiusM: positive(),
   nearbyRadiusM: int(20, 100),
   regionCountRefreshS: positiveInt(),

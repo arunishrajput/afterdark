@@ -52,6 +52,8 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `minSectionAreaM2` | 400 | — | 🔒 | Smaller sections get no tasks. |
 | `taskPointsPerSection` | 3 | — | 🔒 | Target number of auto-generated candidate points per section. |
 | `taskPointMinSpacingM` | 20 | — | 🔒 | Minimum distance between candidate points. |
+| `minTaskPointsPerPlayer` | 4 | — | 🔒 | Setup is valid only with at least this many usable task points per player. |
+| `minRegionsWithPoints` | 2 | — | 🔒 | ...and the usable points must be spread over at least this many regions. |
 | `baseRadiusM` | 30 | — | 🔒 | A player within this distance of the Base counts as gathered. |
 | `nearbyRadiusM` | 40 | 20–100 | ⚙️ | Used by visibility mode `nearby`. |
 | `regionCountRefreshS` | 30 | — | 🔒 | Region population counts are bucketed and refreshed this often. |

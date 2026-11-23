@@ -49,6 +49,8 @@ export const DEFAULT_CONFIG = {
   minSectionAreaM2: 400,
   taskPointsPerSection: 3,
   taskPointMinSpacingM: 20,
+  minTaskPointsPerPlayer: 4,
+  minRegionsWithPoints: 2,
   baseRadiusM: 30,
   nearbyRadiusM: 40,
   regionCountRefreshS: 30,

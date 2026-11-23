@@ -94,6 +94,8 @@ export {
 } from './protocol/schemas';
 export type { Rng } from './rng';
 export { createRng, hashSeed, mulberry32 } from './rng';
+export type { SetupIssue, SetupSummary } from './rules/setup';
+export { pointsNeeded, summarizeSetup, validateSetup } from './rules/setup';
 export type { StartBlocker } from './rules/start';
 export { resolveImposterCount, startBlockers } from './rules/start';
 export type { KickReason, Phase, PlayerStatus } from './types/domain';
