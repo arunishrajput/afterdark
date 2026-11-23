@@ -12,7 +12,6 @@ import { gameNow } from '../clock';
 import type { PlayerState, RoomState } from '../state';
 import type { Effect } from '../types';
 import { endGame } from './end';
-import { activePlayers } from './players';
 
 const MS_PER_S = 1000;
 
@@ -52,9 +51,9 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
   }
 
   // V5 forfeit: a whole side has been gone for forfeitAfterS; the other side wins.
-  const active = activePlayers(state);
-  const imposters = active.filter((p) => p.role === 'imposter');
-  const crew = active.filter((p) => p.role === 'crew');
+  // A player who left is a permanent disconnect, so they stay on their side.
+  const imposters = state.players.filter((p) => p.role === 'imposter');
+  const crew = state.players.filter((p) => p.role === 'crew');
   const since = game.rolesAssignedAt;
   const impGone = sideGone(state, imposters, now, since);
   const crewGone = sideGone(state, crew, now, since);

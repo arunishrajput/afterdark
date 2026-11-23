@@ -8,7 +8,7 @@ import { DEFAULT_CONFIG, type GameConfig, type LatLng } from '@afterdark/shared'
 import { reduce, type ReduceResult } from './reduce';
 import { createRoomState, type RoomState } from './state';
 import { tick } from './tick';
-import type { Command } from './types';
+import type { Command, Effect } from './types';
 
 export const T0 = 1_700_000_000_000;
 export const S = 1000;
@@ -82,6 +82,27 @@ export function refresh(state: RoomState, now: number): RoomState {
     ).state;
   }
   return s;
+}
+
+/** Like `advanceTo`, but returns every effect the refreshes and the tick produced. */
+export function advanceWithEffects(
+  state: RoomState,
+  now: number,
+): { state: RoomState; effects: Effect[] } {
+  let s = state;
+  const effects: Effect[] = [];
+  for (const p of state.players) {
+    if (p.left || !p.loc) continue;
+    const res = run(
+      s,
+      { type: 'locUpdate', playerId: p.id, fix: { lat: p.loc.lat, lng: p.loc.lng, accuracy: 5, ts: now } },
+      now,
+    );
+    s = res.state;
+    effects.push(...res.effects);
+  }
+  const t = tick(s, now);
+  return { state: t.state, effects: [...effects, ...t.effects] };
 }
 
 /** Refresh the fixes, then run one tick at `now`. */
