@@ -47,31 +47,7 @@ _From Phase 00 (2026-11-23):_
 - CI: GitHub Actions `.github/workflows/ci.yml` (verify + Playwright e2e). Green at `phase-00-done`.
 
 ## Manual actions pending for the human
-1. **Optional: fewer permission prompts (task 00.14).** Claude was not allowed to write its own permission allowlist, which is correct, because an agent shouldn't grant itself permissions. If you want fewer prompts, create `.claude/settings.json` in the repo root yourself with the content below, review it, then commit it (or ask Claude to commit it). It allows routine `pnpm`, `git` (no force-push or hard reset), `gh run` and `node` commands. Note that `pnpm *` and `node *` can run arbitrary scripts, so only add it if you're comfortable with that.
-   ```json
-   {
-     "$schema": "https://json.schemastore.org/claude-code-settings.json",
-     "permissions": {
-       "allow": [
-         "Bash(pnpm *)",
-         "Bash(git status)", "Bash(git status *)",
-         "Bash(git diff)", "Bash(git diff *)",
-         "Bash(git log)", "Bash(git log *)",
-         "Bash(git add *)", "Bash(git commit *)",
-         "Bash(git push)", "Bash(git push *)",
-         "Bash(git tag *)",
-         "Bash(git pull)", "Bash(git pull *)",
-         "Bash(gh run *)", "Bash(gh repo view)", "Bash(gh repo view *)",
-         "Bash(node *)"
-       ],
-       "deny": [
-         "Bash(git push --force*)", "Bash(git push -f*)",
-         "Bash(git push * --force*)", "Bash(git push * -f*)",
-         "Bash(git reset --hard*)", "Bash(git clean *)"
-       ]
-     }
-   }
-   ```
+_None right now._
 
 ## Known issues / tech debt
 Format: `- 🔴/🟠/🟢 <issue> (found in phase NN): <notes>`
@@ -89,5 +65,5 @@ _The human pastes results here using the checklist in docs/TESTING.md §6. Mark 
 ## Session log
 | Date | Phase | Summary |
 |---|---|---|
-| 2026-11-23 | 00 | Set up the git repo and public GitHub repo; pnpm monorepo (shared/server/client); strict TS 6.0 + type-aware ESLint + Prettier; shared config (full CONFIG table as a zod schema), mulberry32 RNG, IDs, protocol `Ack`/`time:ping`; Express + Socket.IO server with `/health`, `/version` and validated `time:ping`; React + Tailwind client showing Connected ✓ + ping; Playwright smoke; CI green. 37 unit/integration + 2 e2e tests. Deviation: 00.14 (permission allowlist) handed to the human. ADR-030–033. |
+| 2026-11-23 | 00 | Set up the git repo and public GitHub repo; pnpm monorepo (shared/server/client); strict TS 6.0 + type-aware ESLint + Prettier; shared config (full CONFIG table as a zod schema), mulberry32 RNG, IDs, protocol `Ack`/`time:ping`; Express + Socket.IO server with `/health`, `/version` and validated `time:ping`; React + Tailwind client showing Connected ✓ + ping; Playwright smoke; CI green. 37 unit/integration + 2 e2e tests. 00.14 (permission allowlist): the human reviewed and added `.claude/settings.json`, because auto mode blocked Claude from writing its own permissions. ADR-030–033. |
 | 2026-11-23 | (pre-project) | Wrote the specs (PRD, rules, roles, scoring, config, map/regions, tasks, meetings, protocol, architecture, UI/UX, testing, manual setup, decisions, INFILTR8 notes), the build plan with 15 phase files, CLAUDE.md and this tracker. Merged the creator's concept with the INFILTR8 GDD and added meetings and voting. |

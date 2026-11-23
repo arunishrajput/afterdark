@@ -68,14 +68,14 @@
   - `pnpm e2e`
   - upload the report if it fails
 - [x] **00.13 Tunnel script.** Add `"tunnel": "cloudflared tunnel --url http://localhost:5173"`. Document it in the README dev section.
-- [~] **00.14 Claude Code permissions.** Create `.claude/settings.json` with an allowlist of safe, frequent commands:
+- [x] **00.14 Claude Code permissions.** Create `.claude/settings.json` with an allowlist of safe, frequent commands:
   - `pnpm *`
   - `git status`, `git diff *`, `git log *`, `git add *`, `git commit *`, `git push*`, `git tag *`, `git pull*`
   - `gh run *`, `gh repo view*`
   - `node *`
 
   Keep anything destructive out of the allowlist. Tell the human what was added.
-  - *Outcome:* Claude Code's auto-mode safety check blocked Claude from writing its own permission file (correctly: an agent shouldn't grant itself permissions). The proposed file is in PROGRESS.md › Manual actions for the human to review and add.
+  - *Outcome:* Claude Code's auto-mode safety check blocked Claude from writing its own permission file (correctly: an agent shouldn't grant itself permissions). The human reviewed and added the proposed file on 2026-11-23.
 - [x] **00.15 README.** A short pitch, a quickstart (`pnpm i`, `pnpm dev`), and links to the docs.
 - [x] **00.16 Wrap up.** Update PROGRESS.md (Phase 0 ✅, NEXT = Phase 1, environment, session log). Commit, tag `phase-00-done`, `git push --follow-tags`. Wait for CI with `gh run watch`, and fix anything red.
 
