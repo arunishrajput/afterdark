@@ -43,8 +43,8 @@
 │   ├─ rooms/    RoomManager.ts  Room.ts  sessions.ts  ViewEmitter.ts  lobbyCode.ts
 │   ├─ engine/   state.ts  reduce.ts  tick.ts  clock.ts
 │   │            systems/ lobby.ts location.ts spawn.ts roles.ts tasks.ts infection.ts abilities.ts
-│   │                     meetings.ts zone.ts victory.ts
-│   └─ views/    projectView.ts  radar.ts  results.ts
+│   │                     meetings.ts zone.ts victory.ts log.ts rematch.ts end.ts
+│   └─ views/    projectView.ts  radar.ts  projectResults.ts
 ├─ apps/client/src/
 │   ├─ main.tsx  App.tsx  styles/ (tokens.css, themes.css)
 │   ├─ net/ socket.ts  clock.ts      store/ index.ts

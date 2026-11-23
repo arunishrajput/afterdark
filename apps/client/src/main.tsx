@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import {
   devAdvanceClock,
+  devAutoComplete,
   devForceCoop,
   devSetMinigames,
   devUpdateConfig,
@@ -24,6 +25,7 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {
   (window as unknown as { __afterdarkActions?: object }).__afterdarkActions = {
     devSetMinigames,
     devAdvanceClock,
+    devAutoComplete,
     devForceCoop,
     devUpdateConfig,
     simTeleport,

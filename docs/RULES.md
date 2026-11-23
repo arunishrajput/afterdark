@@ -161,7 +161,8 @@ Full rules are in [MEETINGS.md](MEETINGS.md). In summary:
   - **Pause / Resume.** Game time stops; nothing can be done while paused.
   - **Force start**, during the spawn phase only.
   - **Abort**, which ends the game with no winner.
-- **After the game:** **Play again**, which returns everyone to the lobby with the same map and settings, all un-readied.
+- **After the game:** **Play again** (host), which returns everyone to the lobby with the same map and settings, all un-readied. Per-game state (roles, tags, scores, tasks, the event log) is cleared and ejected players are active again. Players who left, or who have been disconnected for more than `rematchDropAfterS` (5 min), are dropped. Roles and spawns are drawn afresh (ADR-097).
+- **Abort** shows the results screen as "Aborted by host" with the stats so far; there is no winner (V6).
 
 ## 12. Victory
 The server checks win conditions after **every** state change, in strict processing order. The first condition met ends the game.

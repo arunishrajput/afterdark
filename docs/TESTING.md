@@ -35,7 +35,8 @@ Put these in `apps/server/src/views/leak.test.ts`. Extend them in every phase th
 4. **Host has no powers:** the host's view after reveal is identical in structure to any other player's view of the same role.
 5. **Spectator:** an ejected imposter's view has no `imposter` key.
 6. **Radar:** crew radar dots never have `ally`, `exposed` or `infected` flags. In `regions` mode, crew radar is empty.
-7. **Raw payload scan:** in an integration test, record every frame sent to a crew socket over a whole scripted game, then assert that no other player's tag or role, and no `infected` flag, appears in any frame.
+7. **Raw payload scan:** in an integration test, record every frame sent to a crew socket over a whole scripted game, then assert that no other player's tag or role, and no `infected` flag, appears in any frame. Scan only up to the end of the game: the results screen reveals everything on purpose (see 8).
+8. **Results (Phase 12):** `views/leak.results.test.ts`: in the spawning, reveal and playing phases, with a busy event log and walk counters, no view has a `results` key or any of its field names (`scoreSeries`, `tasksDone`, `distanceM`, `infectedAtS`, `awards`, `timeline`, `walkedM`, `log`…); in the ended phase every viewer gets the identical `results` and every key is on `ALLOWED_VIEW_KEYS`; `apps/server/test/results.int.test.ts` scans a whole scripted game's raw frames for the same field names before the end. The secrecy tests of §3 run on views with `results` removed, because the reveal is the one place roles, classes and tags are public.
 
 ## 4. Test mode and the GPS simulator
 - The host enables `testMode`, and every player sees a "TEST MODE" badge.

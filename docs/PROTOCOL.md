@@ -60,7 +60,7 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `coop:submit` | `{taskId, answer: {pin}}` | `{result: 'waiting' \| 'success' \| 'wrong', points}` | a participant of an active session (`taskId` is their card id, or the join id for a stand-in). `pin` is the PIN the other side shows. `wrong` locks submitting for `taskWrongLockoutS` (`COOLDOWN` meanwhile); `waiting` means this half is right; `success` completes it and `points` is the personal credit (`coopPersonalPoints` for crew, 0 for an imposter). `INVALID_PAYLOAD` for a PIN of the wrong shape | 10 |
 | `coop:cancel` | `{taskId}` | — | a participant steps out: the joiner back to waiting, the starter ends the wait | 10 |
 | `dev:forceCoop` | `{ownerId, partnerId}` | — | **testMode only**, host, `playing`. Turns the owner's first suitable solo card (crew) into a co-op task with the partner under the usual eligibility rules (`NOT_ALLOWED` otherwise) | 10 |
-| `lobby:playAgain` | `{}` | — | host, ended | 12 |
+| `lobby:playAgain` | `{}` | — | host, `ended` (`NOT_HOST`, `WRONG_PHASE` in any other phase). Back to the lobby with the same map, setup and config: everyone un-readied, per-game state cleared, ejected players active again, players who left or have been disconnected for more than `rematchDropAfterS` (300 s) removed. The server draws a fresh salt, so the next game's roles and spawns differ (ADR-097). Also works after a host abort, even from a paused game | 12 |
 | `dev:teleport` | `{lat, lng}` | — | **testMode only**. Stores a fix with `teleportAccuracyM`, bypassing the speed check. Used by the simulator's long-press and by bots | 2 |
 | `dev:addBots` | `{count: 1..11, imposterBehaviour?: 'wander' \| 'chase' \| 'sabotage'}` | — | **testMode only**, host, lobby phase. `imposterBehaviour` applies to every imposter bot in the room (default `wander`: they walk and never infect; `chase`: they hunt, see ADR-069). Errors: `NOT_ALLOWED` (test mode off), `NOT_HOST`, `WRONG_PHASE`, `LOBBY_FULL` (it would pass `maxPlayers`; nothing is added). In-process bots named `bot-N` join, send fixes and ready up on the room tick | 4 |
 | `dev:advanceClock` | `{seconds: 1..600}` | — | **testMode only**, host, `playing`. Moves game time forward, so every game-time deadline (cooldowns, channels, incubation, the match end) gets closer by that much. `PAUSED` while the clock is stopped (ADR-070) | 7 |
@@ -133,7 +133,7 @@ interface PlayerView {
     meetingsLeft: number;
     rerollReadyAt: number;
   };
-  results?: ResultsView;          // only when ended
+  results?: ResultsView;          // only when ended, and only if roles were assigned (Phase 12)
 }
 ```
 **`TaskCard`** reveals information in stages:
@@ -146,6 +146,26 @@ The type and points arrive only in the `task:open` ack.
 **Phase 5 view fields:** while `playing`, every viewer with a role gets `game.tasks: TaskCard[]` (their own cards; `[]` for an imposter) and, only while a reroll cooldown runs, `game.rerollReadyAt` (server epoch ms, crew only; omitted while the clock is stopped). A card is `{id, stage:'assigned', kind, regionId, regionName, section}` or, once revealed, `{id, stage:'pin', kind, regionId, regionName, section, lat, lng, atPin}` (`partnerTag` arrives with Phase 10). `regionId` is public (regions are) and lets the client highlight the section. `kind` is `'solo'` for now. Fake and real cards are identical. The `task:open` ack is `{type, points, puzzle}` where `points` is the config value of `type` for real **and** fake tasks.
 
 **Leak invariant:** for two crew players who differ only in infected status, `JSON.stringify(view)` must have the **same set of keys** (values may differ). Leak tests assert this.
+
+**`ResultsView`** (Phase 12, ADR-096): sent only when `phase === 'ended'` and roles had been assigned, identical for every viewer. Players are referred to by id and listed in `players`.
+```
+results: {
+  winner: 'crew'|'imposters'|'draw'|null; reason: EndReason; aborted: boolean;   // aborted === (reason === 'abort')
+  teamScore; targetScore; compromised; threshold; crewCount;
+  durationS: number;                                  // game seconds played (pauses and meetings excluded)
+  players: { id, username, role: 'crew'|'imposter', classes?: ImposterClass[], tag, personalScore,
+             tasksDone,        // solo tasks + co-ops finished (crew)
+             fooled,           // fake tasks finished
+             distanceM,        // rounded; `walkStepM` steps of good fixes during play (ADR-095)
+             infections,       // imposters: channels finished
+             meetingsCalled, infectedAtS?, ejected, left }[];
+  timeline: { atS, kind: 'exposed'|'infected'|'ejected'|'taskStop'|'fakePlanted'|'camouflage'|'paused'|'resumed', actorId?, targetId? }[];
+  meetings: { atS, calledById, tallies: {target: playerId|'skip', count}[], ejectedId?, wasImposter? }[];   // never per-voter choices
+  scoreSeries: { atS, team }[];                       // every scoreSampleS (30 s) of game time, the last point is the final score
+  awards: { crewMvp?, topInfector?, mostFooled?: { playerId, value } };    // only when value > 0
+}
+```
+There is no event for results: the `game.ended` event arrives as before and the next view carries `results`. Leak tests: no `results` key, and none of its field names, in any view before the end.
 
 ### `AnonDot`
 `{alias: string, lat, lng, flags: ('oob'|'stale'|'ally'|'exposed'|'infected')[]}`. The `ally`, `exposed` and `infected` flags are only ever sent to active imposters. The alias is per viewer, rotates every `dotAliasRotateS`, and dots are sorted by alias (ADR-041). A radar frame never contains a player id or username.
@@ -164,6 +184,8 @@ Phase 7 events: `game.compromised {count}` (**public**: a crew member just becam
 Phase 4 events: `lobby.startFailed {reason:'spawns'}` (all; the countdown ended but the area is too small to spread everyone out, E3), `game.spawnStarted`, `game.rolesRevealed`, `game.playStarted`, `game.paused`, `game.resumed`, `game.ended {winner, reason}` (all; `winner` is `'crew'|'imposters'|'draw'|null`, `reason` is `score|ejection|infection|time|forfeit|abort`), `zone.warning` and `zone.penalty {points}` (private to the player out of bounds).
 
 Phase 8 (meetings): `meeting.called {by}` (**public**, `by` is the caller's username: the alarm), `meeting.result {ejected?: {username, wasImposter}}` (**public**, sent when Result begins; no `ejected` means nobody was ejected), and `task.reset` gains `reason: 'meeting'`. Views: `game.meeting?: MeetingView` while a meeting runs, `lobby.players[].revealedRole` once a player is ejected, `me.status: 'spectator'` for an ejected player, and `game.meetingsLeft` is now the **viewer's own** remaining meetings (0 for a spectator). `MeetingView` is `{stage: 'gather'|'discuss'|'vote'|'result', endsAt (server epoch ms; with `pausedAt` the remaining time is `endsAt − pausedAt`), pausedAt?, calledBy (username), gathered: playerId[], roster: {playerId, username, status, connected}[], progress: {done, total} (arrived / skipped / voted, counts only), myVote? (the viewer's own), tallies?: {target: playerId|'skip', count}[] and outcome?: {ejectedId?, ejectedUsername?, wasImposter?} (result only)}`. It has the same shape for crew, imposters and spectators. **No view or event ever says who voted for whom.** `dev:addBots` takes `meetings?: 'off'|'random'` (`pnpm bots --meetings random`): bots always join and vote in meetings, and with `random` each also calls one at a random time (`botMeetingMinS`–`botMeetingMaxS`).
+
+Phase 12: `lobby:playAgain` has no event of its own: everyone's next view is a `lobby` view (`lobby.phase === 'lobby'`, no `results`, nobody ready). A player removed by it (gone for more than `rematchDropAfterS`) gets the usual removal.
 
 All events: `lobby.countdown`, `game.spawnStarted`, `game.rolesRevealed`, `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.fooled`, `task.expired`, `task.rerolled`, `sabotage.started {until}`, `meeting.called {by}`, `meeting.result {ejected?}`, `zone.warning`, `zone.penalty`, `game.paused`, `game.resumed`, `game.ended`.
 

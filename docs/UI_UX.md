@@ -40,7 +40,7 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 | **Fooled overlay** | Big, playful "You got fooled by a fake task!" with a laughing ghost illustration | Dismissable after 2 s |
 | **Meeting** | **Neutral theme for everyone.** Gather (distance to Base, arrivals) → Discuss (countdown, roster) → Vote (roster cards + Skip, confirm) → Result (tallies, ejection reveal) | Big type, so it can be held up in a circle |
 | **Spectator** | Neutral theme, "You were ejected", public map and HUD | No hidden information |
-| **Results** | Winner banner and reason, roles/classes/tags revealed, infection timeline, meeting history, leaderboard (crew MVP, top infector, most fooled), Play again (host) | Neutral theme |
+| **Results** | Winner banner and reason (crew blue or imposter red glow; "Aborted by host" after an abort), "Who was who" cards flipping in one by one (imposters first: role, class, tag), team-score chart against the target, awards (crew MVP, top infector, most fooled) and the ranked leaderboard, timeline (icon, match-clock time, a sentence), meeting history (counts only), **Play again** (host) or "Waiting for the host…", optional Share result (Web Share, text only), Leave | Neutral theme. One scrolling page; the reveal never relies on colour alone (ADR-098) |
 | **How to play** | 5 short illustrated cards | Reachable from Home and the Lobby |
 
 ## 3. HUD details

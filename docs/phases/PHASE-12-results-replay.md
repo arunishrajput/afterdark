@@ -18,8 +18,8 @@
 - **Out:** any persistence across server restarts.
 
 ## Tasks
-- [ ] **12.1 Event log:** the engine appends `{at (game time + wall time), type, actors, data}` for the key events: roles assigned, task completed (player, type, points), fooled, Task Stop, fake planted, camouflage used, infection channel completed (imposter → target), infected, meeting called, votes (counts plus the ejection), zone penalties, pause, end. The log stays on the server until the game ends.
-- [ ] **12.2 `ResultsView`:**
+- [x] **12.1 Event log:** the engine appends `{at (game time + wall time), type, actors, data}` for the key events: roles assigned, task completed (player, type, points), fooled, Task Stop, fake planted, camouflage used, infection channel completed (imposter → target), infected, meeting called, votes (counts plus the ejection), zone penalties, pause, end. The log stays on the server until the game ends.
+- [x] **12.2 `ResultsView`:**
   - winner and reason (V1–V6)
   - final team score and target
   - compromised count and threshold
@@ -30,17 +30,17 @@
   - awards: crew MVP, top infector, most fooled
 
   Only sent when `phase === 'ended'`. Leak test: before the end, no `results` key and none of these fields anywhere.
-- [ ] **12.3 Play again:** host only, from `ended`. Back to `lobby` with the same map, setup and config. Everyone un-readied. Per-game state cleared (tasks, roles, tags, scores, log). Spectators back to active. Disconnected players are dropped only if they've been gone for more than 5 min. Tests.
-- [ ] **12.4 End early:** `game:abort` already exists; add a confirm dialog in the host menu, and results showing "Aborted by host" with the partial stats.
-- [ ] **12.5 Results UI:** neutral theme.
+- [x] **12.3 Play again:** host only, from `ended`. Back to `lobby` with the same map, setup and config. Everyone un-readied. Per-game state cleared (tasks, roles, tags, scores, log). Spectators back to active. Disconnected players are dropped only if they've been gone for more than 5 min. Tests.
+- [x] **12.4 End early:** `game:abort` already exists; add a confirm dialog in the host menu, and results showing "Aborted by host" with the partial stats.
+- [x] **12.5 Results UI:** neutral theme.
   1. A big winner banner (crew blue or imposter red glow) with the reason line.
   2. A "Who was who" grid of cards with username → role, class and tag, flipping in one by one.
   3. A timeline (a vertical list with icons; an optional small inline SVG score chart).
   4. Leaderboard and awards.
   5. Meeting history.
   6. Buttons: Play again (host) or "Waiting for host…", and Leave.
-- [ ] **12.6 Optional share result:** the Web Share API with a short text summary (no images).
-- [ ] **12.7 Tests and E2E:** the integration test checks the ResultsView contents after a scripted game. The e2e test covers bots + 1 player → a crew win → the results screen → Play again → back in the lobby with the same boundary.
+- [x] **12.6 Optional share result:** the Web Share API with a short text summary (no images).
+- [x] **12.7 Tests and E2E:** the integration test checks the ResultsView contents after a scripted game. The e2e test covers bots + 1 player → a crew win → the results screen → Play again → back in the lobby with the same boundary.
 - [ ] **12.8 Wrap up.** Update the docs. Commit, tag, push.
 
 ## Acceptance criteria

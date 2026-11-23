@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { lobbyWithBots, newPlayer, setConfig, startAndReveal } from './helpers';
+import { finishFirstTask, lobbyWithBots, newPlayer, setConfig, startAndReveal } from './helpers';
 
 /**
  * Phase 12: one human (crew, in the GPS simulator) plus 7 bots play to a crew win by tasks alone.
@@ -12,6 +12,7 @@ test.describe.configure({ timeout: 300_000 });
 
 const SHOT = 'test-results/phase12';
 const WIN_WAIT_MS = 240_000;
+const MAX_ROUNDS = 12;
 
 test('a crew win shows the results, then Play again returns to the same lobby', async ({
   browser,
@@ -22,8 +23,19 @@ test('a crew win shows the results, then Play again returns to the same lobby', 
   // The lowest target the settings allow, so the bots' tasks end it within a couple of minutes.
   await setConfig(page, { coopChance: 0, targetScore: 40 });
   await startAndReveal(page);
+  await expect(page.getByTestId('task-card')).toHaveCount(3, { timeout: 20_000 });
 
-  await expect(page.getByTestId('results-screen')).toBeVisible({ timeout: WIN_WAIT_MS });
+  // The player works their own cards (the test-mode shortcut solves each opened task) while the bots work theirs.
+  const results = page.getByTestId('results-screen');
+  for (let round = 0; round < MAX_ROUNDS && (await results.count()) === 0; round++) {
+    try {
+      await finishFirstTask(page, SHOT);
+    } catch (error) {
+      // The last bot task can end the game under us: that is the screen this test wants.
+      if ((await results.count()) === 0 && round === MAX_ROUNDS - 1) throw error;
+    }
+  }
+  await expect(results).toBeVisible({ timeout: WIN_WAIT_MS });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'neutral');
   await expect(page.getByTestId('ended-title')).toHaveText('Crew wins');
   await expect(page.getByTestId('ended-reason')).toHaveText('The crew reached the target score.');

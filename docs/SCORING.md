@@ -79,7 +79,9 @@ Use exact rational comparison, not floats: compare `teamScore × threshold` with
 - **Crew MVP:** the highest personal score among crew.
 - **Top infector:** the imposter with the most successful infections.
 - **Most fooled:** the most fake tasks completed (just for fun).
-- Per-player stats: tasks done, points, distance walked (approximate, from accepted fixes), meetings called, and votes cast. Votes are shown as counts only.
+- Per-player stats: tasks done, points, distance walked (approximate: steps of at least `walkStepM` between good fixes during play, so GPS wobble is not counted), meetings called, infections caused, fake tasks fallen for, and when they were infected. Votes are shown as counts per target in the meeting history, never who voted for whom.
+- Awards need a value above zero (nobody gets "Top infector" with no infection). A tie goes to the player who joined the lobby first. A co-op counts as one task for each crew participant.
+- The **team score chart** is sampled every `scoreSampleS` (30 s) of game time and ends on the real final score (ADR-095, ADR-096).
 
 ## Balance notes (to tune in Phases 11 and 14)
 - **Rough pacing at 8 players with no imposter pressure:** 6 crew × ~1 task per 3 min ≈ 2 tasks/min × ~6 points ≈ 12 points/min. That reaches 100 in about 8–9 min of pure tasking. Real play is slower because of walking, wrong answers, Task Stops, fakes and meetings. The Phase 11 balance script (`pnpm bots:simulate`) puts a typical 8-player game at about 15 minutes with the tuned defaults (see ADR-094).

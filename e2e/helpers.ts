@@ -199,6 +199,7 @@ export async function toPlaying(page: Page, opts: { minigames?: string[] } = {})
 
 interface Actions {
   devAdvanceClock(seconds: number): Promise<{ ok: boolean }>;
+  devAutoComplete(taskId: string): Promise<{ ok: boolean }>;
   devSetMinigames(types: string[]): Promise<{ ok: boolean }>;
   simTeleport(to: { lat: number; lng: number }): Promise<{ ok: boolean }>;
   devForceCoop(
@@ -240,6 +241,27 @@ export async function advanceClock(page: Page, seconds: number) {
     seconds,
   );
   expect(res.ok).toBe(true);
+}
+
+/**
+ * Test hook: finish the player's first task fast. The card is walked to its pin and opened through the real UI
+ * (`reachPin` + `startTask`); the test-mode shortcut then solves it, as the bots do.
+ */
+export async function finishFirstTask(page: Page, shot = 'test-results/phase12') {
+  await reachPin(page, shot);
+  const taskId = await page.evaluate(() => {
+    const hook = (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions;
+    return (hook.cardsOf()[0] as { id: string }).id;
+  });
+  await startTask(page);
+  await expect(page.getByTestId('task-player')).toBeVisible();
+  const res = await page.evaluate(
+    (id) =>
+      (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devAutoComplete(id),
+    taskId,
+  );
+  expect(res.ok).toBe(true);
+  await expect(page.getByTestId('task-player')).toHaveCount(0, { timeout: 8000 });
 }
 
 /**
