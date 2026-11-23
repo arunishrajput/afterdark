@@ -81,11 +81,11 @@ interface MinigameDef<P, S, A, Act = never, F = never> {
 8. **Cooldown recovery** for imposters: see RULES §7.5.
 
 ## 6. Interruptions
-Implemented in Phase 5 (ADR-061): leaving the pin (> `reachRadiusM + taskAbandonExtraM`), a stale fix, zone lock and a disconnect (a `task.reset` event with the reason); weak GPS keeps an open minigame but blocks reveals and opening (E5); the host pause rejects every task command. Task Stop and meetings arrive with Phases 8–9.
+Implemented in Phase 5 (ADR-061): leaving the pin (> `reachRadiusM + taskAbandonExtraM`), a stale fix, zone lock and a disconnect (a `task.reset` event with the reason); weak GPS keeps an open minigame but blocks reveals and opening (E5); the host pause rejects every task command. Task Stop (Phase 9) and meetings (Phase 8) reset and lock as the table says.
 
 | Event | Effect on a minigame in progress | Effect on reveals | Effect on held keys |
 |---|---|---|---|
-| Task Stop | Reset; can't open or submit for 30 s | Kept | Kept |
+| Task Stop | Reset (`task.reset` reason `sabotage`); can't open, play or submit for `taskStopLockS` | Kept | Kept |
 | Meeting called | Reset; task actions blocked until the meeting ends | Kept | Kept |
 | Host pause | Frozen (no input accepted) | Kept | Kept |
 | Player leaves the pin (>25 m) | Reset | Kept | Kept |
@@ -93,6 +93,8 @@ Implemented in Phase 5 (ADR-061): leaving the pin (> `reachRadiusM + taskAbandon
 | Disconnect, then reconnect | Reset | Kept | Kept |
 
 ## 7. Fake tasks (Phantom)
+**Phase 9 notes (ADR-078):** a fake's id is made when it is planted (same 16-symbol format as any task id) and kept when a slot takes it, so the Phantom's `fakes[].id` is the card's id. The server keeps the planter on the task (`fakeOwnerId`, never projected) so the Phantom's count falls when the task is completed, rerolled, reported or its holder is ejected. Distance rules: at least `fakeTaskMinPointDistanceM` (15 m, the reach radius) from every pool point and `fakeTaskMinDistanceM` (30 m) from any other fake.
+
 - **Created by** `ability:fakeTask {lat, lng}`. The server validates it (inside the boundary, outside no-go zones, at least 30 m from other points and fakes) and works out `sectionOf`.
 - **Delivered** by queue to the next crew slot that refills (§2), with a random solo minigame type other than `keyfetch`.
 - **Played** exactly like a real task. On a correct submit, the result is `fooled`: the client shows the full-screen "You got fooled by a fake task!" overlay, nobody earns points, and the slot refills.

@@ -11,7 +11,7 @@ Claude can't walk around outside. So most of the game must be provable with **un
 | `pnpm lint` | ESLint (flat config) + Prettier check |
 | `pnpm verify` | lint + typecheck + test + build. **Must be green before every commit that ends a phase.** |
 | `pnpm e2e` | Playwright against the dev or preview servers (Chromium) |
-| `pnpm bots -- --code ABC123 --count 7 [--imposter-behaviour chase] [--meetings random]` | Bot players (Phase 4+) |
+| `pnpm bots -- --code ABC123 --count 7 [--imposter-behaviour chase|sabotage] [--meetings random]` | Bot players (Phase 4+) |
 | `pnpm tunnel` | cloudflared quick tunnel to the dev client, for real-phone HTTPS tests |
 
 ## 2. Test layers
@@ -67,6 +67,7 @@ Two ways to get bots (ADR-056), both driven by the same shared `BotWalker`:
   - (Phase 8) in a meeting they walk to the Base, skip the discussion and vote at random among the active players (Skip with `botVoteSkipPercent`; an imposter bot never votes for an ally). `--meetings random` (or `dev:addBots {meetings:'random'}`) also makes each bot call one meeting at a random game time between `botMeetingMinS` and `botMeetingMaxS`; without it bots only join the meetings humans call
 - **Imposter bots:**
   - `--imposter-behaviour chase` (Phase 7, ADR-069): imposter bots walk to the nearest crew-looking dot on their radar, start Infect when within `infectionRadiusM − 3 m`, keep following during the channel, then walk 20 m away so the incubation can start. Set the lobby's visibility to **Everyone** so they see far. In-process bots (`dev:addBots {imposterBehaviour:'chase'}`) do the same from the room state
+  - `--imposter-behaviour sabotage` (Phase 9, ADR-080): chase as above, and also use every class ability the moment it is ready: Task Stop (when no lock runs) and Fake Task (a random spot within `botFakeScatterM` of the Base; the server refuses an invalid one and the bot tries another next step). Pair it with `imposterAbilityMode: 'all'` so every imposter bot has both
   - `wander` (default): they walk like everyone else and never infect
 - **Balance script** (Phase 11): `pnpm bots:simulate --games 50 --players 8` runs headless games at accelerated game time (injected clock) and prints the win rate, average length and tasks per player.
 

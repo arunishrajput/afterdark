@@ -100,6 +100,12 @@ Cooldown `taskStopCooldownS` (120 s). When activated:
 
 It cannot be activated while a lock is already active, during a meeting, or while the Saboteur is out of bounds. Stage 1 and 2 reveals and key pickups already completed are kept.
 
+**Clarifications from building it (Phase 9, ADR-078 to ADR-082):**
+- The lock is a game-time deadline (`taskLock`), so a meeting or a host pause freezes it (E23) and it needs no code of its own. `task:open`, `task:action` and `task:submit` answer `TASKS_LOCKED` while it runs; `task:cancel`, reroll and report still work. The Saboteur's own screen jams too, and the event is public and anonymous.
+- Every ability starts on `abilityInitialCooldownS`, recharges on game time, does not recharge while its imposter is out of bounds (the ready time moves back by the time spent out, as for Infect), and after a meeting waits at least `postMeetingGraceS` (the cooldown is raised to the grace deadline). A use that the server refuses starts no cooldown.
+- In `classes` mode a Camouflage-class imposter has Infect only until Camouflage exists (Phase 10); in `all` mode they have Task Stop and Fake Task.
+- An ejected Phantom's queued fakes leave with them; a fake already in a crew slot stays and is played normally.
+
 ### 7.3 Phantom: Fake Task
 Cooldown `fakeTaskCooldownS` (120 s).
 - The Phantom pins a point inside the boundary, outside no-go zones, at least `fakeTaskMinPointDistanceM` (15 m) from every task point, and at least `fakeTaskMinDistanceM` (30 m) from other fakes (ADR-078).

@@ -52,15 +52,15 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `meeting:call` | `{}` | — | active player, `playing`. Errors: `WRONG_PHASE`, `NOT_ALLOWED` (spectator, meetings off, allowance used), `MEETING_ACTIVE`, `PAUSED`, `COOLDOWN` (start grace or the post-meeting cooldown), `STALE` | 8 |
 | `meeting:skipDiscussion` | `{}` | — | active player, during Discuss (idempotent). `WRONG_PHASE` otherwise, `NOT_ALLOWED` for a spectator | 8 |
 | `meeting:vote` | `{target: playerId \| 'skip'}` | — | active player, during Vote, once. `NOT_ALLOWED` (locked, or a spectator), `NOT_FOUND` (not an active player), `WRONG_PHASE` | 8 |
-| `ability:taskStop` | `{}` | `{lockEndsAt}` | Saboteur | 9 |
-| `ability:fakeTask` | `{lat, lng}` | `{fakeId}` | Phantom | 9 |
+| `ability:taskStop` | `{}` | `{lockEndsAt}` (server epoch ms) | active imposter holding Task Stop (Saboteur, or any in `all` mode), `playing`. Errors: `WRONG_PHASE`, `NOT_ALLOWED` (not an imposter, no such ability, or a lock is already running: E12), `MEETING_ACTIVE`, `PAUSED`, `WEAK_GPS` / `STALE`, `OUT_OF_BOUNDS`, `COOLDOWN` (the initial cooldown, the recharge, or the post-meeting grace). A refusal costs no cooldown | 9 |
+| `ability:fakeTask` | `{lat, lng}` | `{fakeId}` (the id the fake carries as a task) | active imposter holding Fake Task (Phantom, or any in `all` mode), `playing`. The same errors as Task Stop, plus `OUT_OF_BOUNDS` (outside the area or in a no-go zone) and `NOT_ALLOWED` (already `fakeTaskMaxActive` fakes out: E14; too close to a task point or another fake: E13; ADR-078). A refusal costs no cooldown | 9 |
 | `ability:camouflage` | `{}` | `{endsAt}` | Camouflage | 10 |
 | `coop:start` | `{taskId}` | — | at pin; opens a waiting session | 10 |
 | `coop:join` | `{taskId}` | `{puzzle}` | assigned partner, or a camouflaged imposter at a waiting session | 10 |
 | `coop:submit` | `{taskId, answer}` | `{result}` | | 10 |
 | `lobby:playAgain` | `{}` | — | host, ended | 12 |
 | `dev:teleport` | `{lat, lng}` | — | **testMode only**. Stores a fix with `teleportAccuracyM`, bypassing the speed check. Used by the simulator's long-press and by bots | 2 |
-| `dev:addBots` | `{count: 1..11, imposterBehaviour?: 'wander' \| 'chase'}` | — | **testMode only**, host, lobby phase. `imposterBehaviour` applies to every imposter bot in the room (default `wander`: they walk and never infect; `chase`: they hunt, see ADR-069). Errors: `NOT_ALLOWED` (test mode off), `NOT_HOST`, `WRONG_PHASE`, `LOBBY_FULL` (it would pass `maxPlayers`; nothing is added). In-process bots named `bot-N` join, send fixes and ready up on the room tick | 4 |
+| `dev:addBots` | `{count: 1..11, imposterBehaviour?: 'wander' \| 'chase' \| 'sabotage'}` | — | **testMode only**, host, lobby phase. `imposterBehaviour` applies to every imposter bot in the room (default `wander`: they walk and never infect; `chase`: they hunt, see ADR-069). Errors: `NOT_ALLOWED` (test mode off), `NOT_HOST`, `WRONG_PHASE`, `LOBBY_FULL` (it would pass `maxPlayers`; nothing is added). In-process bots named `bot-N` join, send fixes and ready up on the room tick | 4 |
 | `dev:advanceClock` | `{seconds: 1..600}` | — | **testMode only**, host, `playing`. Moves game time forward, so every game-time deadline (cooldowns, channels, incubation, the match end) gets closer by that much. `PAUSED` while the clock is stopped (ADR-070) | 7 |
 | `dev:autoComplete` | `{taskId}` | — | **testMode only**; the task must be open. Finishes it as if solved | 5 |
 | `dev:setMinigames` | `{types: SoloMinigameType[]}` (1–7) | — | **testMode only**, host, lobby phase. Limits which minigames new tasks can be; types with no game yet are dropped (`INVALID_PAYLOAD` if none is left) | 5 |
@@ -77,6 +77,8 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `server:shutdown` | `{reason: 'restart'}`; sent to every connected client on SIGTERM (a deploy), `shutdownNoticeMs` before the server closes. Clients show a toast and let Socket.IO reconnect; the game state lives in memory, so a restart ends running lobbies | once (Phase 6) | 6 |
 
 **Imposter block (Phase 7).** `me.imposter` now also carries `infect: {readyAt, channel?: {endsAt, inRange}}` (`readyAt` is a constant server-epoch deadline: in the past when Infect is ready; it moves only when the imposter is out of bounds, because the cooldown stops, RULES §9.3), `compromisedIds` (every exposed **and** infected player, whichever imposter caused it) and `exposures: {playerId, incubationEndsAt?}[]` (the exposed subset; `incubationEndsAt` is absent until the exposing imposter has been away for `incubationDepartS`). A `channel` exists only in the view of the imposter who runs it. `abilities`, `fakes` and `camouflage` arrive with Phases 9–10. A crew view, whatever the player's infection status, has none of these keys and is byte-identical for healthy, exposed and infected players apart from the public `game.compromised`.
+
+**Abilities block (Phase 9).** `me.imposter.abilities` lists the class abilities this build has for the imposter's classes (Task Stop for a Saboteur, Fake Task for a Phantom, both in `all` mode; a Camouflage-class imposter has none until Phase 10). `readyAt` is a game-time deadline as a constant server-epoch value (in the past when ready; it moves only while the imposter is out of bounds or when a meeting adds the grace). `me.imposter.fakes` is the Phantom's own list: `{id, lat, lng, assigned}`, where `assigned` flips from `false` (queued) to `true` when a crew slot takes it; it is `[]` for any imposter without Fake Task and the key does not exist for anyone else. Each ally entry carries that ally's `abilities` (cooldowns are imposter-visible, ROLES.md). `game.taskLock?: {until}` is **public**: present while a Task Stop lock runs, identical for every viewer, and gone from the first view after it ends. A fake's task card has exactly the keys of a real one, its id has the same format, and its `task:open` ack has the same shape: only the `task:submit` result (`fooled`, 0 points) differs.
 
 **Radar visibility (Phase 3, ADR-047):** `playerVisibility` decides who appears in a viewer's `radar` frame: `nearby` (within `nearbyRadiusM` of the viewer's own fix), `regions` (no dots) or `all`. Dot flags are `oob` (boundary or no-go zone), `stale`, and, only for an active imposter viewing another imposter, `ally`; `exposed` and `infected` (Phase 7) mark exposed and infected crew, again only for an active imposter viewer.
 
@@ -105,8 +107,8 @@ interface PlayerView {
     role?: 'crew' | 'imposter'; // after reveal
     imposter?: {                // ONLY when role === 'imposter' and still active
       classes: ImposterClass[];
-      allies: { playerId: string; username: string; tag: string; classes: ImposterClass[] }[];
-      abilities: AbilityState[];   // {id, readyAt, activeUntil?, usesLeft?}
+      allies: { playerId: string; username: string; tag: string; classes: ImposterClass[]; abilities: AbilityState[] }[];
+      abilities: AbilityState[];   // {id: 'taskStop'|'fakeTask'|'camouflage', readyAt, activeUntil?}; readyAt is a constant server-epoch deadline
       infect: { readyAt: number; channel?: { endsAt: number; inRange: boolean } };
       compromisedIds: string[];    // exposed + infected + wrongly ejected
       exposures: { playerId: string; incubationEndsAt?: number }[];
@@ -145,7 +147,9 @@ The type and points arrive only in the `task:open` ack.
 ### `GameEvent` (examples)
 Phase 1–3 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}`, `{type:'lobby.configChanged'}` and `{type:'lobby.mapChanged'}` (the last two: everyone was un-readied; `mapChanged` now covers the boundary, regions, points, no-go zones and the Base). All go to every connected player.
 
-Phase 5 events (all private to the player concerned): `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.reset {reason: 'range'|'gps'|'zone'|'connection'}` (an open minigame was dropped) and `task.removed {reason:'unsafe'}` (a task was swapped because its point was reported). `task.fooled` and `task.expired` arrive with Phases 9–10 (a fake's `fooled` already travels in the submit ack).
+Phase 5 events (all private to the player concerned): `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.reset {reason: 'range'|'gps'|'zone'|'connection'|'meeting'|'sabotage'}` (an open minigame was dropped) and `task.removed {reason:'unsafe'}` (a task was swapped because its point was reported). `task.fooled` and `task.expired` arrive with Phases 9–10 (a fake's `fooled` already travels in the submit ack).
+
+Phase 9 events: `sabotage.started {until}` (**public**, server epoch ms; every phone shows SYSTEMS JAMMED; it never says who), and `task.reset` gains `reason: 'sabotage'` (private to every crew member whose minigame was open). There is no event for a fake: it appears as an ordinary new card.
 
 Phase 7 events: `game.compromised {count}` (**public**: a crew member just became infected; the count only, never who), `infect.completed` (private to the imposter whose channel finished) and `infect.failed {reason: 'range'|'target'|'meeting'}` (private to the imposter, no cooldown: `range` = a gap beyond `infectionGapToleranceS`, `target` = the target stopped being eligible, E6/E7; `meeting` = a meeting was called). **The target is never sent anything**: no event, no view change, no vibration (RULES §7.1.6).
 
