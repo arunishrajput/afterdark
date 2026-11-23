@@ -51,7 +51,7 @@
     - host: kick buttons and a generic settings drawer (play time, target, imposter count, meetings per player) using the config schema
     - Leave button
   - Neutral theme. Make it mobile-first.
-- [ ] **01.11 Integration test.** 8 `socket.io-client` clients against the in-process server: create, join ×7, all ready, countdown fires; one disconnects and resumes and keeps its identity; the host leaves and host status moves; a duplicate name is rejected; a 13th join gets `LOBBY_FULL`.
+- [x] **01.11 Integration test.** 8 `socket.io-client` clients against the in-process server: create, join ×7, all ready, countdown fires; one disconnects and resumes and keeps its identity; the host leaves and host status moves; a duplicate name is rejected; a 13th join gets `LOBBY_FULL`.
 - [ ] **01.12 E2E.** Playwright with 3 browser contexts: create, join by code, ready all, see the countdown. Then reload one context and confirm it is still in the lobby.
 - [ ] **01.13 Wrap up.** Update the docs (PROTOCOL if events changed, PROGRESS). Commit, tag, push.
 
