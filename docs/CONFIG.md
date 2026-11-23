@@ -45,6 +45,9 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `maxBoundaryAreaM2` | 3000000 | — | 🔒 | 3 km². |
 | `regionCount` | `auto` | auto, 2–6 | ✅ | auto by boundary area: under 40k m² → 2, under 150k → 3, under 400k → 4, under 1M → 5, otherwise 6. |
 | `regionCountAutoMaxAreaM2` | `[40000, 150000, 400000, 1000000]` | — | 🔒 | The `auto` rule above, as data: region count = 2 + number of thresholds the area meets or exceeds. |
+| `regionSampleCount` | 400 | — | 🔒 | Random points sampled in the playable area to run k-means on when splitting it into regions. |
+| `regionKmeansIterations` | 20 | — | 🔒 | k-means iterations for the region split. |
+| `minRegionAreaRatio` | 0.1 | — | 🔒 | A region smaller than this fraction of the average region is dropped, and the split re-runs with one region fewer. |
 | `sectionCentreRatio` | 0.35 | — | 🔒 | The Centre section is the inner 35% of the region's radius. |
 | `minSectionAreaM2` | 400 | — | 🔒 | Smaller sections get no tasks. |
 | `taskPointsPerSection` | 3 | — | 🔒 | Target number of auto-generated candidate points per section. |

@@ -7,7 +7,7 @@ import { type LatLng, toPosition } from './types';
 const M_PER_KM = 1000;
 const FULL_TURN = 360;
 /** Mean metres per degree of latitude. */
-const M_PER_DEG_LAT = 111_320;
+export const M_PER_DEG_LAT = 111_320;
 
 /** Great-circle (haversine) distance in metres. */
 export function distanceM(a: LatLng, b: LatLng): number {

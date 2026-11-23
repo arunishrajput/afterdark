@@ -42,6 +42,9 @@ export const DEFAULT_CONFIG = {
   regionCount: 'auto',
   /** auto: area < 40k m² → 2, < 150k → 3, < 400k → 4, < 1M → 5, otherwise 6. */
   regionCountAutoMaxAreaM2: [40_000, 150_000, 400_000, 1_000_000],
+  regionSampleCount: 400,
+  regionKmeansIterations: 20,
+  minRegionAreaRatio: 0.1,
   sectionCentreRatio: 0.35,
   minSectionAreaM2: 400,
   taskPointsPerSection: 3,

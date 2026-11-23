@@ -19,6 +19,19 @@ export {
 export type { BoundaryInput, BoundaryRejection, BoundaryResult } from './geo/boundary';
 export { circleToRing, pointInRing, polygonAreaM2, validateBoundary } from './geo/boundary';
 export { bearingDeg, distanceM, offsetByMeters } from './geo/distance';
+export type { Plane } from './geo/plane';
+export {
+  differenceAreas,
+  intersectAreas,
+  mapArea,
+  planarArea,
+  planarCentroid,
+  planeAt,
+  unionAll,
+  unionAreas,
+} from './geo/plane';
+export type { RegionConfig, RegionShape } from './geo/regions';
+export { MIN_REGIONS, partitionRegions, playableArea, resolveRegionCount } from './geo/regions';
 export type { BBox, BestCandidateOptions } from './geo/sampling';
 export { areaBBox, areaContains, sampleBestCandidate, sampleUniform } from './geo/sampling';
 export type { LatLng, MultiPolygonCoords, PolygonCoords, Position, Ring } from './geo/types';
