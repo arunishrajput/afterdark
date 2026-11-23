@@ -37,7 +37,11 @@ export function Lobby({ view }: { view: PlayerView }) {
 
       <CodeCard code={lobby.code} />
       <Roster players={lobby.players} meId={me.id} amHost={me.isHost} />
-      <Checklist players={lobby.players} config={lobby.config} />
+      <Checklist
+        players={lobby.players}
+        config={lobby.config}
+        boundarySet={lobby.map.boundary !== undefined}
+      />
 
       <section
         aria-labelledby="settings-title"

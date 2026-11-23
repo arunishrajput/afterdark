@@ -101,6 +101,7 @@ export function startConnection(): void {
   socket.io.on('reconnect_attempt', () => setStatus('connecting'));
 
   socket.on('view', (view) => useGame.getState().setView(view));
+  socket.on('radar', (radar) => useGame.getState().setRadar(radar));
   socket.on('event', (event) => {
     const text = toastFor(event);
     if (text) useGame.getState().pushToast(text);

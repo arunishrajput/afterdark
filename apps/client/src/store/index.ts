@@ -1,4 +1,4 @@
-import type { GameEvent, PlayerView } from '@afterdark/shared';
+import type { GameEvent, PlayerView, RadarPayload } from '@afterdark/shared';
 import { create } from 'zustand';
 
 import type { ClockSample } from '../net/clock';
@@ -32,11 +32,14 @@ export interface Toast {
 interface GameState {
   /** Latest server snapshot for this player; undefined when not in a lobby. */
   view: PlayerView | undefined;
+  /** Latest anonymous radar frame (a separate stream from the view). */
+  radar: RadarPayload | undefined;
   /** True while a saved session is being resumed after (re)connecting. */
   resuming: boolean;
   notice: Notice | undefined;
   toasts: Toast[];
   setView: (view: PlayerView) => void;
+  setRadar: (radar: RadarPayload) => void;
   clearView: () => void;
   setResuming: (resuming: boolean) => void;
   setNotice: (notice: Notice | undefined) => void;
@@ -48,6 +51,7 @@ let nextToastId = 1;
 
 export const useGame = create<GameState>()((set) => ({
   view: undefined,
+  radar: undefined,
   resuming: false,
   notice: undefined,
   toasts: [],
@@ -57,7 +61,8 @@ export const useGame = create<GameState>()((set) => ({
       if (s.view && s.view.me.id === view.me.id && view.v <= s.view.v) return s;
       return { view };
     }),
-  clearView: () => set({ view: undefined }),
+  setRadar: (radar) => set({ radar }),
+  clearView: () => set({ view: undefined, radar: undefined }),
   setResuming: (resuming) => set({ resuming }),
   setNotice: (notice) => set({ notice }),
   pushToast: (text) => set((s) => ({ toasts: [...s.toasts, { id: nextToastId++, text }] })),
@@ -71,6 +76,8 @@ export function toastFor(event: GameEvent): string | undefined {
       return 'Countdown cancelled';
     case 'lobby.configChanged':
       return 'Settings changed. Everyone is un-readied.';
+    case 'lobby.mapChanged':
+      return 'Map changed. Everyone is un-readied.';
     case 'lobby.countdown':
       return undefined; // the countdown overlay shows it
   }

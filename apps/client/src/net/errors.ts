@@ -12,6 +12,8 @@ const MESSAGES: Partial<Record<ClientErrorCode, string>> = {
   NOT_HOST: 'Only the host can do that.',
   NOT_ALLOWED: 'That isn’t allowed right now.',
   WRONG_PHASE: 'That isn’t possible right now.',
+  WEAK_GPS: 'GPS is too weak. Move into the open and wait for a better fix.',
+  STALE: 'Your location is out of date. Check your GPS and try again.',
   RATE_LIMITED: 'Slow down a little and try again.',
   KICKED: 'You were removed from that lobby.',
   TIMEOUT: 'No answer from the server. Check your connection.',

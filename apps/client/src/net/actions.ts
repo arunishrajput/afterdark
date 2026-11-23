@@ -1,5 +1,5 @@
 /** Player intents. The server decides; the UI waits for the next view. */
-import type { GameConfigEditablePatch } from '@afterdark/shared';
+import type { BoundaryInput, GameConfigEditablePatch, LatLng } from '@afterdark/shared';
 
 import { useGame } from '../store';
 import { clearSession, saveSession } from './persist';
@@ -31,3 +31,8 @@ export const updateConfig = (patch: GameConfigEditablePatch) =>
   request('lobby:updateConfig', { patch });
 
 export const kickPlayer = (playerId: string) => request('lobby:kick', { playerId });
+
+export const setBoundary = (boundary: BoundaryInput) => request('lobby:setBoundary', { boundary });
+
+/** Test mode only: place yourself exactly (the server refuses it otherwise). */
+export const devTeleport = (to: LatLng) => request('dev:teleport', to);

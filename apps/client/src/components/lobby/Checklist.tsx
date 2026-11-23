@@ -10,13 +10,18 @@ import {
 export function Checklist({
   players,
   config,
+  boundarySet,
 }: {
   players: PublicPlayer[];
   config: GameConfigPublic;
+  boundarySet: boolean;
 }) {
   const readyCount = players.filter((p) => p.ready).length;
   const blockers = new Set<StartBlocker>(
-    startBlockers({ ...DEFAULT_CONFIG, ...config }, { playerCount: players.length, readyCount }),
+    startBlockers(
+      { ...DEFAULT_CONFIG, ...config },
+      { playerCount: players.length, readyCount, boundarySet },
+    ),
   );
   const items: { key: StartBlocker; label: string }[] = [
     {
@@ -24,6 +29,7 @@ export function Checklist({
       label: `At least ${DEFAULT_CONFIG.minPlayers} players (${Math.min(players.length, DEFAULT_CONFIG.minPlayers)}/${DEFAULT_CONFIG.minPlayers})`,
     },
     { key: 'tooManyImposters', label: 'Imposter count leaves enough crew' },
+    { key: 'boundaryMissing', label: 'Playable area drawn on the map' },
     { key: 'notAllReady', label: `Everyone ready (${readyCount}/${players.length})` },
   ];
   return (
