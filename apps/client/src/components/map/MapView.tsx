@@ -5,7 +5,7 @@
  */
 import 'leaflet/dist/leaflet.css';
 
-import type { AnonDot, BoundaryInput, LatLng, Position } from '@afterdark/shared';
+import type { AnonDot, BoundaryInput, FakeView, LatLng, Position } from '@afterdark/shared';
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -19,6 +19,7 @@ import {
 } from 'react-leaflet';
 
 import { BoundaryEditor } from './BoundaryEditor';
+import { CenterReporter, FakeMarkers } from './FakeLayers';
 import { ringToLatLngs, toLeaflet, WORLD_RING } from './geo';
 import { dotIcon, selfIcon, spawnIcon } from './icons';
 import { NoGoEditor } from './NoGoEditor';
@@ -63,6 +64,10 @@ export interface MapViewProps {
   spawn?: LatLng | undefined;
   /** The player's own task cards: the section to head for and the revealed pins. */
   tasks?: TaskOverlay | undefined;
+  /** A Phantom's own fake tasks (Phase 9). */
+  fakes?: readonly FakeView[] | undefined;
+  /** A Phantom placing a fake: a crosshair at the centre, tinted by `valid`, and the centre reported on every move. */
+  placing?: { onCenter: (at: LatLng) => void; valid: boolean } | undefined;
 }
 
 /** Forwards taps on the bare map to the parent. */
@@ -259,6 +264,8 @@ export default function MapView({
   onNoGoZone,
   spawn,
   tasks,
+  fakes,
+  placing,
 }: MapViewProps) {
   const [fitSignal, setFitSignal] = useState(0);
   return (
@@ -330,6 +337,8 @@ export default function MapView({
           />
         )}
         {tasks && <TaskLayers overlay={tasks} />}
+        {fakes && <FakeMarkers fakes={fakes} />}
+        {placing && <CenterReporter onCenter={placing.onCenter} />}
         {self && <SelfLayer self={self} onSimMove={onSimMove} />}
         <MapEffects
           ring={ring}
@@ -339,6 +348,13 @@ export default function MapView({
           onSimMove={onSimMove}
         />
       </MapContainer>
+      {placing && (
+        <div
+          data-testid="placer-cross"
+          data-valid={placing.valid}
+          className={`placer-cross ${placing.valid ? 'placer-cross--ok' : 'placer-cross--bad'}`}
+        />
+      )}
       {ring && (
         <button
           type="button"

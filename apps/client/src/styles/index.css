@@ -422,3 +422,102 @@ textarea {
     animation: none;
   }
 }
+
+/* Phantom: a fake task on its own map (Phase 9). Dashed while queued, solid once a crew slot holds it. */
+.fake-pin {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: rgb(120 124 140 / 0.35);
+  color: #fff;
+  border: 3px dashed #fff;
+  font-size: 18px;
+}
+.fake-pin--assigned {
+  border-style: solid;
+  background: rgb(120 124 140 / 0.85);
+}
+
+/* The crosshair at the map centre while placing a fake task; tinted by the client-side check, with a label as well as a colour. */
+.placer-cross {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 900;
+  width: 56px;
+  height: 56px;
+  translate: -50% -50%;
+  pointer-events: none;
+  border: 3px solid var(--placer, #fff);
+  border-radius: 9999px;
+  box-shadow: 0 0 18px var(--placer, #fff);
+}
+.placer-cross::before,
+.placer-cross::after {
+  content: '';
+  position: absolute;
+  background: var(--placer, #fff);
+}
+.placer-cross::before {
+  top: 50%;
+  left: -12px;
+  right: -12px;
+  height: 3px;
+  translate: 0 -50%;
+}
+.placer-cross::after {
+  left: 50%;
+  top: -12px;
+  bottom: -12px;
+  width: 3px;
+  translate: -50% 0;
+}
+.placer-cross--ok {
+  --placer: #34d399;
+}
+.placer-cross--bad {
+  --placer: #ff5a5a;
+}
+
+/* SYSTEMS JAMMED: a short glitch every second (still for reduced motion). */
+.jam-glitch {
+  animation: jam-glitch 1s steps(2, end) infinite;
+}
+@keyframes jam-glitch {
+  0%,
+  86%,
+  100% {
+    transform: none;
+    text-shadow: none;
+  }
+  90% {
+    transform: translateX(-3px);
+    text-shadow: 3px 0 var(--danger);
+  }
+  95% {
+    transform: translateX(3px);
+    text-shadow: -3px 0 var(--accent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jam-glitch {
+    animation: none;
+  }
+}
+
+/* The fooled overlay's ghost drifts a little. */
+.ghost-float {
+  animation: ghost-float 2.4s ease-in-out infinite;
+}
+@keyframes ghost-float {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ghost-float {
+    animation: none;
+  }
+}

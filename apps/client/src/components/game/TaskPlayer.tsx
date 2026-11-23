@@ -17,6 +17,7 @@ import { cancelTask, openTask, submitTask, taskAction } from '../../net/actions'
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { Button } from '../ui/Button';
+import { Ghost } from './Ghost';
 import { cardLabel } from './taskGeo';
 
 // Each game loads only when a task of that type opens (ARCHITECTURE §11).
@@ -25,6 +26,8 @@ const LockBreaker = lazy(() => import('../minigames/LockBreaker'));
 
 const MS_PER_S = 1000;
 const RESULT_SHOWN_MS = 1400;
+/** The fooled overlay can be dismissed after this long, so the joke is seen (UI_UX §3). */
+const FOOLED_DISMISS_MS = 2000;
 const LOCKOUT_TICK_MS = 250;
 
 const GAME_NAMES = { wires: 'Wire Connect', lock: 'Lock Breaker' } as const;
@@ -64,11 +67,17 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
     if (!live && step.kind !== 'done' && !busy) onClose();
   }, [live, step.kind, busy, onClose]);
 
+  // A completed task closes itself; the fooled overlay waits to be dismissed (after a short beat).
+  const fooled = step.kind === 'done' && step.result === 'fooled';
+  const [canDismiss, setCanDismiss] = useState(false);
   useEffect(() => {
     if (step.kind !== 'done') return;
-    const t = setTimeout(onClose, RESULT_SHOWN_MS);
+    const t = setTimeout(
+      fooled ? () => setCanDismiss(true) : onClose,
+      fooled ? FOOLED_DISMISS_MS : RESULT_SHOWN_MS,
+    );
     return () => clearTimeout(t);
-  }, [step.kind, onClose]);
+  }, [step.kind, fooled, onClose]);
 
   useEffect(() => {
     if (lockedUntil <= Date.now()) return;
@@ -217,7 +226,19 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
             className="flex flex-1 flex-col items-center justify-center gap-2 text-center"
           >
             {step.result === 'fooled' ? (
-              <p className="font-display text-3xl font-bold">You got fooled by a fake task!</p>
+              <div data-testid="fooled-overlay" className="flex flex-col items-center gap-4">
+                <Ghost className="h-40 w-36 text-muted" />
+                <p className="font-display text-3xl font-bold">You got fooled by a fake task!</p>
+                <p className="text-muted">It paid nothing. Someone out there is laughing.</p>
+                <Button
+                  data-testid="fooled-dismiss"
+                  variant="secondary"
+                  disabled={!canDismiss}
+                  onClick={onClose}
+                >
+                  {canDismiss ? 'Dismiss' : '…'}
+                </Button>
+              </div>
             ) : (
               <>
                 <p className="font-display text-4xl font-bold text-accent">+{step.points}</p>

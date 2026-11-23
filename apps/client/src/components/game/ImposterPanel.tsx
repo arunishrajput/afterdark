@@ -13,6 +13,7 @@ import { buzz } from '../../net/cues';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { Button } from '../ui/Button';
+import { AbilityBar } from './AbilityBar';
 import { formatClock } from './format';
 import { InfectedChip } from './InfectedList';
 import { type InfectState, infectStateOf, targetOnRadar } from './infectState';
@@ -35,7 +36,14 @@ const REASON: Record<Exclude<InfectState, 'channel' | 'ready' | 'cooldown'>, str
   gps: 'Waiting for GPS',
 };
 
-export function ImposterPanel({ view }: { view: PlayerView }) {
+export function ImposterPanel({
+  view,
+  onPlaceFake,
+}: {
+  view: PlayerView;
+  /** The Phantom tapped Fake Task: the screen switches to the placement mode. */
+  onPlaceFake: () => void;
+}) {
   const imposter = view.me.imposter;
   const dots = useGame((s) => s.radar?.dots ?? []);
   const pushToast = useGame((s) => s.pushToast);
@@ -84,57 +92,60 @@ export function ImposterPanel({ view }: { view: PlayerView }) {
     <section
       aria-label="Imposter abilities"
       data-testid="imposter-panel"
-      className="flex items-center gap-4 rounded-2xl border border-white/10 bg-surface px-4 py-3"
+      className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-surface px-4 py-3"
     >
-      <button
-        type="button"
-        data-testid="infect-button"
-        data-state={state}
-        disabled={state !== 'ready' && state !== 'channel'}
-        onClick={() => (state === 'channel' ? void cancelInfect() : void tap())}
-        aria-label={
-          state === 'channel'
-            ? 'Cancel infecting'
-            : state === 'ready'
-              ? 'Infect the nearest player'
-              : state === 'cooldown'
-                ? `Infect ready in ${formatClock(readyIn)}`
-                : `Infect unavailable: ${REASON[state]}`
-        }
-        className={`touch-manipulation rounded-full transition active:scale-95 disabled:opacity-60 ${
-          state === 'ready' ? 'infect-pulse' : ''
-        }`}
-      >
-        <ProgressRing fraction={ring} warn={state === 'channel' && channel?.inRange === false}>
-          <span className="font-mono text-sm font-bold tracking-wide">{label}</span>
-        </ProgressRing>
-      </button>
-      <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
-        <p data-testid="infect-hint" role="status" className="text-sm">
-          {state === 'channel' &&
-            (channel?.inRange ? (
-              <span>Stay close…</span>
-            ) : (
-              <span className="font-semibold text-danger">Too far! Get back next to them.</span>
-            ))}
-          {state === 'ready' && <span>Target in range. Tap to infect.</span>}
-          {state === 'cooldown' && <span className="text-muted">Recharging</span>}
-          {state !== 'channel' && state !== 'ready' && state !== 'cooldown' && (
-            <span className="text-muted">{REASON[state]}</span>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          data-testid="infect-button"
+          data-state={state}
+          disabled={state !== 'ready' && state !== 'channel'}
+          onClick={() => (state === 'channel' ? void cancelInfect() : void tap())}
+          aria-label={
+            state === 'channel'
+              ? 'Cancel infecting'
+              : state === 'ready'
+                ? 'Infect the nearest player'
+                : state === 'cooldown'
+                  ? `Infect ready in ${formatClock(readyIn)}`
+                  : `Infect unavailable: ${REASON[state]}`
+          }
+          className={`touch-manipulation rounded-full transition active:scale-95 disabled:opacity-60 ${
+            state === 'ready' ? 'infect-pulse' : ''
+          }`}
+        >
+          <ProgressRing fraction={ring} warn={state === 'channel' && channel?.inRange === false}>
+            <span className="font-mono text-sm font-bold tracking-wide">{label}</span>
+          </ProgressRing>
+        </button>
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+          <p data-testid="infect-hint" role="status" className="text-sm">
+            {state === 'channel' &&
+              (channel?.inRange ? (
+                <span>Stay close…</span>
+              ) : (
+                <span className="font-semibold text-danger">Too far! Get back next to them.</span>
+              ))}
+            {state === 'ready' && <span>Target in range. Tap to infect.</span>}
+            {state === 'cooldown' && <span className="text-muted">Recharging</span>}
+            {state !== 'channel' && state !== 'ready' && state !== 'cooldown' && (
+              <span className="text-muted">{REASON[state]}</span>
+            )}
+          </p>
+          {state === 'channel' && (
+            <Button
+              variant="ghost"
+              className="min-h-11 text-xs"
+              data-testid="infect-cancel"
+              onClick={() => void cancelInfect()}
+            >
+              Cancel (no cooldown)
+            </Button>
           )}
-        </p>
-        {state === 'channel' && (
-          <Button
-            variant="ghost"
-            className="min-h-11 text-xs"
-            data-testid="infect-cancel"
-            onClick={() => void cancelInfect()}
-          >
-            Cancel (no cooldown)
-          </Button>
-        )}
-        <InfectedChip view={view} />
+          <InfectedChip view={view} />
+        </div>
       </div>
+      <AbilityBar view={view} now={now} onPlaceFake={onPlaceFake} />
     </section>
   );
 }

@@ -15,7 +15,7 @@ const MESSAGES: Partial<Record<ClientErrorCode, string>> = {
   WEAK_GPS: 'GPS is too weak. Move into the open and wait for a better fix.',
   STALE: 'Your location is out of date. Check your GPS and try again.',
   OUT_OF_RANGE: 'Walk closer to the pin.',
-  TASKS_LOCKED: 'Return to the zone to use tasks.',
+  TASKS_LOCKED: 'Tasks are locked: you are out of the zone, or systems are jammed.',
   COOLDOWN: 'Not ready yet. Wait a moment.',
   PAUSED: 'The game is paused.',
   MEETING_ACTIVE: 'A meeting is in progress.',

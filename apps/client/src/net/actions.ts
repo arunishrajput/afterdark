@@ -114,6 +114,13 @@ export const castVote = (target: string) => request('meeting:vote', { target });
 
 // ── Phase 7: infection (imposters) ──────────────────────────────────────────
 
+// ── Phase 9: class abilities (imposters) ────────────────────────────────────
+
+/** Saboteur: reset every minigame in progress and lock all tasks for a while. Public: everyone sees SYSTEMS JAMMED. */
+export const taskStop = () => request('ability:taskStop', {});
+/** Phantom: pin a fake task at `at`. The server checks the spot; a refusal costs no cooldown. */
+export const placeFakeTask = (at: LatLng) => request('ability:fakeTask', at);
+
 /** Starts a channel on the nearest healthy crew member within range; the server picks the target. */
 export const startInfect = () => request('ability:infect', {});
 /** Stops a channel. Free: no cooldown. */

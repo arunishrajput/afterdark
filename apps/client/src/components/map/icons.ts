@@ -81,3 +81,13 @@ export function taskPinIcon(color: string, atPin: boolean): L.DivIcon {
     iconAnchor: [18, 18],
   });
 }
+
+/** A Phantom's own fake task: a ghost-grey pin, dashed while it waits in the queue, solid once a crew slot holds it. */
+export function fakePinIcon(assigned: boolean): L.DivIcon {
+  return L.divIcon({
+    className: 'task-pin-marker',
+    html: `<div class="fake-pin${assigned ? ' fake-pin--assigned' : ''}" aria-label="${assigned ? 'Your fake task, handed out' : 'Your fake task, waiting'}"><span>${assigned ? '👻' : '◌'}</span></div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+}

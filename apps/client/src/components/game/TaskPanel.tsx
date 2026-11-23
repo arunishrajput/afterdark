@@ -38,6 +38,8 @@ export function TaskPanel({
   const regions = view.lobby.map.regions;
   const pushToast = useGame((s) => s.pushToast);
   const rerollReadyAt = view.game?.rerollReadyAt;
+  // A Task Stop lock: nobody can open a task until it ends (RULES §7.2).
+  const jammed = view.game?.taskLock !== undefined;
   const now = useServerNow(CLOCK_REFRESH_MS, rerollReadyAt !== undefined);
   const rerollLeft = rerollReadyAt === undefined ? 0 : Math.max(0, rerollReadyAt - now);
   const menuCard = cards.find((c) => c.id === menuFor);
@@ -117,9 +119,10 @@ export function TaskPanel({
               <Button
                 data-testid="task-start"
                 className="min-h-11 px-4"
+                disabled={jammed}
                 onClick={() => onStart(card)}
               >
-                Start
+                {jammed ? 'Jammed' : 'Start'}
               </Button>
             )}
             <Button

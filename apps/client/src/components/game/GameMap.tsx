@@ -1,4 +1,4 @@
-import type { LatLng, PlayerView } from '@afterdark/shared';
+import type { FakeView, LatLng, PlayerView } from '@afterdark/shared';
 import { lazy, Suspense } from 'react';
 
 import { useSelfPosition } from '../../hooks/useSelfPosition';
@@ -20,6 +20,8 @@ export function GameMap({
   simulated,
   spawn,
   tasks,
+  fakes,
+  placing,
   resizeKey,
 }: {
   view: PlayerView;
@@ -28,6 +30,10 @@ export function GameMap({
   spawn?: LatLng | undefined;
   /** Play: the viewer's own task layers. */
   tasks?: TaskOverlay | undefined;
+  /** A Phantom's own fakes. */
+  fakes?: readonly FakeView[] | undefined;
+  /** A Phantom placing a fake task. */
+  placing?: { onCenter: (at: LatLng) => void; valid: boolean } | undefined;
   resizeKey?: string;
 }) {
   const radar = useGame((s) => s.radar);
@@ -55,6 +61,8 @@ export function GameMap({
         overlay={overlay}
         spawn={spawn}
         tasks={tasks}
+        fakes={fakes}
+        placing={placing}
         tool="none"
         onSimMove={simulated ? (to) => void simTeleport(to) : undefined}
         resizeKey={resizeKey}

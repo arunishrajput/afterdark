@@ -3,6 +3,7 @@ import type { PlayerView } from '@afterdark/shared';
 import { GameMap } from '../components/game/GameMap';
 import { GameMenu } from '../components/game/HostMenu';
 import { InfectionBoxes, MatchTimer, TeamScoreBar } from '../components/game/Hud';
+import { JamOverlay } from '../components/game/JamOverlay';
 import { useLocation } from '../store/location';
 
 /**
@@ -43,6 +44,7 @@ export function Spectator({ view }: { view: PlayerView }) {
       </section>
       <div className="relative isolate min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10">
         <GameMap view={view} simulated={lobby.testMode && simOn} tasks={undefined} />
+        {game?.taskLock && <JamOverlay until={game.taskLock.until} />}
       </div>
     </main>
   );

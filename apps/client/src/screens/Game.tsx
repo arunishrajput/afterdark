@@ -1,6 +1,8 @@
-import type { PlayerView, TaskCard } from '@afterdark/shared';
+import type { LatLng, PlayerView, TaskCard } from '@afterdark/shared';
 import { useState } from 'react';
 
+import { fakeSpotProblem } from '../components/game/abilityState';
+import { FakePlacerBar } from '../components/game/FakePlacerBar';
 import { GameMap } from '../components/game/GameMap';
 import { GameMenu } from '../components/game/HostMenu';
 import {
@@ -11,6 +13,7 @@ import {
   ZoneGlow,
 } from '../components/game/Hud';
 import { ImposterPanel } from '../components/game/ImposterPanel';
+import { JamOverlay } from '../components/game/JamOverlay';
 import { MeetingButton } from '../components/game/MeetingButton';
 import { TaskPanel } from '../components/game/TaskPanel';
 import { TaskPlayer } from '../components/game/TaskPlayer';
@@ -36,6 +39,10 @@ export function Game({ view }: { view: PlayerView }) {
   // completed, and the sheet still has the result to show.
   const [playing, setPlaying] = useState<TaskCard | undefined>();
   const [focus, setFocus] = useState<{ id: string; seq: number } | undefined>();
+  // The Phantom's placement mode: the map's centre is where the fake would go.
+  const [placing, setPlacing] = useState(false);
+  const [center, setCenter] = useState<LatLng | undefined>();
+  const lock = game?.taskLock;
 
   return (
     <main className="relative mx-auto flex h-dvh max-w-md flex-col gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -66,7 +73,17 @@ export function Game({ view }: { view: PlayerView }) {
               ? { cards, regions: lobby.map.regions, focusId: focus?.id, focusSeq: focus?.seq }
               : undefined
           }
+          fakes={imposter?.fakes}
+          placing={
+            placing
+              ? {
+                  onCenter: setCenter,
+                  valid: center !== undefined && fakeSpotProblem(view, center) === undefined,
+                }
+              : undefined
+          }
         />
+        {lock && <JamOverlay until={lock.until} />}
         {paused && (
           <div
             role="status"
@@ -86,7 +103,13 @@ export function Game({ view }: { view: PlayerView }) {
           onStart={(card: TaskCard) => setPlaying(card)}
         />
       )}
-      {me.role === 'imposter' && imposter && <ImposterPanel view={view} />}
+      {me.role === 'imposter' &&
+        imposter &&
+        (placing ? (
+          <FakePlacerBar view={view} center={center} onClose={() => setPlacing(false)} />
+        ) : (
+          <ImposterPanel view={view} onPlaceFake={() => setPlacing(true)} />
+        ))}
       {playing && <TaskPlayer card={playing} onClose={() => setPlaying(undefined)} />}
 
       <section
