@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 05, Task engine & first minigames** → [docs/phases/PHASE-05-tasks-core.md](docs/phases/PHASE-05-tasks-core.md)
+**◐ IN PROGRESS: Phase 05, Task engine & first minigames** (started 2026-11-23, resume at task 05.1) → [docs/phases/PHASE-05-tasks-core.md](docs/phases/PHASE-05-tasks-core.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
@@ -16,7 +16,7 @@
 | 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ✅ DONE | 2026-11-23 | `phase-02-done` |
 | 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ✅ DONE | 2026-11-23 | `phase-03-done` |
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ✅ DONE | 2026-11-23 | `phase-04-done` |
-| 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ▶ NEXT | | |
+| 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 06 | [Deploy & first field test](docs/phases/PHASE-06-deploy-field-test.md) | ☐ NOT STARTED | | |
 | 07 | [Infection system](docs/phases/PHASE-07-infection.md) | ☐ NOT STARTED | | |
 | 08 | [Meetings & voting](docs/phases/PHASE-08-meetings-voting.md) | ☐ NOT STARTED | | |
