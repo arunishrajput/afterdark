@@ -127,13 +127,15 @@ test('host draws, sees regions, renames one, deletes a point, places the Base; t
 
   // ⑤ Base: tap to move it.
   await host.getByTestId('step-base').click();
-  const flagBefore = await host
-    .locator('.base-flag')
-    .evaluate((el) => el.getBoundingClientRect().x);
+  // Compare x and y: a new Base can land straight above or below the old one.
+  const flagAt = () =>
+    host.locator('.base-flag').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return `${Math.round(r.x)},${Math.round(r.y)}`;
+    });
+  const flagBefore = await flagAt();
   await tapBareMap(host);
-  await expect
-    .poll(async () => host.locator('.base-flag').evaluate((el) => el.getBoundingClientRect().x))
-    .not.toBe(flagBefore);
+  await expect.poll(flagAt).not.toBe(flagBefore);
   await expect(guest.locator('.base-flag')).toHaveCount(1);
 
   // The checklist is green for everything the host controls; only readiness is left.
