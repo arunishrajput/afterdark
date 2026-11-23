@@ -1,4 +1,10 @@
-import { DEFAULT_CONFIG, type LatLng, offsetByMeters, toPosition } from '@afterdark/shared';
+import {
+  DEFAULT_CONFIG,
+  type GameConfig,
+  type LatLng,
+  offsetByMeters,
+  toPosition,
+} from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
 import { reduce } from '../reduce';
@@ -41,7 +47,7 @@ interface Fixture {
 }
 
 /** A 6-player game of wires tasks, the two imposters armed with every implemented ability and past the initial cooldown. */
-function ready(extra: Partial<typeof CFG> = {}): Fixture {
+function ready(extra: Partial<GameConfig> = {}): Fixture {
   const start = toPlaying(
     newLobby({ players: 6, config: { minigamesEnabled: ['wires'], ...extra } }),
   );
