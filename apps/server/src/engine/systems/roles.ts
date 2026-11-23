@@ -51,6 +51,7 @@ export function assignRoles(state: RoomState, now: number): void {
       const own = drawn[imposterNo++ % drawn.length];
       p.classes =
         config.imposterAbilityMode === 'all' || own === undefined ? [...IMPOSTER_CLASSES] : [own];
+      p.infect = { readyAtGameMs: config.abilityInitialCooldownS * MS_PER_S, completed: 0 };
     } else {
       p.role = 'crew';
     }
@@ -68,5 +69,6 @@ export function assignRoles(state: RoomState, now: number): void {
     pointUsedAtGameMs: {},
     fakeQueue: [],
     matchEndsAtGameMs: config.playTimeMin * MS_PER_MIN,
+    lastInfectGameMs: 0,
   };
 }

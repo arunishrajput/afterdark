@@ -2,6 +2,7 @@
 import type { KickReason } from '../types/domain';
 import type {
   GameEvent,
+  InfectAck,
   PlayerView,
   RadarPayload,
   TaskActionAck,
@@ -95,6 +96,8 @@ export interface ClientToServerEvents {
   'task:cancel': (payload: TaskRefPayload, ack: AckCallback) => void;
   'task:reroll': (payload: TaskRefPayload, ack: AckCallback) => void;
   'task:reportUnsafe': (payload: TaskReportUnsafePayload, ack: AckCallback) => void;
+  'ability:infect': (payload: GameCommandPayload, ack: AckCallback<InfectAck>) => void;
+  'ability:cancelInfect': (payload: GameCommandPayload, ack: AckCallback) => void;
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
   'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
   'dev:autoComplete': (payload: TaskRefPayload, ack: AckCallback) => void;

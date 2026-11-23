@@ -101,6 +101,36 @@ export interface QueuedFake {
   section: SectionId;
 }
 
+/** An Infect channel in progress (RULES §7.1.2). Deadlines are game ms. */
+export interface InfectChannel {
+  targetId: string;
+  /** Game ms when the channel completes, if both stay in range. */
+  endsAtGameMs: number;
+  /** Game ms when the current out-of-range gap began; absent while in range. */
+  gapSince?: number;
+  /** In range at the last evaluation (the imposter's ring shows it). */
+  inRange: boolean;
+}
+
+/** An imposter's Infect state (RULES §7.1). */
+export interface InfectState {
+  /** Game ms when Infect is ready again (pushed back while the imposter is out of bounds, RULES §9.3). */
+  readyAtGameMs: number;
+  channel?: InfectChannel;
+  /** Successful infections, for the results screen's top infector (SCORING). */
+  completed: number;
+}
+
+/** What a target carries between the end of a channel and becoming infected (RULES §7.1.3). Server-only. */
+export interface ExposureState {
+  /** The imposter whose channel exposed them: incubation starts when this imposter leaves. */
+  byId: string;
+  /** Game ms when the exposing imposter went out of range; absent while they are in range. */
+  awaySince?: number;
+  /** Game ms when incubation ends; absent until the imposter has been away for `incubationDepartS`. */
+  incubationEndsAtGameMs?: number;
+}
+
 export interface PlayerState {
   id: string;
   username: string;
@@ -127,10 +157,14 @@ export interface PlayerState {
   /** Game ms when this player may reroll again (RULES §6.5). */
   rerollReadyAtGameMs?: number;
   /**
-   * Infection status (Phase 7 fills it in). It lives in the state from Phase 4 so
-   * the leak tests can prove a crew view looks the same for any status.
+   * Infection status. Never projected into the player's own view or any crew view
+   * (RULES §7.1.6): only imposters learn it, through `projectImposter` and the radar.
    */
   infection?: 'exposed' | 'infected';
+  /** Present exactly while `infection === 'exposed'`. */
+  exposure?: ExposureState;
+  /** Imposters only, from the role reveal. */
+  infect?: InfectState;
   zone?: ZoneState;
 }
 
@@ -182,6 +216,8 @@ export interface GameState {
   fakeQueue: QueuedFake[];
   /** Game-time deadline of the match (`playTimeMin`). */
   matchEndsAtGameMs: number;
+  /** Game ms of the last infection update, to freeze cooldowns while an imposter is out of bounds. */
+  lastInfectGameMs: number;
 }
 
 export interface GameResult {

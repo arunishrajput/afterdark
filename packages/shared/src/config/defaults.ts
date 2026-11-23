@@ -129,6 +129,7 @@ export const DEFAULT_CONFIG = {
   infectionChannelS: 10,
   infectionGapToleranceS: 3,
   incubationS: 60,
+  incubationDepartS: 3,
   infectionCooldownS: 60,
   infectionWinPercent: 60,
 

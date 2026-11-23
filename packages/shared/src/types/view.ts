@@ -215,10 +215,30 @@ export interface ImposterAlly {
   classes: ImposterClass[];
 }
 
+/** The imposter's own Infect state (RULES §7.1). Times are server epoch ms. */
+export interface InfectView {
+  /** When Infect is ready again; in the past when it is ready now. */
+  readyAt: number;
+  /** Present while a channel runs. `inRange` is false during a tolerated gap. */
+  channel?: { endsAt: number; inRange: boolean };
+}
+
+/** A crew member who completed a channel and is incubating (imposter-only). */
+export interface ExposureView {
+  playerId: string;
+  /** Absent until the exposing imposter has left (RULES §7.1.3). */
+  incubationEndsAt?: number;
+}
+
 /** Imposter-only information. A crew view has no `imposter` key at all. */
 export interface ImposterView {
   classes: ImposterClass[];
   allies: ImposterAlly[];
+  infect: InfectView;
+  /** Everyone exposed or infected, whichever imposter caused it (ROLES.md). */
+  compromisedIds: string[];
+  /** The subset still incubating; the rest of `compromisedIds` are infected. */
+  exposures: ExposureView[];
 }
 
 export interface MeView {
@@ -296,4 +316,15 @@ export type GameEvent =
   /** Private: a minigame in progress was reset (the player left the pin, lost GPS, left the zone or reconnected). */
   | { type: 'task.reset'; reason: 'range' | 'gps' | 'zone' | 'connection' }
   /** Private: a task was replaced because its point was reported unsafe (by anyone). */
-  | { type: 'task.removed'; reason: 'unsafe' };
+  | { type: 'task.removed'; reason: 'unsafe' }
+  /** Public (Phase 7): a crew member just became compromised. Says nothing about who. */
+  | { type: 'game.compromised'; count: number }
+  /** Private to the imposter (Phase 7): their Infect channel finished. The target is never told. */
+  | { type: 'infect.completed' }
+  /** Private to the imposter: their channel failed (no cooldown). `range` is a gap beyond the tolerance, `target` means the target stopped being eligible (E6, E7), `meeting` is Phase 8. */
+  | { type: 'infect.failed'; reason: 'range' | 'target' | 'meeting' };
+
+/** The ack of `ability:infect`. */
+export interface InfectAck {
+  channelEndsAt: number;
+}

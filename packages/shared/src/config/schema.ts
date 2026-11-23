@@ -136,6 +136,7 @@ export const gameConfigSchema = z.strictObject({
   infectionChannelS: int(5, 30),
   infectionGapToleranceS: positive(),
   incubationS: int(0, 180),
+  incubationDepartS: positive(),
   infectionCooldownS: positiveInt(),
   infectionWinPercent: int(40, 100),
 

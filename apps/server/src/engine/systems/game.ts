@@ -7,6 +7,7 @@ import { startClock } from '../clock';
 import type { RoomState } from '../state';
 import type { Effect } from '../types';
 import { endGame } from './end';
+import { updateInfection } from './infection';
 import { activePlayers } from './players';
 import { assignRoles } from './roles';
 import { spawnPhaseDone, updateSpawnReach } from './spawn';
@@ -46,6 +47,7 @@ export function advance(state: RoomState, now: number, effects: Effect[]): void 
   }
   if (state.phase === 'playing') {
     updateZone(state, now, effects);
+    updateInfection(state, now, effects);
     updateTasks(state, now, effects);
   }
   checkVictory(state, now, effects);

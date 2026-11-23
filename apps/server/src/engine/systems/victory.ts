@@ -2,9 +2,8 @@
  * Win checks (RULES §12), called after every reducer run and every tick. The
  * first condition met ends the game, in strict order V1 → V6. Pure.
  *
- * Done here: V1 (team score), V4 (time-up) and V5 (forfeit). V6 (abort) is a host
- * command, see `control.ts`. V2 and V3 are stubbed below and arrive with the
- * phases that can trigger them.
+ * Done here: V1 (team score), V3 (infection), V4 (time-up) and V5 (forfeit). V6 (abort)
+ * is a host command, see `control.ts`. V2 (ejection) arrives with Phase 8.
  */
 import { winnerOnTimeUp } from '@afterdark/shared';
 
@@ -15,7 +14,7 @@ import { endGame } from './end';
 
 const MS_PER_S = 1000;
 
-/** Crew members counted toward the imposter win: infected (Phase 7) or wrongly ejected (Phase 8). */
+/** Crew members counted toward the imposter win: infected, or (Phase 8) wrongly ejected. Exposed does not count (E9). */
 export function compromisedCount(state: RoomState): number {
   return state.players.filter((p) => p.role === 'crew' && p.infection === 'infected').length;
 }
@@ -40,7 +39,11 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
     return;
   }
   // V2 every imposter ejected → crew              TODO(phase 08): ejection
-  // V3 compromised ≥ threshold → imposters        TODO(phase 07): infection, and 08: wrong ejection
+  // V3 compromised ≥ threshold → imposters (wrong ejection joins the count in Phase 8)
+  if (state.phase === 'playing' && compromisedCount(state) >= game.threshold) {
+    endGame(state, 'imposters', 'infection', effects);
+    return;
+  }
 
   // V4 the match clock reaches playTimeMin.
   if (state.phase === 'playing' && gameNow(game.clock, now) >= game.matchEndsAtGameMs) {

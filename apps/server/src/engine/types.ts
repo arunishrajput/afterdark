@@ -4,6 +4,7 @@ import type {
   ErrorCode,
   GameConfigEditablePatch,
   GameEvent,
+  InfectAck,
   LatLng,
   LobbyEditTaskPointsPayload,
   LobbyRegenerateRegionsPayload,
@@ -44,6 +45,8 @@ export type Command =
   | { type: 'taskCancel'; playerId: string; taskId: string }
   | { type: 'taskReroll'; playerId: string; taskId: string }
   | { type: 'taskReportUnsafe'; playerId: string; taskId: string }
+  | { type: 'infectStart'; playerId: string }
+  | { type: 'infectCancel'; playerId: string }
   /** Test mode only (`dev:autoComplete`): finish an open task as if solved. */
   | { type: 'devAutoComplete'; playerId: string; taskId: string }
   /** Test mode only (`dev:setMinigames`): restrict the types new tasks can be. */
@@ -53,7 +56,8 @@ export type Command =
 export type CommandReply =
   | { type: 'open'; ack: TaskOpenAck }
   | { type: 'action'; ack: TaskActionAck }
-  | { type: 'submit'; ack: TaskSubmitAck };
+  | { type: 'submit'; ack: TaskSubmitAck }
+  | { type: 'infect'; ack: InfectAck };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =

@@ -127,6 +127,7 @@ Rules: [SCORING.md](SCORING.md).
 | `infectionChannelS` | 10 | 5–30 | ⚙️ | Imposter and target must stay in range this long. |
 | `infectionGapToleranceS` | 3 | — | 🔒 | Out-of-range or stale gaps up to this long don't break the channel. |
 | `incubationS` | 60 | 0–180 | ⚙️ | Starts when the imposter leaves the target. |
+| `incubationDepartS` | 3 | — | 🔒 | How long the exposing imposter must stay out of range (or stale) before incubation starts (RULES §7.1.3). |
 | `infectionCooldownS` | 60 | — | 🔒 | Per imposter, after each *successful* infection. |
 | `infectionWinPercent` | 60 | 40–100 | ⚙️ | Win threshold = `ceil(pct/100 × originalCrewCount)`. |
 

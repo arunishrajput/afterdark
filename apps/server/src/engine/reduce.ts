@@ -2,6 +2,7 @@
 import type { RoomState } from './state';
 import * as control from './systems/control';
 import { advance } from './systems/game';
+import * as infection from './systems/infection';
 import * as lobby from './systems/lobby';
 import * as location from './systems/location';
 import * as map from './systems/map';
@@ -106,6 +107,12 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'taskReportUnsafe':
         play.reportUnsafe(draft, cmd.playerId, cmd.taskId, now, effects);
+        break;
+      case 'infectStart':
+        infection.startInfect(draft, cmd.playerId, now, effects);
+        break;
+      case 'infectCancel':
+        infection.cancelInfect(draft, cmd.playerId);
         break;
       case 'devSetMinigames':
         control.setMinigames(draft, cmd.playerId, cmd.types);
