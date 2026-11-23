@@ -15,7 +15,7 @@ When the user says **"Start the next phase"** (or "continue", or "resume"):
    - tick each checkbox in the phase file as you go
 7. **Verify.** Prove every acceptance criterion with evidence: test output, `pnpm verify`, `pnpm e2e`, bot runs, Playwright MCP screenshots. "Looks right" is not evidence.
 8. **Document.** Update `PROGRESS.md`: status ✅, a session log entry, what was built, deviations, known issues, **handoff notes for the next session**, and manual steps for the human. Record every new decision in `docs/DECISIONS.md`. Update any spec the code changed (CONFIG, PROTOCOL, RULES, TASKS…). **Docs must match the code.**
-9. **Ship.** `git add -A && git commit -m "docs(progress): complete phase NN"`, then `git tag phase-NN-done`, then `git push --follow-tags`. Check CI (`gh run watch`) and fix anything red.
+9. **Ship.** `git add -A && git commit -m "docs(progress): complete phase NN"`, then `git tag -a phase-NN-done -m "Phase NN done"` (annotated: `--follow-tags` skips lightweight tags), then `git push --follow-tags`, and confirm with `git ls-remote --tags origin`. Check CI (`gh run watch`) and fix anything red.
 10. **Hand off.** End with a short summary, numbered manual steps for the human (if any), and: **"Run /clear, then type: Start the next phase"**.
 
 ### Guardrails
