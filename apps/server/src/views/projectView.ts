@@ -10,7 +10,6 @@ import {
   type LocationView,
   type MapSetupPublic,
   type PlayerView,
-  pointInRing,
   type PublicPlayer,
   type RegionPublic,
   sectionBigEnough,
@@ -20,7 +19,8 @@ import {
 
 import type { PlayerState, RoomState, SetupRegion } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
-import { projectRegionCounts } from '../engine/systems/regionCounts';
+import { isOutOfBounds } from '../engine/systems/zone';
+import { projectGame, projectOwnGame } from './projectGame';
 
 /** The view without the per-send envelope (`v`, `serverNow`), so it can be diffed. */
 export type PlayerViewBody = Omit<PlayerView, 'v' | 'serverNow'>;
@@ -99,7 +99,7 @@ function projectOwnLocation(
     lng: loc.lng,
     accuracy: loc.accuracy,
     quality: fixQuality(loc, now, state.config),
-    oob: state.boundary ? !pointInRing(loc, state.boundary.ring) : false,
+    oob: isOutOfBounds(state, loc),
   };
 }
 
@@ -125,9 +125,8 @@ export function projectView(state: RoomState, playerId: string, now: number): Pl
       ready: me.ready,
       status: 'active',
       ...(location ? { location } : {}),
+      ...projectOwnGame(state, me, now),
     },
-    ...(state.setup.regions.length > 0
-      ? { game: { regionCounts: projectRegionCounts(state, playerId, now) } }
-      : {}),
+    ...(state.setup.regions.length > 0 ? { game: projectGame(state, playerId, now) } : {}),
   };
 }

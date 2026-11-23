@@ -4,7 +4,12 @@ import type { EndReason, Winner } from '@afterdark/shared';
 import type { RoomState } from '../state';
 import type { Effect } from '../types';
 
-export function endGame(state: RoomState, winner: Winner, reason: EndReason, effects: Effect[]): void {
+export function endGame(
+  state: RoomState,
+  winner: Winner,
+  reason: EndReason,
+  effects: Effect[],
+): void {
   if (state.phase === 'ended') return;
   state.phase = 'ended';
   state.result = { winner, reason };

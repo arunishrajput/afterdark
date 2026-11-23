@@ -79,13 +79,24 @@ describe('GameClock', () => {
     expect(wallTimeOf(c, 60_000, T0 + 50_000)).toBeUndefined();
   });
 
-  it('builds the display pair: endsAt moves with real time while paused, pausedAt marks the freeze', () => {
+  it('builds the display pair: endsAt is constant while running, and pausedAt marks the freeze', () => {
     const c = createClock();
     startClock(c, T0);
     expect(clockView(c, 60_000, T0 + 20_000)).toEqual({ endsAt: T0 + 60_000 });
+    expect(clockView(c, 60_000, T0 + 30_000)).toEqual({ endsAt: T0 + 60_000 });
     pauseClock(c, 'host', T0 + 20_000);
-    const v = clockView(c, 60_000, T0 + 50_000);
-    expect(v.pausedAt).toBe(T0 + 50_000);
-    expect(v.endsAt - (v.pausedAt ?? 0)).toBe(40_000); // remaining stays 40 s
+    const a = clockView(c, 60_000, T0 + 50_000);
+    const b = clockView(c, 60_000, T0 + 90_000);
+    expect(a).toEqual(b); // nothing moves with `now`, so a view diff sees no change
+    expect(a.pausedAt).toBe(T0 + 20_000);
+    expect(a.endsAt - (a.pausedAt ?? 0)).toBe(40_000);
+  });
+
+  it('after a resume the pause marker is gone and endsAt has moved by the paused time', () => {
+    const c = createClock();
+    startClock(c, T0);
+    pauseClock(c, 'host', T0 + 20_000);
+    resumeClock(c, 'host', T0 + 50_000);
+    expect(clockView(c, 60_000, T0 + 60_000)).toEqual({ endsAt: T0 + 90_000 });
   });
 });

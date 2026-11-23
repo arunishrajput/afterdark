@@ -6,12 +6,14 @@
  *
  * `playerVisibility` decides who appears (ADR-008): `nearby` (within
  * `nearbyRadiusM` of the viewer's own latest fix), `regions` (nobody; region
- * counts only) or `all`. Phase 4 adds the imposter-only flags.
+ * counts only) or `all`. An active imposter's radar also marks the other
+ * imposters with `ally` (ROLES.md); Phase 7 adds exposed and infected.
  */
-import { type AnonDot, distanceM, type DotFlag, hashSeed, pointInRing } from '@afterdark/shared';
+import { type AnonDot, distanceM, type DotFlag, hashSeed } from '@afterdark/shared';
 
 import type { RoomState } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
+import { isOutOfBounds } from '../engine/systems/zone';
 
 const MS_PER_S = 1000;
 const ALIAS_RADIX = 36;
@@ -28,7 +30,9 @@ function alias(salt: string, viewerId: string, targetId: string, epoch: number):
 export function buildRadar(state: RoomState, viewerId: string, now: number): AnonDot[] {
   const { playerVisibility, nearbyRadiusM } = state.config;
   if (playerVisibility === 'regions') return [];
-  const viewerFix = state.players.find((p) => p.id === viewerId)?.loc;
+  const viewer = state.players.find((p) => p.id === viewerId);
+  const viewerFix = viewer?.loc;
+  const viewerIsImposter = viewer?.role === 'imposter' && !viewer.left;
   if (playerVisibility === 'nearby' && !viewerFix) return [];
   const epoch = Math.floor(now / (state.config.dotAliasRotateS * MS_PER_S));
   const dots: AnonDot[] = [];
@@ -39,7 +43,8 @@ export function buildRadar(state: RoomState, viewerId: string, now: number): Ano
     }
     const flags: DotFlag[] = [];
     if (fixQuality(p.loc, now, state.config) === 'stale') flags.push('stale');
-    if (state.boundary && !pointInRing(p.loc, state.boundary.ring)) flags.push('oob');
+    if (isOutOfBounds(state, p.loc)) flags.push('oob');
+    if (viewerIsImposter && p.role === 'imposter') flags.push('ally');
     dots.push({
       alias: alias(state.radarSalt, viewerId, p.id, epoch),
       lat: p.loc.lat,

@@ -93,7 +93,11 @@ export function beginSpawning(state: RoomState, now: number, effects: Effect[]):
   const base = state.setup.base;
   if (!spawns || !base) {
     for (const p of state.players) p.ready = false;
-    effects.push({ kind: 'event', to: 'all', event: { type: 'lobby.startFailed', reason: 'spawns' } });
+    effects.push({
+      kind: 'event',
+      to: 'all',
+      event: { type: 'lobby.startFailed', reason: 'spawns' },
+    });
     return;
   }
   const assigned = assignSpawns(players, spawns, base);

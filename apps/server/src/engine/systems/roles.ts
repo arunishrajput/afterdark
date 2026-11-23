@@ -36,9 +36,7 @@ export function assignRoles(state: RoomState, now: number): void {
   const rng = createRng(hashSeed(`${state.secretSeed}|roles`));
 
   const imposterIds = new Set(
-    rng
-      .shuffle(players.map((p) => p.id))
-      .slice(0, imposterCountFor(state, players.length)),
+    rng.shuffle(players.map((p) => p.id)).slice(0, imposterCountFor(state, players.length)),
   );
   const tags = drawTags(rng, players.length);
   const drawn: ImposterClass[] = rng.shuffle(IMPOSTER_CLASSES);
@@ -51,7 +49,8 @@ export function assignRoles(state: RoomState, now: number): void {
       p.role = 'imposter';
       // `classes`: one class each, no repeats (at most 3 imposters). `all`: every class.
       const own = drawn[imposterNo++ % drawn.length];
-      p.classes = config.imposterAbilityMode === 'all' || own === undefined ? [...IMPOSTER_CLASSES] : [own];
+      p.classes =
+        config.imposterAbilityMode === 'all' || own === undefined ? [...IMPOSTER_CLASSES] : [own];
     } else {
       p.role = 'crew';
     }

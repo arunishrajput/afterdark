@@ -5,71 +5,15 @@
 import { sectionOf } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
-import { buildLobbyFixture, FIXTURE_NOW, FORBIDDEN_KEY_NAMES, keysDeep } from './leakHarness';
+import {
+  ALLOWED_VIEW_KEYS,
+  buildLobbyFixture,
+  FIXTURE_NOW,
+  FORBIDDEN_KEY_NAMES,
+  keysDeep,
+} from './leakHarness';
 import { projectView } from './projectView';
 import { buildRadar } from './radar';
-
-/** Every key path a view may contain (through Phase 3). Anything else fails the test. */
-const ALLOWED_VIEW_KEYS = new Set([
-  'lobby',
-  'lobby.code',
-  'lobby.phase',
-  'lobby.hostId',
-  'lobby.testMode',
-  'lobby.config',
-  'lobby.map',
-  'lobby.map.boundary',
-  'lobby.map.boundary.ring',
-  'lobby.map.boundary.areaM2',
-  'lobby.map.regions',
-  'lobby.map.regions[].id',
-  'lobby.map.regions[].name',
-  'lobby.map.regions[].area',
-  'lobby.map.regions[].origin',
-  'lobby.map.regions[].origin.lat',
-  'lobby.map.regions[].origin.lng',
-  'lobby.map.regions[].rhoM',
-  'lobby.map.regions[].areaM2',
-  'lobby.map.regions[].sections',
-  'lobby.map.regions[].sections[].id',
-  'lobby.map.regions[].sections[].areaM2',
-  'lobby.map.regions[].sections[].usable',
-  'lobby.map.taskPoints',
-  'lobby.map.taskPoints[].id',
-  'lobby.map.taskPoints[].lat',
-  'lobby.map.taskPoints[].lng',
-  'lobby.map.taskPoints[].regionId',
-  'lobby.map.taskPoints[].section',
-  'lobby.map.taskPoints[].source',
-  'lobby.map.noGo',
-  'lobby.map.base',
-  'lobby.map.base.lat',
-  'lobby.map.base.lng',
-  'lobby.players',
-  'lobby.players[].id',
-  'lobby.players[].username',
-  'lobby.players[].isHost',
-  'lobby.players[].ready',
-  'lobby.players[].connected',
-  'lobby.players[].status',
-  'lobby.countdownEndsAt',
-  'me',
-  'me.id',
-  'me.username',
-  'me.isHost',
-  'me.ready',
-  'me.status',
-  'me.location',
-  'me.location.lat',
-  'me.location.lng',
-  'me.location.accuracy',
-  'me.location.quality',
-  'me.location.oob',
-  'game',
-  'game.regionCounts',
-  'game.regionCounts[].regionId',
-  'game.regionCounts[].bucket',
-]);
 
 const NOW = FIXTURE_NOW;
 

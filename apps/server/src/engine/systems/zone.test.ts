@@ -75,11 +75,28 @@ describe('zone penalties during play', () => {
 
   it('warns the player at once, and only that player', () => {
     const { state, now } = start();
-    const res = run(state, { type: 'teleport', playerId: 'p1', lat: OUT.lat, lng: OUT.lng }, now + S);
+    const res = run(
+      state,
+      { type: 'teleport', playerId: 'p1', lat: OUT.lat, lng: OUT.lng },
+      now + S,
+    );
     expect(eventsFor(res.effects, 'p1', 'zone.warning')).toHaveLength(1);
     expect(eventsFor(res.effects, 'p2', 'zone.warning')).toHaveLength(0);
-    expect(isZoneLocked(res.state.players.find((p) => p.id === 'p1') ?? { id: '', username: '', ready: false, connected: true })).toBe(true);
-    expect(res.effects.every((e) => e.kind !== 'event' || e.to !== 'all' || e.event.type !== 'zone.warning')).toBe(true);
+    expect(
+      isZoneLocked(
+        res.state.players.find((p) => p.id === 'p1') ?? {
+          id: '',
+          username: '',
+          ready: false,
+          connected: true,
+        },
+      ),
+    ).toBe(true);
+    expect(
+      res.effects.every(
+        (e) => e.kind !== 'event' || e.to !== 'all' || e.event.type !== 'zone.warning',
+      ),
+    ).toBe(true);
   });
 
   it('takes nothing during the grace, then 1 personal point at its end and 1 every interval', () => {
@@ -165,7 +182,9 @@ describe('zone penalties during play', () => {
     expect(s.players.find((p) => p.id === 'p1')?.personalScore).toBe(0); // 5 + 9 = 14 s < 15 s grace
     s = advanceTo(s, t0 + 600 * S + 10 * S);
     expect(s.players.find((p) => p.id === 'p1')?.personalScore).toBe(-1);
-    expect(gameNow(s.game?.clock ?? { gameMs: 0, started: false, reasons: [] }, t0 + 610 * S)).toBe(16 * S); // 1 s before the fix + 5 s before the pause + 10 s after the resume
+    expect(gameNow(s.game?.clock ?? { gameMs: 0, started: false, reasons: [] }, t0 + 610 * S)).toBe(
+      16 * S,
+    ); // 1 s before the fix + 5 s before the pause + 10 s after the resume
   });
 
   it('does nothing before play: a player outside during the reveal gets no zone state', () => {

@@ -24,9 +24,15 @@ describe('imposter count (RULES §5.1)', () => {
 
   it('never leaves fewer than minCrewRemaining crew', () => {
     const lobby = newLobby({ players: 4 });
-    expect(imposterCountFor({ ...lobby, config: { ...lobby.config, imposterCount: 3 } }, 4)).toBe(1);
-    expect(imposterCountFor({ ...lobby, config: { ...lobby.config, imposterCount: 2 } }, 6)).toBe(2);
-    expect(imposterCountFor({ ...lobby, config: { ...lobby.config, imposterCount: 3 } }, 5)).toBe(2);
+    expect(imposterCountFor({ ...lobby, config: { ...lobby.config, imposterCount: 3 } }, 4)).toBe(
+      1,
+    );
+    expect(imposterCountFor({ ...lobby, config: { ...lobby.config, imposterCount: 2 } }, 6)).toBe(
+      2,
+    );
+    expect(imposterCountFor({ ...lobby, config: { ...lobby.config, imposterCount: 3 } }, 5)).toBe(
+      2,
+    );
   });
 
   it('honours a manual count', () => {

@@ -1,6 +1,7 @@
 import { areaContains, DEFAULT_CONFIG, distanceM, offsetByMeters } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
+import { reduce } from '../reduce';
 import {
   advanceTo,
   errCode,
@@ -13,7 +14,6 @@ import {
   T0,
   toSpawning,
 } from '../testkit';
-import { reduce } from '../reduce';
 import { playableAreaOf } from './layout';
 
 const MIN_SEP = DEFAULT_CONFIG.spawnMinSeparationM;
@@ -45,9 +45,12 @@ describe('spawn generation (RULES §4.1)', () => {
     let s = newLobby({ players: 6 });
     const c = offsetByMeters(HOME, 60, 0);
     const zone = [
-      [offsetByMeters(c, -80, -80), offsetByMeters(c, 80, -80), offsetByMeters(c, 80, 80), offsetByMeters(c, -80, 80)].map(
-        (p) => [p.lng, p.lat] as [number, number],
-      ),
+      [
+        offsetByMeters(c, -80, -80),
+        offsetByMeters(c, 80, -80),
+        offsetByMeters(c, 80, 80),
+        offsetByMeters(c, -80, 80),
+      ].map((p) => [p.lng, p.lat] as [number, number]),
     ];
     s = run(s, { type: 'setNoGoZones', playerId: 'host', zones: zone }).state;
     const inside = areaContains(playableAreaOf(s));
@@ -120,7 +123,11 @@ describe('reach detection (RULES §4.3)', () => {
     // A teleport has accuracy 5 (good); send an inaccurate fix on the spawn instead.
     const s2 = run(
       weak,
-      { type: 'locUpdate', playerId: 'p2', fix: { ...(state.players[2]?.spawn ?? HOME), accuracy: 80, ts: now } },
+      {
+        type: 'locUpdate',
+        playerId: 'p2',
+        fix: { ...(state.players[2]?.spawn ?? HOME), accuracy: 80, ts: now },
+      },
       now,
     ).state;
     expect(s2.players.find((x) => x.id === 'p2')?.spawn?.reached).toBe(false);
@@ -158,7 +165,8 @@ describe('spawn phase transitions', () => {
   it('a disconnected player does not block forever: the timeout still ends the phase (E2)', () => {
     const { state, now } = toSpawning(newLobby({ players: 4 }));
     let s = run(state, { type: 'disconnect', playerId: 'p3' }, now).state;
-    for (const p of s.players.filter((x) => x.id !== 'p3')) s = moveTo(s, p.id, p.spawn ?? HOME, now);
+    for (const p of s.players.filter((x) => x.id !== 'p3'))
+      s = moveTo(s, p.id, p.spawn ?? HOME, now);
     expect(s.phase).toBe('spawning');
     s = advanceTo(s, now + s.config.spawnTimeoutS * S);
     expect(s.phase).toBe('reveal');
@@ -186,7 +194,11 @@ describe('spawn phase transitions', () => {
       { type: 'setReady', playerId: 'p1', ready: true },
       { type: 'updateConfig', playerId: 'host', patch: { playTimeMin: 20 } },
       { type: 'kick', playerId: 'host', targetId: 'p1' },
-      { type: 'setBoundary', playerId: 'host', boundary: { type: 'circle', center: HOME, radiusM: 100 } },
+      {
+        type: 'setBoundary',
+        playerId: 'host',
+        boundary: { type: 'circle', center: HOME, radiusM: 100 },
+      },
       { type: 'pause', playerId: 'host' },
       { type: 'resume', playerId: 'host' },
     ] as const) {

@@ -7,6 +7,7 @@ import { offsetByMeters, toPosition } from '@afterdark/shared';
 import { createRoomState, type RoomState } from '../engine/state';
 import { applyLayout } from '../engine/systems/layout';
 import { refreshRegionCounts } from '../engine/systems/regionCounts';
+import { newLobby, run, T0, toPlaying, toReveal, toSpawning } from '../engine/testkit';
 import { SessionRegistry } from '../rooms/sessions';
 
 /**
@@ -30,7 +31,104 @@ export function keysDeep(value: unknown, prefix = ''): string[] {
   return [...out].sort();
 }
 
-/** Key names that must never appear in a view, at any depth, before Phase 4 adds roles. */
+/** Every key path a view may contain (through Phase 4). Anything else fails the test. */
+export const ALLOWED_VIEW_KEYS = new Set([
+  'lobby',
+  'lobby.code',
+  'lobby.phase',
+  'lobby.hostId',
+  'lobby.testMode',
+  'lobby.config',
+  'lobby.map',
+  'lobby.map.boundary',
+  'lobby.map.boundary.ring',
+  'lobby.map.boundary.areaM2',
+  'lobby.map.regions',
+  'lobby.map.regions[].id',
+  'lobby.map.regions[].name',
+  'lobby.map.regions[].area',
+  'lobby.map.regions[].origin',
+  'lobby.map.regions[].origin.lat',
+  'lobby.map.regions[].origin.lng',
+  'lobby.map.regions[].rhoM',
+  'lobby.map.regions[].areaM2',
+  'lobby.map.regions[].sections',
+  'lobby.map.regions[].sections[].id',
+  'lobby.map.regions[].sections[].areaM2',
+  'lobby.map.regions[].sections[].usable',
+  'lobby.map.taskPoints',
+  'lobby.map.taskPoints[].id',
+  'lobby.map.taskPoints[].lat',
+  'lobby.map.taskPoints[].lng',
+  'lobby.map.taskPoints[].regionId',
+  'lobby.map.taskPoints[].section',
+  'lobby.map.taskPoints[].source',
+  'lobby.map.noGo',
+  'lobby.map.base',
+  'lobby.map.base.lat',
+  'lobby.map.base.lng',
+  'lobby.players',
+  'lobby.players[].id',
+  'lobby.players[].username',
+  'lobby.players[].isHost',
+  'lobby.players[].ready',
+  'lobby.players[].connected',
+  'lobby.players[].status',
+  'lobby.countdownEndsAt',
+  'me',
+  'me.id',
+  'me.username',
+  'me.isHost',
+  'me.ready',
+  'me.status',
+  'me.location',
+  'me.location.lat',
+  'me.location.lng',
+  'me.location.accuracy',
+  'me.location.quality',
+  'me.location.oob',
+  'game',
+  'game.regionCounts',
+  'game.regionCounts[].regionId',
+  'game.regionCounts[].bucket',
+  // Phase 4: the viewer's own spawn, tag, role, zone and score; the public game numbers.
+  'me.spawn',
+  'me.spawn.lat',
+  'me.spawn.lng',
+  'me.spawn.reached',
+  'me.tag',
+  'me.role',
+  'me.imposter',
+  'me.imposter.classes',
+  'me.imposter.allies',
+  'me.imposter.allies[].playerId',
+  'me.imposter.allies[].username',
+  'me.imposter.allies[].tag',
+  'me.imposter.allies[].classes',
+  'me.personalScore',
+  'me.zone',
+  'me.zone.oob',
+  'me.zone.graceEndsAt',
+  'game.spawn',
+  'game.spawn.reached',
+  'game.spawn.total',
+  'game.spawn.endsAt',
+  'game.revealEndsAt',
+  'game.clock',
+  'game.clock.endsAt',
+  'game.clock.pausedAt',
+  'game.teamScore',
+  'game.targetScore',
+  'game.compromised',
+  'game.threshold',
+  'game.crewCount',
+  'game.meetingsLeft',
+  'game.result',
+  'game.result.winner',
+  'game.result.reason',
+]);
+
+/** Key names that must never appear in a lobby view, at any depth (before roles exist). */
 export const FORBIDDEN_KEY_NAMES = [
   'token',
   'role',
@@ -111,4 +209,44 @@ export function buildLobbyFixture(opts: LobbyFixtureOptions = {}): LobbyFixture 
   }
   const tokens = new Map(state.players.map((p) => [p.id, sessions.issue(state.code, p.id)]));
   return { state, tokens };
+}
+
+export type GamePhaseFixture = 'spawning' | 'reveal' | 'playing' | 'ended';
+
+export interface GameFixtureOptions {
+  players?: number;
+  phase?: GamePhaseFixture;
+  /** Secret room seed: different seeds give different roles. */
+  salt?: string;
+  /** Mark this player's infection status (a crew member in the structure-parity tests). */
+  infection?: { id: string; status: 'exposed' | 'infected' };
+}
+
+export interface GameFixture {
+  state: RoomState;
+  /** The moment the fixture's phase was reached (views are built at this time). */
+  now: number;
+  tokens: Map<string, string>;
+}
+
+/** A game in the given phase, built through the real engine (so roles come from the real assignment). */
+export function buildGameFixture(opts: GameFixtureOptions = {}): GameFixture {
+  const lobby = newLobby({ players: opts.players ?? 8, radarSalt: opts.salt ?? 'leak-salt' });
+  const phase = opts.phase ?? 'playing';
+  const reached =
+    phase === 'spawning'
+      ? toSpawning(lobby)
+      : phase === 'reveal'
+        ? toReveal(lobby)
+        : toPlaying(lobby);
+  let { state } = reached;
+  const { now } = reached;
+  if (phase === 'ended') state = run(state, { type: 'abort', playerId: 'host' }, now).state;
+  if (opts.infection) {
+    const p = state.players.find((x) => x.id === opts.infection?.id);
+    if (p) p.infection = opts.infection.status;
+  }
+  const sessions = new SessionRegistry();
+  const tokens = new Map(state.players.map((p) => [p.id, sessions.issue(state.code, p.id)]));
+  return { state, now: Math.max(now, T0), tokens };
 }

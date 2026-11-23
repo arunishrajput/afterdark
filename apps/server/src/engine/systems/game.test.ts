@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 import { gameNow, isPaused } from '../clock';
 import { reduce } from '../reduce';
-import { tick } from '../tick';
 import {
   advanceTo,
   errCode,
@@ -19,6 +18,7 @@ import {
   toSpawning,
   walkToSpawns,
 } from '../testkit';
+import { tick } from '../tick';
 import type { Effect } from '../types';
 
 const eventTypes = (effects: Effect[]) =>
@@ -50,13 +50,14 @@ describe('state machine: lobby → spawning → reveal → playing → ended', (
     const { state, now } = toPlaying(newLobby({ players: 5 }));
     expect(state.phase).toBe('playing');
     expect(state.game?.clock.started).toBe(true);
-    expect(gameNow(state.game?.clock ?? { gameMs: 0, started: false, reasons: [] }, now + 30 * S)).toBe(30 * S);
+    expect(
+      gameNow(state.game?.clock ?? { gameMs: 0, started: false, reasons: [] }, now + 30 * S),
+    ).toBe(30 * S);
   });
 
   it('a spawn-phase fix that completes the group moves to reveal without waiting for a tick', () => {
-    let { state, now } = toSpawning(newLobby({ players: 4 }));
-    state = walkToSpawns(state, now);
-    expect(state.phase).toBe('reveal');
+    const { state, now } = toSpawning(newLobby({ players: 4 }));
+    expect(walkToSpawns(state, now).phase).toBe('reveal');
   });
 
   it('game.rolesRevealed and game.playStarted are emitted once each', () => {
@@ -84,26 +85,32 @@ describe('illegal commands per phase (WRONG_PHASE)', () => {
       }
     }
     const ended = run(playing.state, { type: 'abort', playerId: 'host' }, playing.now).state;
-    expect(errCode(reduce(ended, { type: 'setReady', playerId: 'p1', ready: false }, playing.now))).toBe(
-      'WRONG_PHASE',
-    );
+    expect(
+      errCode(reduce(ended, { type: 'setReady', playerId: 'p1', ready: false }, playing.now)),
+    ).toBe('WRONG_PHASE');
   });
 
   it('forceStart only works in the spawn phase', () => {
     const lobby = newLobby({ players: 5 });
-    expect(errCode(reduce(lobby, { type: 'forceStart', playerId: 'host' }, T0))).toBe('WRONG_PHASE');
-    const reveal = toReveal(newLobby({ players: 5 }));
-    expect(errCode(reduce(reveal.state, { type: 'forceStart', playerId: 'host' }, reveal.now))).toBe(
+    expect(errCode(reduce(lobby, { type: 'forceStart', playerId: 'host' }, T0))).toBe(
       'WRONG_PHASE',
     );
+    const reveal = toReveal(newLobby({ players: 5 }));
+    expect(
+      errCode(reduce(reveal.state, { type: 'forceStart', playerId: 'host' }, reveal.now)),
+    ).toBe('WRONG_PHASE');
   });
 
   it('pause and resume only work while playing', () => {
     const lobby = newLobby({ players: 5 });
     expect(errCode(reduce(lobby, { type: 'pause', playerId: 'host' }, T0))).toBe('WRONG_PHASE');
     const reveal = toReveal(newLobby({ players: 5 }));
-    expect(errCode(reduce(reveal.state, { type: 'pause', playerId: 'host' }, reveal.now))).toBe('WRONG_PHASE');
-    expect(errCode(reduce(reveal.state, { type: 'resume', playerId: 'host' }, reveal.now))).toBe('WRONG_PHASE');
+    expect(errCode(reduce(reveal.state, { type: 'pause', playerId: 'host' }, reveal.now))).toBe(
+      'WRONG_PHASE',
+    );
+    expect(errCode(reduce(reveal.state, { type: 'resume', playerId: 'host' }, reveal.now))).toBe(
+      'WRONG_PHASE',
+    );
   });
 
   it('abort has nothing to abort in the lobby, and nothing after the end', () => {
@@ -115,8 +122,14 @@ describe('illegal commands per phase (WRONG_PHASE)', () => {
   });
 
   it('joining is closed from the spawn phase to the end', () => {
-    for (const { state, now } of [toSpawning(newLobby({ players: 5 })), toReveal(newLobby({ players: 5 })), toPlaying(newLobby({ players: 5 }))]) {
-      expect(errCode(reduce(state, { type: 'join', playerId: 'late', username: 'Late' }, now))).toBe('GAME_IN_PROGRESS');
+    for (const { state, now } of [
+      toSpawning(newLobby({ players: 5 })),
+      toReveal(newLobby({ players: 5 })),
+      toPlaying(newLobby({ players: 5 })),
+    ]) {
+      expect(
+        errCode(reduce(state, { type: 'join', playerId: 'late', username: 'Late' }, now)),
+      ).toBe('GAME_IN_PROGRESS');
     }
   });
 });
@@ -124,10 +137,14 @@ describe('illegal commands per phase (WRONG_PHASE)', () => {
 describe('host controls (RULES §11, 04.7)', () => {
   it('only the host can force start, pause, resume and abort (NOT_HOST)', () => {
     const spawning = toSpawning(newLobby({ players: 5 }));
-    expect(errCode(reduce(spawning.state, { type: 'forceStart', playerId: 'p1' }, spawning.now))).toBe('NOT_HOST');
+    expect(
+      errCode(reduce(spawning.state, { type: 'forceStart', playerId: 'p1' }, spawning.now)),
+    ).toBe('NOT_HOST');
     const playing = toPlaying(newLobby({ players: 5 }));
     for (const type of ['pause', 'resume', 'abort'] as const) {
-      expect(errCode(reduce(playing.state, { type, playerId: 'p1' }, playing.now)), type).toBe('NOT_HOST');
+      expect(errCode(reduce(playing.state, { type, playerId: 'p1' }, playing.now)), type).toBe(
+        'NOT_HOST',
+      );
     }
   });
 
@@ -142,7 +159,8 @@ describe('host controls (RULES §11, 04.7)', () => {
 
   it('pause freezes game time and resume restarts it', () => {
     const { state, now } = toPlaying(newLobby({ players: 5 }));
-    const clockOf = (s: typeof state) => s.game?.clock ?? { gameMs: 0, started: false, reasons: [] };
+    const clockOf = (s: typeof state) =>
+      s.game?.clock ?? { gameMs: 0, started: false, reasons: [] };
     const paused = run(state, { type: 'pause', playerId: 'host' }, now + 20 * S);
     expect(eventTypes(paused.effects)).toContain('game.paused');
     expect(isPaused(clockOf(paused.state))).toBe(true);
@@ -186,7 +204,11 @@ describe('host controls (RULES §11, 04.7)', () => {
   });
 
   it('abort ends the game with no winner, from spawning, reveal and playing (V6)', () => {
-    for (const { state, now } of [toSpawning(newLobby({ players: 5 })), toReveal(newLobby({ players: 5 })), toPlaying(newLobby({ players: 5 }))]) {
+    for (const { state, now } of [
+      toSpawning(newLobby({ players: 5 })),
+      toReveal(newLobby({ players: 5 })),
+      toPlaying(newLobby({ players: 5 })),
+    ]) {
       const res = run(state, { type: 'abort', playerId: 'host' }, now);
       expect(res.state.phase).toBe('ended');
       expect(res.state.result).toEqual({ winner: null, reason: 'abort' });

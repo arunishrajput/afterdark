@@ -2,15 +2,8 @@ import { DEFAULT_CONFIG } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
 import { reduce } from '../reduce';
+import { advanceTo, newLobby, run, S, toPlaying, toReveal } from '../testkit';
 import { tick } from '../tick';
-import {
-  advanceTo,
-  newLobby,
-  run,
-  S,
-  toPlaying,
-  toReveal,
-} from '../testkit';
 import type { Effect } from '../types';
 import { compromisedCount } from './victory';
 
@@ -91,7 +84,8 @@ describe('V5: forfeit (RULES §10.6)', () => {
     const { state, now } = toPlaying(newLobby({ players: 10 })); // 3 imposters
     const imposters = state.players.filter((p) => p.role === 'imposter');
     let s = state;
-    for (const p of imposters.slice(1)) s = run(s, { type: 'disconnect', playerId: p.id }, now).state;
+    for (const p of imposters.slice(1))
+      s = run(s, { type: 'disconnect', playerId: p.id }, now).state;
     expect(tick(s, now + FORFEIT_MS * 2).state.phase).toBe('playing');
   });
 
@@ -128,7 +122,10 @@ describe('V5: forfeit (RULES §10.6)', () => {
     const { state, now } = toPlaying(newLobby({ players: 6 }));
     let s = dropAll(state, 'imposter', now + 5 * S);
     s = dropAll(s, 'crew', now + 5 * S);
-    expect(tick(s, now + 5 * S + FORFEIT_MS).state.result).toEqual({ winner: 'draw', reason: 'forfeit' });
+    expect(tick(s, now + 5 * S + FORFEIT_MS).state.result).toEqual({
+      winner: 'draw',
+      reason: 'forfeit',
+    });
   });
 
   it('reduce also checks victory (a command after the window ends the game)', () => {
@@ -137,7 +134,11 @@ describe('V5: forfeit (RULES §10.6)', () => {
     const crew = s.players.find((p) => p.role === 'crew');
     const res = reduce(
       s,
-      { type: 'locUpdate', playerId: crew?.id ?? '', fix: { lat: 28.6139, lng: 77.209, accuracy: 5, ts: now + 5 * S + FORFEIT_MS } },
+      {
+        type: 'locUpdate',
+        playerId: crew?.id ?? '',
+        fix: { lat: 28.6139, lng: 77.209, accuracy: 5, ts: now + 5 * S + FORFEIT_MS },
+      },
       now + 5 * S + FORFEIT_MS,
     );
     expect(res.ok && res.state.phase).toBe('ended');

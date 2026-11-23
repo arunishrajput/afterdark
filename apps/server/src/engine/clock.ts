@@ -17,6 +17,8 @@ export interface GameClock {
   started: boolean;
   /** Everything currently holding the clock stopped. */
   reasons: PauseReason[];
+  /** Server ms when the clock last stopped; set only while it is stopped after having started. */
+  stoppedAt?: number;
 }
 
 export function createClock(): GameClock {
@@ -35,12 +37,14 @@ export function gameNow(c: GameClock, now: number): number {
 function stop(c: GameClock, now: number): void {
   c.gameMs = gameNow(c, now);
   delete c.runningSince;
+  if (c.started) c.stoppedAt = now;
 }
 
 /** Begin counting (play starts). Stays stopped if a pause reason is already set. */
 export function startClock(c: GameClock, now: number): void {
   c.started = true;
   if (c.reasons.length === 0 && c.runningSince === undefined) c.runningSince = now;
+  else c.stoppedAt ??= now;
 }
 
 export function pauseClock(c: GameClock, reason: PauseReason, now: number): void {
@@ -52,7 +56,10 @@ export function pauseClock(c: GameClock, reason: PauseReason, now: number): void
 export function resumeClock(c: GameClock, reason: PauseReason, now: number): void {
   if (!c.reasons.includes(reason)) return;
   c.reasons = c.reasons.filter((r) => r !== reason);
-  if (c.started && c.reasons.length === 0) c.runningSince = now;
+  if (c.started && c.reasons.length === 0) {
+    c.runningSince = now;
+    delete c.stoppedAt;
+  }
 }
 
 /** Wall-clock time when game time reaches `gameDeadlineMs`, or `undefined` while the clock is stopped. */
@@ -61,10 +68,14 @@ export function wallTimeOf(c: GameClock, gameDeadlineMs: number, now: number): n
 }
 
 /**
- * The display pair for a deadline: while stopped, `pausedAt` is `now` and `endsAt`
- * is `now + remaining`, so the client's `endsAt − pausedAt` stays constant.
+ * The display pair for a deadline. While running, `endsAt` is a constant. While
+ * stopped, `pausedAt` is the moment of the stop and `endsAt − pausedAt` is the
+ * remaining time, so neither moves with `now` and views stay diff-able.
+ * Only meaningful once the clock has started.
  */
 export function clockView(c: GameClock, gameDeadlineMs: number, now: number): ClockView {
-  const endsAt = now + (gameDeadlineMs - gameNow(c, now));
-  return isRunning(c) || !c.started ? { endsAt } : { endsAt, pausedAt: now };
+  if (c.stoppedAt !== undefined) {
+    return { endsAt: c.stoppedAt + (gameDeadlineMs - c.gameMs), pausedAt: c.stoppedAt };
+  }
+  return { endsAt: now + (gameDeadlineMs - gameNow(c, now)) };
 }

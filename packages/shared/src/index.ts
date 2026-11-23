@@ -113,14 +113,14 @@ export {
 } from './protocol/schemas';
 export type { Rng } from './rng';
 export { createRng, hashSeed, mulberry32 } from './rng';
-export { drawTags, formatTag, TAG_PATTERN, TAG_WORDS } from './tags';
 export { bucketLabel } from './rules/buckets';
 export type { SetupIssue, SetupSummary } from './rules/setup';
 export { pointsNeeded, summarizeSetup, validateSetup } from './rules/setup';
-export type { Progress } from './rules/victory';
-export { infectionThreshold, winnerOnTimeUp } from './rules/victory';
 export type { StartBlocker } from './rules/start';
 export { resolveImposterCount, startBlockers } from './rules/start';
+export type { Progress } from './rules/victory';
+export { infectionThreshold, winnerOnTimeUp } from './rules/victory';
+export { drawTags, formatTag, TAG_PATTERN, TAG_WORDS } from './tags';
 export type {
   EndReason,
   ImposterClass,
@@ -133,10 +133,10 @@ export type {
 export { GAME_PHASES, IMPOSTER_CLASSES, PHASES } from './types/domain';
 export type {
   AnonDot,
+  ClockView,
   DotFlag,
   GameConfigPublic,
   GameEvent,
-  ClockView,
   GameView,
   ImposterAlly,
   ImposterView,
@@ -152,6 +152,6 @@ export type {
   RegionPublic,
   SectionStat,
   SpawnView,
-  ZoneView,
   TaskPointPublic,
+  ZoneView,
 } from './types/view';

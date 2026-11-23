@@ -17,7 +17,12 @@ function requirePlaying(state: RoomState): NonNullable<RoomState['game']> {
 }
 
 /** Spawn phase only: give everyone a role now, even if some have not reached their spawn (E1). */
-export function forceStart(state: RoomState, playerId: string, now: number, effects: Effect[]): void {
+export function forceStart(
+  state: RoomState,
+  playerId: string,
+  now: number,
+  effects: Effect[],
+): void {
   requireHost(state, playerId);
   if (state.phase !== 'spawning') {
     throw new RuleError('WRONG_PHASE', 'Force start only works while players walk to their spawns');

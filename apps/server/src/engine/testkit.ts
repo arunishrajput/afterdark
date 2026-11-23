@@ -66,7 +66,8 @@ export function newLobby(opts: LobbyOptions = {}): RoomState {
 /** Everyone readies up; returns the state with the countdown running. */
 export function readyAll(state: RoomState, now = T0): RoomState {
   let s = state;
-  for (const p of state.players) s = run(s, { type: 'setReady', playerId: p.id, ready: true }, now).state;
+  for (const p of state.players)
+    s = run(s, { type: 'setReady', playerId: p.id, ready: true }, now).state;
   return s;
 }
 
@@ -77,7 +78,11 @@ export function refresh(state: RoomState, now: number): RoomState {
     if (p.left || !p.loc) continue;
     s = run(
       s,
-      { type: 'locUpdate', playerId: p.id, fix: { lat: p.loc.lat, lng: p.loc.lng, accuracy: 5, ts: now } },
+      {
+        type: 'locUpdate',
+        playerId: p.id,
+        fix: { lat: p.loc.lat, lng: p.loc.lng, accuracy: 5, ts: now },
+      },
       now,
     ).state;
   }
@@ -95,7 +100,11 @@ export function advanceWithEffects(
     if (p.left || !p.loc) continue;
     const res = run(
       s,
-      { type: 'locUpdate', playerId: p.id, fix: { lat: p.loc.lat, lng: p.loc.lng, accuracy: 5, ts: now } },
+      {
+        type: 'locUpdate',
+        playerId: p.id,
+        fix: { lat: p.loc.lat, lng: p.loc.lng, accuracy: 5, ts: now },
+      },
       now,
     );
     s = res.state;

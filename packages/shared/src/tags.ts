@@ -69,7 +69,10 @@ export function formatTag(word: string, no: number): string {
 /** `count` tags with distinct words (throws if there are fewer words than players). */
 export function drawTags(rng: Rng, count: number): string[] {
   if (count > TAG_WORDS.length) throw new RangeError('Not enough tag words');
-  return rng.shuffle(TAG_WORDS).slice(0, count).map((w) => formatTag(w, rng.int(1, TAG_NUMBER_MAX)));
+  return rng
+    .shuffle(TAG_WORDS)
+    .slice(0, count)
+    .map((w) => formatTag(w, rng.int(1, TAG_NUMBER_MAX)));
 }
 
 /** The shape every tag has. */
