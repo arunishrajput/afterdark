@@ -186,6 +186,7 @@ export const gameConfigSchema = z.strictObject({
   botVoteSkipPercent: z.number().int().min(0).max(100),
   botMeetingMinS: positive(),
   botMeetingMaxS: positive(),
+  botFakeScatterM: positive(),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;

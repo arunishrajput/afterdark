@@ -179,4 +179,5 @@ export const DEFAULT_CONFIG = {
   botVoteSkipPercent: 30,
   botMeetingMinS: 150,
   botMeetingMaxS: 400,
+  botFakeScatterM: 120,
 } as const satisfies GameConfig;

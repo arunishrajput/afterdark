@@ -10,7 +10,10 @@
  * bots were added with `imposterBehaviour: 'chase'` (Phase 7): then it hunts the nearest
  * healthy crew member (it reads positions from the room state, as test tooling may),
  * infects through the real `infectStart` command, follows during the channel and walks
- * away afterwards so the incubation can begin. In a meeting (Phase 8) every bot walks to the Base, skips the
+ * away afterwards so the incubation can begin. With `imposterBehaviour: 'sabotage'` (Phase 9) it chases as
+ * well and uses Task Stop and Fake Task through the real ability commands whenever they are ready (a fake
+ * goes to a random spot near the Base; an invalid spot is refused and another is tried on the next step).
+ * In a meeting (Phase 8) every bot walks to the Base, skips the
  * discussion and votes (a random active player, or Skip with `botVoteSkipPercent`; an imposter bot never
  * votes for another imposter). Only with `meetings: 'random'` does a bot also call a meeting, once, at a
  * random game time between `botMeetingMinS` and `botMeetingMaxS`.
@@ -163,8 +166,9 @@ export class BotDriver {
     p: PlayerState,
     now: number,
   ): { to: LatLng | undefined } | undefined {
-    if (this.imposterBehaviour !== 'chase' || p.role !== 'imposter' || !p.infect || !p.loc) return;
+    if (this.imposterBehaviour === 'wander' || p.role !== 'imposter' || !p.infect || !p.loc) return;
     if (state.phase !== 'playing' || !state.game) return;
+    if (this.imposterBehaviour === 'sabotage') this.useAbilities(bot, state, p, now);
     const targets = state.players
       // Only players the server would accept as a target: a stale human is not worth chasing.
       .filter(
@@ -188,6 +192,26 @@ export class BotDriver {
       return { to: bot.walker.pos };
     }
     return { to: action.to };
+  }
+
+  /** A sabotaging imposter bot uses every ability that is ready: Task Stop at once, Fake Task at a random spot near the Base. */
+  private useAbilities(bot: Bot, state: RoomState, p: PlayerState, now: number): void {
+    const game = state.game;
+    if (!game || game.meeting) return;
+    const gameMs = gameNow(game.clock, now);
+    const ready = (id: 'taskStop' | 'fakeTask') => {
+      const a = p.abilities?.[id];
+      return a !== undefined && gameMs >= a.readyAtGameMs;
+    };
+    if (ready('taskStop') && game.taskLock === undefined) {
+      this.room.dispatch({ type: 'abilityTaskStop', playerId: p.id });
+    }
+    const base = state.setup.base;
+    if (ready('fakeTask') && base) {
+      const r = state.config.botFakeScatterM;
+      const at = offsetByMeters(base, (bot.rng.next() * 2 - 1) * r, (bot.rng.next() * 2 - 1) * r);
+      this.room.dispatch({ type: 'abilityFakeTask', playerId: p.id, at });
+    }
   }
 
   /** Take part in the meeting in progress, or (in `random` mode) call one when this bot's time has come. */

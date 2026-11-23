@@ -79,8 +79,11 @@ export class BotWalker {
 
 // ── Imposter bots (Phase 7) ──────────────────────────────────────────────────
 
-/** How an imposter bot plays (`dev:addBots`, `--imposter-behaviour`). */
-export const BOT_IMPOSTER_BEHAVIOURS = ['wander', 'chase'] as const;
+/**
+ * How an imposter bot plays (`dev:addBots`, `--imposter-behaviour`). `chase` hunts and infects
+ * (Phase 7); `sabotage` (Phase 9) does that and also uses its class abilities whenever they are ready.
+ */
+export const BOT_IMPOSTER_BEHAVIOURS = ['wander', 'chase', 'sabotage'] as const;
 export type BotImposterBehaviour = (typeof BOT_IMPOSTER_BEHAVIOURS)[number];
 
 /** Whether bots call meetings (`random`, once each at a random time) or only join the ones others call (`off`, the default). */

@@ -7,7 +7,9 @@
  * and finishes it with the test-mode shortcut (`dev:autoComplete`). Imposters wander,
  * or with `imposterBehaviour: 'chase'` hunt the nearest crew-looking dot on their radar
  * (so the lobby needs visibility Everyone to see far), `ability:infect` when close,
- * follow during the channel and walk away afterwards. In a meeting every bot walks to the Base, skips
+ * follow during the channel and walk away afterwards; `sabotage` does that and also uses Task Stop and
+ * Fake Task (`ability:taskStop`, `ability:fakeTask` at a random spot near the Base) whenever its
+ * own view says they are ready. In a meeting every bot walks to the Base, skips
  * the discussion and votes at random (Skip with `botVoteSkipPercent`; an imposter never votes for an
  * ally). With `meetings: 'random'` a bot also calls one meeting, at a random time into play.
  */
@@ -171,7 +173,8 @@ export class Bot {
     walker: BotWalker,
   ): Promise<{ to: LatLng | undefined } | undefined> {
     const infect = view.me.imposter?.infect;
-    if (this.o.imposterBehaviour !== 'chase' || !infect || view.lobby.phase !== 'playing') return;
+    if (this.o.imposterBehaviour === 'wander' || !infect || view.lobby.phase !== 'playing') return;
+    if (this.o.imposterBehaviour === 'sabotage') await this.useAbilities(view);
     this.brain ??= new ChaseBrain({
       infectionRadiusM: view.lobby.config.infectionRadiusM,
       rng: this.rng,
@@ -194,6 +197,25 @@ export class Bot {
       return { to: walker.pos };
     }
     return { to: action.to };
+  }
+
+  /** Uses every class ability whose cooldown is over: Task Stop when nothing is jammed, Fake Task at a random spot near the Base. */
+  private async useAbilities(view: PlayerView): Promise<void> {
+    const abilities = view.me.imposter?.abilities ?? [];
+    const now = Date.now() + this.offsetMs;
+    const ready = (id: string) => abilities.some((a) => a.id === id && a.readyAt <= now);
+    if (view.game?.meeting) return;
+    if (ready('taskStop') && view.game?.taskLock === undefined) {
+      const res = await this.call('ability:taskStop', {});
+      if (res.ok) this.o.log(`${this.o.name}: Task Stop`);
+    }
+    const base = view.lobby.map.base;
+    if (ready('fakeTask') && base) {
+      const r = DEFAULT_CONFIG.botFakeScatterM;
+      const at = offsetByMeters(base, (this.rng.next() * 2 - 1) * r, (this.rng.next() * 2 - 1) * r);
+      const res = await this.call('ability:fakeTask', at);
+      if (res.ok) this.o.log(`${this.o.name}: planted a fake task`);
+    }
   }
 
   private allowed(view: PlayerView, p: LatLng): boolean {

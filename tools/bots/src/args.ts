@@ -28,7 +28,7 @@ const MAX_COUNT = 11;
 const MAX_SPEED_FACTOR = 8;
 const DEFAULT_SEED = 1;
 
-export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [--count ${DEFAULT_COUNT}] [--speed 1] [--seed 1] [--imposter-behaviour wander|chase] [--meetings off|random]
+export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [--count ${DEFAULT_COUNT}] [--speed 1] [--seed 1] [--imposter-behaviour wander|chase|sabotage] [--meetings off|random]
 
   --code   lobby code to join (required)
   --url    server URL (default ${DEFAULT_URL})
@@ -36,7 +36,8 @@ export const USAGE = `Usage: pnpm bots -- --code ABC123 [--url ${DEFAULT_URL}] [
   --speed  walking-speed multiplier (default 1 = 1.4 m/s)
   --seed   random seed for the walks (default ${DEFAULT_SEED})
   --imposter-behaviour  chase: imposter bots hunt the nearest crew dot on their radar and infect
-                        (set the lobby's visibility to Everyone so they can see far); wander: just walk (default)
+                        (set the lobby's visibility to Everyone so they can see far); sabotage: chase, and also use Task Stop
+                        and Fake Task whenever they are ready; wander: just walk (default)
   --meetings  random: each bot calls one meeting at a random time (off by default; bots always join and vote in meetings)`;
 
 export function parseBotArgs(argv: readonly string[]): BotArgs {
