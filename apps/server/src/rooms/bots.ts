@@ -360,7 +360,7 @@ export class BotDriver {
     // A crew bot sometimes works out who the imposters are (a stand-in for human deduction).
     if (p.role === 'crew' && bot.rng.next() * 100 < state.config.botVoteSuspicionPercent) {
       const guilty = state.players.filter((x) => x.role === 'imposter' && isActive(x));
-      if (guilty.length > 0) return (bot.rng.pick(guilty) as PlayerState).id;
+      if (guilty.length > 0) return bot.rng.pick(guilty).id;
     }
     const candidates = state.players.filter(
       (x) => x.id !== p.id && isActive(x) && !(p.role === 'imposter' && x.role === 'imposter'),
