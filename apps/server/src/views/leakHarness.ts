@@ -179,6 +179,7 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'game.tasks[].atPin',
   'game.tasks[].partnerWaiting',
   'game.tasks[].requested',
+  'game.tasks[].holdsKey',
   'game.coop',
   'game.coop.taskId',
   'game.coop.phase',

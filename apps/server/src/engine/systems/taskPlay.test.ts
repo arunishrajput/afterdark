@@ -678,9 +678,9 @@ describe('dev:setMinigames (test mode)', () => {
         reduce(play.state, { type: 'devSetMinigames', playerId: 'host', types: ['lock'] }, 0),
       ),
     ).toBe('WRONG_PHASE');
-    // A type with no game yet is dropped; with nothing left it is refused.
+    // An empty list is refused.
     expect(
-      errCode(reduce(lobby, { type: 'devSetMinigames', playerId: 'host', types: ['pattern'] }, 0)),
+      errCode(reduce(lobby, { type: 'devSetMinigames', playerId: 'host', types: [] }, 0)),
     ).toBe('INVALID_PAYLOAD');
     const off = structuredClone(lobby);
     off.config.testMode = false;

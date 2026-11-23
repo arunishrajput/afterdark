@@ -107,6 +107,12 @@ export function setReady(state: RoomState, playerId: string, ready: boolean, now
   p.ready = ready;
 }
 
+/** Settings are numbers, strings, booleans or a list of types (Minigame variety): compare lists by content. */
+const sameValue = (a: unknown, b: unknown): boolean =>
+  Array.isArray(a) && Array.isArray(b)
+    ? a.length === b.length && a.every((x, i) => x === b[i])
+    : a === b;
+
 export function updateConfig(
   state: RoomState,
   playerId: string,
@@ -121,7 +127,7 @@ export function updateConfig(
   const changes: GameConfigEditablePatch = {};
   for (const key of EDITABLE_CONFIG_KEYS) {
     const value = patch[key];
-    if (value !== undefined && value !== state.config[key])
+    if (value !== undefined && !sameValue(value, state.config[key]))
       Object.assign(changes, { [key]: value });
   }
   if (Object.keys(changes).length === 0) return;

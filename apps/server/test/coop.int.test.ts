@@ -348,6 +348,8 @@ describe('co-op over sockets', () => {
         coopChance: 0.5,
         imposterAbilityMode: 'all',
         playerVisibility: 'all',
+        // This test is about co-op, so keep the solo mix to the two games that need no walking twice.
+        minigamesEnabled: ['wires', 'lock'],
       },
     });
     await human.ok('lobby:setBoundary', {

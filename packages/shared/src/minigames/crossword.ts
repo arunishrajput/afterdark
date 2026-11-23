@@ -96,7 +96,10 @@ function puzzleOf(grid: readonly string[]): CrosswordPuzzle {
   };
 }
 
-export function generateCrossword(rng: Rng): { puzzle: CrosswordPuzzle; solution: CrosswordSolution } {
+export function generateCrossword(rng: Rng): {
+  puzzle: CrosswordPuzzle;
+  solution: CrosswordSolution;
+} {
   const base = rng.pick(CROSSWORD_GRIDS);
   const grid = rng.chance(0.5) ? transpose(base) : [...base];
   return { puzzle: puzzleOf(grid), solution: grid };
@@ -109,6 +112,11 @@ export const crossword: MinigameDef<CrosswordPuzzle, CrosswordSolution, string[]
     answer.length === solution.length &&
     answer.every((row, i) => row.toUpperCase() === solution[i]),
   answerSchema: z
-    .array(z.string().regex(/^[A-Za-z#]+$/).max(MAX_SIZE))
+    .array(
+      z
+        .string()
+        .regex(/^[A-Za-z#]+$/)
+        .max(MAX_SIZE),
+    )
     .max(MAX_SIZE),
 };

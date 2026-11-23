@@ -7,6 +7,7 @@
 import {
   DEFAULT_CONFIG,
   type LockCode,
+  type LockFeedback,
   type PlayerView,
   scoreGuess,
   type TaskCard,
@@ -148,7 +149,7 @@ describe('tasks over sockets', () => {
   });
 
   it('section → pin → open → solve: wires scores for the whole team', async () => {
-    const { code, members } = await toPlaying(8);
+    const { code, members } = await toPlaying(8, { minigamesEnabled: ['wires', 'lock'] });
     const me = crewIn(members)[0] as Member;
     // Find a wires task if this seed gives one, else reroll until it does (cooldown permitting) — otherwise solve whatever opens.
     const card = cardsOf(me)[0] as TaskCard;
@@ -172,7 +173,7 @@ describe('tasks over sockets', () => {
       await me.client.locate(ts.clock.now, { lat: atPin.lat, lng: atPin.lng });
       const done = await me.client.ok('task:submit', { taskId: card.id, answer: wiresAnswer(ack) });
       expect(done).toEqual({ result: 'success', points: DEFAULT_CONFIG.points.wires });
-    } else {
+    } else if (ack.type === 'lock') {
       // Lock: guess by elimination through task:action, then submit the matched code.
       let candidates: LockCode[] = [];
       const n = ack.puzzle.maxDigit + 1;
@@ -186,10 +187,11 @@ describe('tasks over sockets', () => {
         // A human guesses about once a second; the socket allows 10 events per second.
         await new Promise((r) => setTimeout(r, GUESS_PAUSE_MS));
         const guess = candidates[0] as LockCode;
-        const { feedback } = await me.client.ok('task:action', {
+        const ack2 = await me.client.ok('task:action', {
           taskId: card.id,
           action: { guess },
         });
+        const feedback = ack2.feedback as LockFeedback;
         if (feedback.solved) solved = guess;
         else
           candidates = candidates.filter((c) => {

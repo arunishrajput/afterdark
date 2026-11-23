@@ -5,7 +5,6 @@ import { createRng } from '../rng';
 import { applyMoves, isSolved, legalMoves, slide } from './slide';
 import { CTX } from './testCtx';
 
-
 /** A shortest solution by breadth-first search. Test code only: the game never solves its own puzzles. */
 function solveMoves(tiles: readonly number[]): number[] | undefined {
   const key = (t: readonly number[]) => t.join('');
@@ -16,7 +15,7 @@ function solveMoves(tiles: readonly number[]): number[] | undefined {
     for (const board of frontier) {
       if (isSolved(board)) {
         const moves: number[] = [];
-        for (let step = seen.get(key(board)); step; ) {
+        for (let step = seen.get(key(board)); step;) {
           moves.push(step.tile);
           step = seen.get(step.from);
         }

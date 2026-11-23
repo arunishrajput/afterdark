@@ -15,7 +15,8 @@ describe('crossword bank', () => {
     const keys = CROSSWORD_GRIDS.map((g) => g.join('/'));
     expect(new Set(keys).size).toBe(keys.length);
     // A transposed copy must not already be in the bank either (it would be a repeat).
-    for (const g of CROSSWORD_GRIDS) expect(keys.filter((k) => k === transpose(g).join('/')).length).toBeLessThanOrEqual(1);
+    for (const g of CROSSWORD_GRIDS)
+      expect(keys.filter((k) => k === transpose(g).join('/')).length).toBeLessThanOrEqual(1);
     for (const g of CROSSWORD_GRIDS) {
       expect([3, 4]).toContain(g.length);
       for (const row of g) {
@@ -37,7 +38,12 @@ describe('crossword bank', () => {
       // Word lengths match what the grid shows.
       for (const e of across) expect(g[e.row]?.slice(e.col, e.col + e.word.length)).toBe(e.word);
       for (const e of down) {
-        expect(g.map((r) => r[e.col]).join('').slice(e.row, e.row + e.word.length)).toBe(e.word);
+        expect(
+          g
+            .map((r) => r[e.col])
+            .join('')
+            .slice(e.row, e.row + e.word.length),
+        ).toBe(e.word);
       }
     }
   });
@@ -83,7 +89,15 @@ describe('crossword (Mini Crossword)', () => {
   it('is case-insensitive and exact', () => {
     const { puzzle, solution } = gen(6);
     expect(crossword.verify(puzzle, solution, [...solution], undefined, CTX)).toBe(true);
-    expect(crossword.verify(puzzle, solution, solution.map((r) => r.toLowerCase()), undefined, CTX)).toBe(true);
+    expect(
+      crossword.verify(
+        puzzle,
+        solution,
+        solution.map((r) => r.toLowerCase()),
+        undefined,
+        CTX,
+      ),
+    ).toBe(true);
     const wrong = [...solution];
     const first = wrong[0] as string;
     const at = first.search(/[A-Z]/);

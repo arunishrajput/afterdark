@@ -8,7 +8,12 @@ import type { TaskPointSource } from '../geo/pool';
 import type { SectionId } from '../geo/sections';
 import type { LatLng, MultiPolygonCoords, Position, Ring } from '../geo/types';
 import type { CoopPuzzle } from '../minigames/coopPin';
+import type { CrosswordPuzzle } from '../minigames/crossword';
+import type { KeyAction, KeyFeedback, KeyPuzzle, KeyTurns } from '../minigames/keyfetch';
 import type { LockAction, LockFeedback, LockPuzzle } from '../minigames/lock';
+import type { PatternPuzzle } from '../minigames/pattern';
+import type { SignalPuzzle } from '../minigames/signal';
+import type { SlidePuzzle } from '../minigames/slide';
 import type { WiresAnswer, WiresPuzzle } from '../minigames/wires';
 import type { EndReason, ImposterClass, Phase, PlayerStatus, Role, Winner } from './domain';
 
@@ -170,6 +175,8 @@ export type TaskCard =
       partnerTag?: string;
       /** The partner-slot card ("Requested by a teammate"): someone else rolled it (TASKS §5.2). */
       requested?: true;
+      /** Key Fetch only, the owner's own card: the key is in hand and this card now points at Point 2. */
+      holdsKey?: true;
     }
   | {
       id: string;
@@ -180,6 +187,7 @@ export type TaskCard =
       section: SectionId;
       partnerTag?: string;
       requested?: true;
+      holdsKey?: true;
       lat: number;
       lng: number;
       atPin: boolean;
@@ -190,15 +198,21 @@ export type TaskCard =
 /** The puzzle the server sends when a task is opened: never the solution. */
 export type TaskOpenAck =
   | { type: 'wires'; points: number; puzzle: WiresPuzzle }
-  | { type: 'lock'; points: number; puzzle: LockPuzzle };
+  | { type: 'lock'; points: number; puzzle: LockPuzzle }
+  | { type: 'pattern'; points: number; puzzle: PatternPuzzle }
+  | { type: 'signal'; points: number; puzzle: SignalPuzzle }
+  | { type: 'slide'; points: number; puzzle: SlidePuzzle }
+  | { type: 'crossword'; points: number; puzzle: CrosswordPuzzle }
+  | { type: 'keyfetch'; points: number; puzzle: KeyPuzzle };
 
-export type TaskActionBody = LockAction;
-export type TaskActionAck = { feedback: LockFeedback };
+export type TaskActionBody = LockAction | KeyAction;
+export type TaskActionAck = { feedback: LockFeedback | KeyFeedback };
 
 /** `fooled` is a fake task finished correctly (Phase 9). */
 export type TaskSubmitAck = { result: 'success' | 'wrong' | 'fooled'; points: number };
 
-export type TaskAnswerBody = WiresAnswer | number[];
+/** Wires, lock, pattern and slide answer with numbers; signal with a word; crossword with rows; key fetch with turns. */
+export type TaskAnswerBody = WiresAnswer | number[] | string | string[] | KeyTurns;
 
 /** The ack of `coop:join`: the PIN the joiner must show. */
 export interface CoopJoinAck {

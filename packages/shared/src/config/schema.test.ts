@@ -58,6 +58,17 @@ describe('editable config', () => {
   it('a patch is range-checked', () => {
     expect(editableConfigPatchSchema.safeParse({ meetingVoteS: 10 }).success).toBe(false);
   });
+
+  it('Minigame variety: any 2 or more solo types, never fewer, never an unknown type', () => {
+    const patch = (minigamesEnabled: unknown) =>
+      editableConfigPatchSchema.safeParse({ minigamesEnabled }).success;
+    expect(patch(['wires', 'lock'])).toBe(true);
+    expect(patch([...DEFAULT_CONFIG.minigamesEnabled])).toBe(true);
+    expect(patch(['wires'])).toBe(false);
+    expect(patch([])).toBe(false);
+    expect(patch(['wires', 'coop_pin'])).toBe(false);
+    expect(HOST_CONFIG_TIER.minigamesEnabled).toBe('advanced');
+  });
 });
 
 describe('editableNumberRange', () => {

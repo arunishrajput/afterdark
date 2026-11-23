@@ -103,7 +103,9 @@ describe('lock', () => {
 
   it('rejects an action that is not a guess', () => {
     const s = start(4);
-    expect(game.act(s.puzzle, s.solution, s.state, { guess: 'abc' }, createRng(1), CTX)).toBe('invalid');
+    expect(game.act(s.puzzle, s.solution, s.state, { guess: 'abc' }, createRng(1), CTX)).toBe(
+      'invalid',
+    );
     expect(
       game.act(s.puzzle, s.solution, s.state, { guess: [1, 2, 3], extra: 1 }, createRng(1), CTX),
     ).toBe('invalid');

@@ -27,18 +27,46 @@ describe('keyfetch (Key Fetch)', () => {
     const grab = keyfetch.act?.(puzzle, solution, undefined, { step: 'grab' }, rng, at(10_000));
     expect(grab?.feedback).toEqual({ picked: false });
     const state = grab?.state as KeyState;
-    const early = keyfetch.act?.(puzzle, solution, state, { step: 'pickup' }, rng, at(10_000 + holdMs - 1));
+    const early = keyfetch.act?.(
+      puzzle,
+      solution,
+      state,
+      { step: 'pickup' },
+      rng,
+      at(10_000 + holdMs - 1),
+    );
     expect(early?.feedback).toEqual<KeyFeedback>({ picked: false });
-    const done = keyfetch.act?.(puzzle, solution, state, { step: 'pickup' }, rng, at(10_000 + holdMs));
+    const done = keyfetch.act?.(
+      puzzle,
+      solution,
+      state,
+      { step: 'pickup' },
+      rng,
+      at(10_000 + holdMs),
+    );
     expect(done?.feedback).toEqual<KeyFeedback>({ picked: true });
   });
 
   it('refuses a pickup that was never grabbed, and a grab on leg 2', () => {
     const one = keyfetch.generate(createRng(3), 1, DEFAULT_CONFIG, at(0));
-    const blind = keyfetch.act?.(one.puzzle, one.solution, undefined, { step: 'pickup' }, rng, at(99_000));
+    const blind = keyfetch.act?.(
+      one.puzzle,
+      one.solution,
+      undefined,
+      { step: 'pickup' },
+      rng,
+      at(99_000),
+    );
     expect(blind?.feedback).toEqual({ picked: false });
     const two = keyfetch.generate(createRng(3), 1, DEFAULT_CONFIG, at(0, true));
-    const grab = keyfetch.act?.(two.puzzle, two.solution, undefined, { step: 'grab' }, rng, at(0, true));
+    const grab = keyfetch.act?.(
+      two.puzzle,
+      two.solution,
+      undefined,
+      { step: 'grab' },
+      rng,
+      at(0, true),
+    );
     expect(grab?.feedback).toEqual({ picked: false });
     expect((grab?.state as KeyState | undefined)?.grabbedAtMs).toBeUndefined();
   });
@@ -46,19 +74,39 @@ describe('keyfetch (Key Fetch)', () => {
   it('a new grab restarts the hold', () => {
     const { puzzle, solution } = keyfetch.generate(createRng(3), 1, DEFAULT_CONFIG, at(0));
     const first = keyfetch.act?.(puzzle, solution, undefined, { step: 'grab' }, rng, at(0));
-    const second = keyfetch.act?.(puzzle, solution, first?.state as KeyState, { step: 'grab' }, rng, at(2_000));
-    const early = keyfetch.act?.(puzzle, solution, second?.state as KeyState, { step: 'pickup' }, rng, at(holdMs));
+    const second = keyfetch.act?.(
+      puzzle,
+      solution,
+      first?.state as KeyState,
+      { step: 'grab' },
+      rng,
+      at(2_000),
+    );
+    const early = keyfetch.act?.(
+      puzzle,
+      solution,
+      second?.state as KeyState,
+      { step: 'pickup' },
+      rng,
+      at(holdMs),
+    );
     expect(early?.feedback).toEqual({ picked: false });
   });
 
   it('verifies the turns on leg 2 only', () => {
     const two = keyfetch.generate(createRng(4), 1, DEFAULT_CONFIG, at(0, true));
-    expect(keyfetch.verify(two.puzzle, two.solution, [...two.solution], undefined, at(0, true))).toBe(true);
+    expect(
+      keyfetch.verify(two.puzzle, two.solution, [...two.solution], undefined, at(0, true)),
+    ).toBe(true);
     const wrong = two.solution.map((t) => (t === 'L' ? 'R' : 'L'));
     expect(keyfetch.verify(two.puzzle, two.solution, wrong, undefined, at(0, true))).toBe(false);
-    expect(keyfetch.verify(two.puzzle, two.solution, two.solution.slice(1), undefined, at(0, true))).toBe(false);
+    expect(
+      keyfetch.verify(two.puzzle, two.solution, two.solution.slice(1), undefined, at(0, true)),
+    ).toBe(false);
     const one = keyfetch.generate(createRng(4), 1, DEFAULT_CONFIG, at(0));
-    expect(keyfetch.verify(one.puzzle, one.solution, [...one.solution], undefined, at(0))).toBe(false);
+    expect(keyfetch.verify(one.puzzle, one.solution, [...one.solution], undefined, at(0))).toBe(
+      false,
+    );
   });
 
   it('parses through the erased wrapper: bad answers and actions are invalid', () => {

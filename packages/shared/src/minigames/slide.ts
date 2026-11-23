@@ -43,7 +43,10 @@ function slideTile(tiles: readonly number[], tile: number): number[] | undefined
 }
 
 /** Replays a move list. `undefined` as soon as a move is illegal. */
-export function applyMoves(tiles: readonly number[], moves: readonly number[]): number[] | undefined {
+export function applyMoves(
+  tiles: readonly number[],
+  moves: readonly number[],
+): number[] | undefined {
   let board: number[] | undefined = [...tiles];
   for (const tile of moves) {
     board = slideTile(board, tile);

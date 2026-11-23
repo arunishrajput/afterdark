@@ -181,6 +181,46 @@ function nextTask(state: RoomState, p: PlayerState, now: number): TaskState | un
   return makeCoop(state, p, solo, now) ?? solo;
 }
 
+/**
+ * Key Fetch (TASKS §4): the key was picked up at Point 1. The card moves to Point 2: another
+ * section when one exists, at least `keyFetchMinLegM` away, and back to Stage 1 for its own
+ * reveal. The wishes relax in the order "far and elsewhere", "far", "elsewhere", "any other".
+ * Task Stop, meetings and reconnects never touch `keyHeld`.
+ */
+export function moveToKeyPoint(state: RoomState, p: PlayerState, task: TaskState, now: number) {
+  const game = state.game;
+  if (!game) return;
+  const rng = taskRng(state);
+  const gameMs = gameNow(game.clock, now);
+  if (task.pointId) game.pointUsedAtGameMs[task.pointId] = gameMs;
+  const taken = new Set((p.tasks ?? []).map((t) => t.pointId));
+  const here = pointKey(task.regionId, task.section);
+  const all = [...usablePointsBySection(state).values()].flat().filter((pt) => !taken.has(pt.id));
+  const far = (pt: TaskPoint) => distanceM(task, pt) >= state.config.keyFetchMinLegM;
+  const elsewhere = (pt: TaskPoint) => pointKey(pt.regionId, pt.section) !== here;
+  let point: TaskPoint | undefined;
+  for (const wishes of [[far, elsewhere], [far], [elsewhere], []]) {
+    const fit = all.filter((pt) => wishes.every((wish) => wish(pt)));
+    if (fit.length > 0) {
+      point = choosePoint(state, p, rng, fit, now) ?? rng.pick(fit);
+      break;
+    }
+  }
+  task.keyHeld = true;
+  delete task.open;
+  delete task.holdSince;
+  task.stage = 'assigned';
+  task.atPin = false;
+  // With no other point at all the card stays where it is and reveals the pin again.
+  if (point) {
+    task.pointId = point.id;
+    task.lat = point.lat;
+    task.lng = point.lng;
+    task.regionId = point.regionId;
+    task.section = point.section;
+  }
+}
+
 /** Fills the player's empty slots (RULES §6.1). A slot stays empty while no section can host a task. */
 export function refillSlots(state: RoomState, p: PlayerState, now: number): void {
   if (!isTasker(p) || !state.game) return;

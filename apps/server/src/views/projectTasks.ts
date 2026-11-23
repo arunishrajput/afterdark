@@ -39,6 +39,7 @@ function projectCard(state: RoomState, me: PlayerState, t: TaskState): TaskCard 
     section: t.section,
     ...partner,
     ...(me.partnerTask?.id === t.id ? { requested: true as const } : {}),
+    ...(t.keyHeld ? { holdsKey: true as const } : {}),
   };
   if (t.stage === 'assigned') return { ...head, stage: 'assigned' };
   return {

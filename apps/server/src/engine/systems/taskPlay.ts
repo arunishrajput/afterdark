@@ -6,9 +6,15 @@
  */
 import {
   distanceM,
+  type CrosswordPuzzle,
+  type KeyFeedback,
+  type KeyPuzzle,
   type LockFeedback,
   type LockPuzzle,
   minigameOf,
+  type PatternPuzzle,
+  type SignalPuzzle,
+  type SlidePuzzle,
   type SoloMinigameType,
   type TaskActionAck,
   type TaskContext,
@@ -23,7 +29,7 @@ import { expireCoopById, expireCoopsAtPoint } from './coop';
 import { heldTasks } from './coopPairing';
 import { requireGoodFix } from './location';
 import { findPlayer } from './players';
-import { isTasker, refillSlots, resetOpen, taskRng } from './tasks';
+import { isTasker, moveToKeyPoint, refillSlots, resetOpen, taskRng } from './tasks';
 import { requireTasksUnlocked } from './taskStop';
 import { isZoneLocked } from './zone';
 
@@ -98,7 +104,12 @@ export function openTask(
     if (p.tasks?.some((t) => t.open)) {
       throw new RuleError('NOT_ALLOWED', 'Finish or cancel the task you have open');
     }
-    const { puzzle, solution } = game.generate(taskRng(state), 1, state.config, contextOf(state, task, now));
+    const { puzzle, solution } = game.generate(
+      taskRng(state),
+      1,
+      state.config,
+      contextOf(state, task, now),
+    );
     task.open = { puzzle, solution };
   }
   // The same ack for a real and a fake task: only the submit result differs (TASKS §1).
@@ -120,8 +131,16 @@ function openAck(type: SoloMinigameType, points: number, puzzle: unknown): TaskO
       return { type, points, puzzle: puzzle as WiresPuzzle };
     case 'lock':
       return { type, points, puzzle: puzzle as LockPuzzle };
-    default:
-      throw new RuleError('INTERNAL', 'No such minigame');
+    case 'pattern':
+      return { type, points, puzzle: puzzle as PatternPuzzle };
+    case 'signal':
+      return { type, points, puzzle: puzzle as SignalPuzzle };
+    case 'slide':
+      return { type, points, puzzle: puzzle as SlidePuzzle };
+    case 'crossword':
+      return { type, points, puzzle: puzzle as CrosswordPuzzle };
+    case 'keyfetch':
+      return { type, points, puzzle: puzzle as KeyPuzzle };
   }
 }
 
@@ -151,13 +170,15 @@ export function actOnTask(
   if (step === 'invalid') throw new RuleError('INVALID_PAYLOAD', 'That is not a valid move');
   open.progress = step.state;
   if (step.solution !== undefined) open.solution = step.solution;
+  const feedback = step.feedback as LockFeedback | KeyFeedback;
+  // Key Fetch: a long enough hold at Point 1 sends the card on to Point 2 (the minigame closes).
+  if (task.type === 'keyfetch' && 'picked' in feedback && feedback.picked) {
+    moveToKeyPoint(state, p, task, now);
+  }
   effects.push({
     kind: 'reply',
     playerId,
-    reply: {
-      type: 'action',
-      ack: { feedback: step.feedback as LockFeedback } satisfies TaskActionAck,
-    },
+    reply: { type: 'action', ack: { feedback } satisfies TaskActionAck },
   });
 }
 

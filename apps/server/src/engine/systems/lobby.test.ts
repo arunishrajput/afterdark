@@ -225,6 +225,33 @@ describe('updateConfig (RULES §3.6)', () => {
     expect(res.effects).toEqual([]);
   });
 
+  it('Minigame variety: the host can switch types off, and an unchanged list un-readies nobody', () => {
+    let s = lobbyWith(1);
+    s = ok(reduce(s, { type: 'setReady', playerId: 'p1', ready: true }, T0)).state;
+    const same = ok(
+      reduce(
+        s,
+        {
+          type: 'updateConfig',
+          playerId: 'host',
+          patch: { minigamesEnabled: [...s.config.minigamesEnabled] },
+        },
+        T0,
+      ),
+    );
+    expect(same.effects).toEqual([]);
+    expect(player(same.state, 'p1')?.ready).toBe(true);
+    const fewer = ok(
+      reduce(
+        s,
+        { type: 'updateConfig', playerId: 'host', patch: { minigamesEnabled: ['wires', 'slide'] } },
+        T0,
+      ),
+    );
+    expect(fewer.state.config.minigamesEnabled).toEqual(['wires', 'slide']);
+    expect(player(fewer.state, 'p1')?.ready).toBe(false);
+  });
+
   it('rejects enabling test mode when the server forbids it', () => {
     const s = lobbyWith(1, { allowTestMode: false });
     const res = reduce(

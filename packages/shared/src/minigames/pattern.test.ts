@@ -5,7 +5,7 @@ import { createRng } from '../rng';
 import { pattern } from './pattern';
 import { CTX } from './testCtx';
 
-const gen = (seed: number, patternLength = DEFAULT_CONFIG.patternLength) =>
+const gen = (seed: number, patternLength: number = DEFAULT_CONFIG.patternLength) =>
   pattern.generate(createRng(seed), 1, { ...DEFAULT_CONFIG, patternLength }, CTX);
 
 describe('pattern (Pattern Memory)', () => {

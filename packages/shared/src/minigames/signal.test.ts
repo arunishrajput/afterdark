@@ -54,7 +54,9 @@ describe('signal (Signal Decode)', () => {
       expect(k).toBeGreaterThanOrEqual(1);
       expect(k).toBeLessThan(d);
       for (const [sym, letter] of Object.entries(puzzle.key)) {
-        expect(puzzle.symbols.some((s, i) => String(s) === sym && solution[i] === letter)).toBe(true);
+        expect(puzzle.symbols.some((s, i) => String(s) === sym && solution[i] === letter)).toBe(
+          true,
+        );
       }
       revealed += k;
       distinct += d;
