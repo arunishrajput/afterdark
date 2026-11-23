@@ -4,18 +4,25 @@ import { useState } from 'react';
 import { Checklist } from '../components/lobby/Checklist';
 import { CodeCard } from '../components/lobby/CodeCard';
 import { CountdownOverlay } from '../components/lobby/CountdownOverlay';
+import { PermissionGate } from '../components/lobby/PermissionGate';
 import { Roster } from '../components/lobby/Roster';
 import { SettingsSheet, SettingsSummary } from '../components/lobby/Settings';
+import { MapPanel } from '../components/MapPanel';
 import { Button } from '../components/ui/Button';
 import { leaveLobby, setReady } from '../net/actions';
 import { messageFor } from '../net/errors';
+import { SimPanel } from '../sim/SimPanel';
 import { useGame } from '../store';
+import { useLocation } from '../store/location';
 
 export function Lobby({ view }: { view: PlayerView }) {
   const { lobby, me } = view;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const pushToast = useGame((s) => s.pushToast);
+  const simOn = useLocation((s) => s.sim.on);
+  const simulated = lobby.testMode && simOn;
+  const locationGood = me.location?.quality === 'good';
 
   const toggleReady = async () => {
     setBusy(true);
@@ -36,7 +43,9 @@ export function Lobby({ view }: { view: PlayerView }) {
       </header>
 
       <CodeCard code={lobby.code} />
+      <PermissionGate view={view} simulated={simulated} />
       <Roster players={lobby.players} meId={me.id} amHost={me.isHost} />
+      <MapPanel view={view} simulated={simulated} />
       <Checklist
         players={lobby.players}
         config={lobby.config}
@@ -63,6 +72,8 @@ export function Lobby({ view }: { view: PlayerView }) {
         )}
       </section>
 
+      {lobby.testMode && <SimPanel />}
+
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-bg/90 backdrop-blur">
         <div className="mx-auto flex max-w-md gap-2 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button variant="secondary" onClick={() => void leaveLobby()}>
@@ -71,18 +82,23 @@ export function Lobby({ view }: { view: PlayerView }) {
           <Button
             data-testid="ready-button"
             aria-pressed={me.ready}
-            disabled={busy}
+            disabled={busy || (!me.ready && !locationGood)}
             onClick={() => void toggleReady()}
             className="flex-1 text-lg"
             variant={me.ready ? 'secondary' : 'primary'}
           >
-            {me.ready ? 'Ready ✓ (tap to cancel)' : 'I’m ready'}
+            {me.ready ? 'Ready ✓ (tap to cancel)' : locationGood ? 'I’m ready' : 'Waiting for GPS…'}
           </Button>
         </div>
       </div>
 
       {settingsOpen && (
-        <SettingsSheet open config={lobby.config} onClose={() => setSettingsOpen(false)} />
+        <SettingsSheet
+          open
+          config={lobby.config}
+          playerCount={lobby.players.length}
+          onClose={() => setSettingsOpen(false)}
+        />
       )}
       {lobby.countdownEndsAt !== undefined && <CountdownOverlay endsAt={lobby.countdownEndsAt} />}
     </main>
