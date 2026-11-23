@@ -24,6 +24,7 @@ import { dotIcon, selfIcon, spawnIcon } from './icons';
 import { NoGoEditor } from './NoGoEditor';
 import { type MapTool, SetupLayers, type SetupOverlay } from './SetupLayers';
 import { BOUNDARY_STYLE, OUTSIDE_STYLE, TILE_ATTRIBUTION, TILE_URL } from './style';
+import { TaskLayers, type TaskOverlay } from './TaskLayers';
 
 const FIT_PADDING: [number, number] = [28, 28];
 const START_ZOOM = 17;
@@ -60,6 +61,8 @@ export interface MapViewProps {
   onNoGoZone?: ((coords: Position[]) => void) | undefined;
   /** The player's own spawn point (spawn phase). */
   spawn?: LatLng | undefined;
+  /** The player's own task cards: the section to head for and the revealed pins. */
+  tasks?: TaskOverlay | undefined;
 }
 
 /** Forwards taps on the bare map to the parent. */
@@ -255,6 +258,7 @@ export default function MapView({
   onPointTap,
   onNoGoZone,
   spawn,
+  tasks,
 }: MapViewProps) {
   const [fitSignal, setFitSignal] = useState(0);
   return (
@@ -325,6 +329,7 @@ export default function MapView({
             keyboard={false}
           />
         )}
+        {tasks && <TaskLayers overlay={tasks} />}
         {self && <SelfLayer self={self} onSimMove={onSimMove} />}
         <MapEffects
           ring={ring}

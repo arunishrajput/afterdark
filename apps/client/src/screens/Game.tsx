@@ -1,4 +1,5 @@
-import type { PlayerView } from '@afterdark/shared';
+import type { PlayerView, TaskCard } from '@afterdark/shared';
+import { useState } from 'react';
 
 import { GameMap } from '../components/game/GameMap';
 import { GameMenu } from '../components/game/HostMenu';
@@ -9,6 +10,9 @@ import {
   TeamScoreBar,
   ZoneGlow,
 } from '../components/game/Hud';
+import { TaskPanel } from '../components/game/TaskPanel';
+import { TaskPlayer } from '../components/game/TaskPlayer';
+import { useSelfPosition } from '../hooks/useSelfPosition';
 import { SimPanel } from '../sim/SimPanel';
 import { useLocation } from '../store/location';
 
@@ -24,6 +28,11 @@ export function Game({ view }: { view: PlayerView }) {
   const simulated = lobby.testMode && simOn;
   const imposter = me.imposter;
   const paused = game?.clock?.pausedAt !== undefined;
+  const self = useSelfPosition(view);
+  const cards = game?.tasks ?? [];
+  const [playing, setPlaying] = useState<string | undefined>();
+  const [focus, setFocus] = useState<{ id: string; seq: number } | undefined>();
+  const playingCard = cards.find((c) => c.id === playing);
 
   return (
     <main className="relative mx-auto flex h-dvh max-w-md flex-col gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -46,7 +55,15 @@ export function Game({ view }: { view: PlayerView }) {
       <StatusBanner view={view} />
 
       <div className="relative isolate min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10">
-        <GameMap view={view} simulated={simulated} />
+        <GameMap
+          view={view}
+          simulated={simulated}
+          tasks={
+            me.role === 'crew'
+              ? { cards, regions: lobby.map.regions, focusId: focus?.id, focusSeq: focus?.seq }
+              : undefined
+          }
+        />
         {paused && (
           <div
             role="status"
@@ -57,6 +74,16 @@ export function Game({ view }: { view: PlayerView }) {
           </div>
         )}
       </div>
+
+      {me.role === 'crew' && (
+        <TaskPanel
+          view={view}
+          self={self}
+          onFocus={(card: TaskCard) => setFocus((f) => ({ id: card.id, seq: (f?.seq ?? 0) + 1 }))}
+          onStart={(card: TaskCard) => setPlaying(card.id)}
+        />
+      )}
+      {playingCard && <TaskPlayer card={playingCard} onClose={() => setPlaying(undefined)} />}
 
       <section
         aria-label="Your status"

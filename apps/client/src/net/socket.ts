@@ -10,6 +10,7 @@ import { io, type Socket } from 'socket.io-client';
 
 import { toastFor, useConnection, useGame } from '../store';
 import { bestEstimate, type ClockSample, sampleFromPing } from './clock';
+import { playCue } from './cues';
 import type { ClientErrorCode } from './errors';
 import { clearSession, loadSession } from './persist';
 
@@ -103,8 +104,12 @@ export function startConnection(): void {
   socket.on('view', (view) => useGame.getState().setView(view));
   socket.on('radar', (radar) => useGame.getState().setRadar(radar));
   socket.on('event', (event) => {
+    const g = useGame.getState();
     const text = toastFor(event);
-    if (text) useGame.getState().pushToast(text);
+    if (text) g.pushToast(text);
+    if (event.type === 'task.reset') g.signalTaskReset(event.reason);
+    if (event.type === 'task.completed') g.signalTaskDone(event.points);
+    playCue(event);
   });
   socket.on('kicked', ({ reason }) => {
     const g = useGame.getState();

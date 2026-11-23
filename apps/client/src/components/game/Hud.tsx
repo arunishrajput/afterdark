@@ -1,11 +1,13 @@
 /** HUD parts (UI_UX §3): match timer, infection boxes, team score bar, zone banner and edge glow. */
 import type { PlayerView } from '@afterdark/shared';
+import { useEffect, useRef, useState } from 'react';
 
 import { useServerNow } from '../../hooks/useServerNow';
 import { formatClock } from './format';
 
 const TIMER_REFRESH_MS = 250;
 const PERCENT = 100;
+const SCORE_FLOAT_MS = 1300;
 
 /** Remaining game time from the server's clock pair; frozen while `pausedAt` is set. */
 export function MatchTimer({
@@ -70,10 +72,36 @@ export function InfectionBoxes({
   );
 }
 
+/** A "+N" that floats up from the score whenever the team score rises (UI_UX §3). */
+function ScoreFloat({ score }: { score: number }) {
+  const prev = useRef(score);
+  const [float, setFloat] = useState<{ key: number; gain: number } | undefined>();
+  useEffect(() => {
+    const gain = score - prev.current;
+    prev.current = score;
+    if (gain <= 0) return;
+    setFloat((f) => ({ key: (f?.key ?? 0) + 1, gain }));
+    const t = setTimeout(() => setFloat(undefined), SCORE_FLOAT_MS);
+    return () => clearTimeout(t);
+  }, [score]);
+  if (!float) return null;
+  return (
+    <span
+      key={float.key}
+      data-testid="score-float"
+      aria-hidden="true"
+      className="score-float absolute -top-1 right-0 font-mono text-sm font-bold text-accent"
+    >
+      +{float.gain}
+    </span>
+  );
+}
+
 export function TeamScoreBar({ score, target }: { score: number; target: number }) {
   const pct = Math.min(PERCENT, Math.round((score / Math.max(1, target)) * PERCENT));
   return (
-    <div className="min-w-0 flex-1" data-testid="team-score">
+    <div className="relative min-w-0 flex-1" data-testid="team-score">
+      <ScoreFloat score={score} />
       <div
         role="progressbar"
         aria-label="Team score"

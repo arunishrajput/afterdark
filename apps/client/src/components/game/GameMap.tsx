@@ -5,6 +5,7 @@ import { useSelfPosition } from '../../hooks/useSelfPosition';
 import { simTeleport } from '../../net/actions';
 import { useGame } from '../../store';
 import type { SetupOverlay } from '../map/SetupLayers';
+import type { TaskOverlay } from '../map/TaskLayers';
 
 // Leaflet is heavy: fetched only once a lobby is open (same chunk as the lobby map).
 const MapView = lazy(() => import('../map/MapView'));
@@ -18,12 +19,15 @@ export function GameMap({
   view,
   simulated,
   spawn,
+  tasks,
   resizeKey,
 }: {
   view: PlayerView;
   simulated: boolean;
   /** Spawn phase: draw the player's own spawn pin. */
   spawn?: LatLng | undefined;
+  /** Play: the viewer's own task layers. */
+  tasks?: TaskOverlay | undefined;
   resizeKey?: string;
 }) {
   const radar = useGame((s) => s.radar);
@@ -50,6 +54,7 @@ export function GameMap({
         dots={radar?.dots ?? []}
         overlay={overlay}
         spawn={spawn}
+        tasks={tasks}
         tool="none"
         onSimMove={simulated ? (to) => void simTeleport(to) : undefined}
         resizeKey={resizeKey}

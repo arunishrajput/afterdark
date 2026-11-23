@@ -265,3 +265,79 @@ textarea {
     animation: none;
   }
 }
+
+/* Task pins and the section to head for (Phase 5) */
+.task-pin-marker {
+  background: none;
+  border: none;
+}
+.task-pin {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: var(--region);
+  color: #0a0c12;
+  border: 3px solid #fff;
+  font-size: 18px;
+  box-shadow: 0 0 14px var(--region);
+}
+.task-pin--here {
+  animation: pin-pulse 1.4s ease-out infinite;
+}
+@keyframes pin-pulse {
+  0% {
+    box-shadow:
+      0 0 14px var(--region),
+      0 0 0 0 var(--region);
+  }
+  100% {
+    box-shadow:
+      0 0 14px var(--region),
+      0 0 0 18px transparent;
+  }
+}
+.task-section {
+  animation: section-glow 2s ease-in-out infinite;
+}
+@keyframes section-glow {
+  50% {
+    fill-opacity: 0.12;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-pin--here,
+  .task-section {
+    animation: none;
+  }
+}
+
+/* The +N that floats up from the score when the team scores */
+.score-float {
+  animation: score-float 1.2s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes score-float {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-1.5rem);
+  }
+}
+
+/* A wrong answer shakes the game */
+.shake {
+  animation: shake 0.35s ease-in-out;
+}
+@keyframes shake {
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}

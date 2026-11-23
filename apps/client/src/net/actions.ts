@@ -6,6 +6,8 @@ import type {
   LobbyEditTaskPointsPayload,
   LobbyRegenerateRegionsPayload,
   Position,
+  TaskActionBody,
+  TaskAnswerBody,
 } from '@afterdark/shared';
 
 import { useGame } from '../store';
@@ -76,3 +78,19 @@ export async function simTeleport(to: LatLng) {
   // Walking sends normal fixes; a teleport is a jump the speed check would reject.
   return devTeleport(to);
 }
+
+// ── Phase 5: tasks ──────────────────────────────────────────────────────────
+
+/** At the pin: the reply carries the minigame type, its points and the puzzle (never the solution). */
+export const openTask = (taskId: string) => request('task:open', { taskId });
+/** One step of a multi-step game (a lock guess). */
+export const taskAction = (taskId: string, action: TaskActionBody) =>
+  request('task:action', { taskId, action });
+/** The server checks the answer; a wrong one locks submitting for a few seconds. */
+export const submitTask = (taskId: string, answer: TaskAnswerBody) =>
+  request('task:submit', { taskId, answer });
+export const cancelTask = (taskId: string) => request('task:cancel', { taskId });
+export const rerollTask = (taskId: string) => request('task:reroll', { taskId });
+export const reportUnsafe = (taskId: string) => request('task:reportUnsafe', { taskId });
+/** Test mode only: finish the open task as if it was solved. */
+export const devAutoComplete = (taskId: string) => request('dev:autoComplete', { taskId });

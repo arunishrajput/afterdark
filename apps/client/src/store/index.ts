@@ -29,6 +29,12 @@ export interface Toast {
   text: string;
 }
 
+/** A private task event the UI reacts to (a counter, so the same event twice still changes the store). */
+export interface TaskSignal {
+  seq: number;
+  reason: 'range' | 'gps' | 'zone' | 'connection';
+}
+
 interface GameState {
   /** Latest server snapshot for this player; undefined when not in a lobby. */
   view: PlayerView | undefined;
@@ -38,12 +44,18 @@ interface GameState {
   resuming: boolean;
   notice: Notice | undefined;
   toasts: Toast[];
+  /** The latest `task.reset`: an open minigame was dropped. */
+  taskReset: TaskSignal | undefined;
+  /** The latest `task.completed`, for the +N float. */
+  taskDone: { seq: number; points: number } | undefined;
   setView: (view: PlayerView) => void;
   setRadar: (radar: RadarPayload) => void;
   clearView: () => void;
   setResuming: (resuming: boolean) => void;
   setNotice: (notice: Notice | undefined) => void;
   pushToast: (text: string) => void;
+  signalTaskReset: (reason: TaskSignal['reason']) => void;
+  signalTaskDone: (points: number) => void;
   dismissToast: (id: number) => void;
 }
 
@@ -55,6 +67,8 @@ export const useGame = create<GameState>()((set) => ({
   resuming: false,
   notice: undefined,
   toasts: [],
+  taskReset: undefined,
+  taskDone: undefined,
   setView: (view) =>
     set((s) => {
       // Ignore a stale snapshot for the same player (views carry an increasing `v`).
@@ -66,8 +80,19 @@ export const useGame = create<GameState>()((set) => ({
   setResuming: (resuming) => set({ resuming }),
   setNotice: (notice) => set({ notice }),
   pushToast: (text) => set((s) => ({ toasts: [...s.toasts, { id: nextToastId++, text }] })),
+  signalTaskReset: (reason) =>
+    set((s) => ({ taskReset: { seq: (s.taskReset?.seq ?? 0) + 1, reason } })),
+  signalTaskDone: (points) =>
+    set((s) => ({ taskDone: { seq: (s.taskDone?.seq ?? 0) + 1, points } })),
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
+
+const TASK_RESET_COPY = {
+  range: 'You moved away from the pin. The task was reset.',
+  gps: 'GPS signal lost. The task was reset.',
+  zone: 'You left the zone. The task was reset.',
+  connection: 'Connection lost. The task was reset.',
+} as const;
 
 /** Toast copy for server events (UI_UX §4: short and imperative). */
 export function toastFor(event: GameEvent): string | undefined {
@@ -88,6 +113,16 @@ export function toastFor(event: GameEvent): string | undefined {
       return 'Return to the zone';
     case 'zone.penalty':
       return `Out of bounds: −${event.points} ${event.points === 1 ? 'point' : 'points'}`;
+    case 'task.reset':
+      return TASK_RESET_COPY[event.reason];
+    case 'task.removed':
+      return 'A task was swapped: its spot was reported unsafe';
+    case 'task.revealed':
+      return 'Pin revealed';
+    case 'task.atPin':
+      return 'You are at the pin';
+    case 'task.completed':
+      return undefined; // the +N float shows it
     case 'lobby.countdown':
     case 'game.spawnStarted':
     case 'game.rolesRevealed':

@@ -71,3 +71,13 @@ export function spawnIcon(): L.DivIcon {
     iconAnchor: [17, 17],
   });
 }
+
+/** A revealed task pin. At the pin it pulses, so it reads as "you are here". */
+export function taskPinIcon(color: string, atPin: boolean): L.DivIcon {
+  return L.divIcon({
+    className: 'task-pin-marker',
+    html: `<div class="task-pin${atPin ? ' task-pin--here' : ''}" style="--region:${color}" aria-label="Task pin"><span>${atPin ? '◎' : '◉'}</span></div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+}
