@@ -96,6 +96,13 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `taskWrongLockoutS` | 3 | — | 🔒 | Wait after a wrong submission. |
 | `taskAbandonExtraM` | 10 | — | 🔒 | A minigame in progress is cancelled if the player goes further than `reachRadiusM` plus this from the pin. |
 | `keyFetchMinLegM` | 60 | — | 🔒 | Minimum distance between the two points of a key-fetch task. |
+| `taskMinDistanceM` | 60 | — | 🔒 | A new task's pin is picked at least this far from the player when a point that far exists (MAP §4). |
+| `minigamesEnabled` | `['wires','lock']` | — | 🔒 | Types a solo task can roll. Grows as minigames ship (Phase 11 adds the rest). |
+| `minigameWeights` | wires 3, lock 3, pattern 3, signal 2, slide 2, crossword 2, keyfetch 1 | — | 🔒 | Relative chance of each type among the enabled ones (TASKS §2). |
+| `wiresPairs` | 4 | 3–6 | 🔒 | Wires per side in Wire Connect. |
+| `lockDigits` | 3 | 3–5 | 🔒 | Length of the Lock Breaker code. |
+| `lockDigitMax` | 5 | 3–9 | 🔒 | Highest digit used (digits run 0 to this). |
+| `lockMaxGuesses` | 8 | — | 🔒 | Guesses before the lock re-rolls its code. |
 
 ## Points
 Rules: [SCORING.md](SCORING.md).

@@ -26,6 +26,17 @@ const pointsSchema = z.strictObject({
   fake: count(),
 });
 
+/** Relative chance of each minigame type when a solo task is rolled (TASKS §2). */
+const minigameWeightsSchema = z.strictObject({
+  wires: count(),
+  lock: count(),
+  pattern: count(),
+  signal: count(),
+  slide: count(),
+  crossword: count(),
+  keyfetch: count(),
+});
+
 const imposterAutoRuleSchema = z.strictObject({ maxPlayers: positiveInt(), count: positiveInt() });
 const regionCountBucketSchema = z.strictObject({ min: count(), label: z.string().min(1) });
 
@@ -106,6 +117,15 @@ export const gameConfigSchema = z.strictObject({
   taskWrongLockoutS: positive(),
   taskAbandonExtraM: positive(),
   keyFetchMinLegM: positive(),
+  taskMinDistanceM: positive(),
+  minigamesEnabled: z
+    .array(z.enum(['wires', 'lock', 'pattern', 'signal', 'slide', 'crossword', 'keyfetch']))
+    .min(1),
+  minigameWeights: minigameWeightsSchema,
+  wiresPairs: int(3, 6),
+  lockDigits: int(3, 5),
+  lockDigitMax: int(3, 9),
+  lockMaxGuesses: positiveInt(),
 
   // Points
   points: pointsSchema,
