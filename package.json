@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "lint": "eslint . --max-warnings=0 && prettier --check .",
     "format": "prettier --write . && eslint . --fix",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "e2e": "playwright test",
     "tunnel": "cloudflared tunnel --url http://localhost:5173"
