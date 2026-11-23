@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 01, Lobby system** → [docs/phases/PHASE-01-lobby.md](docs/phases/PHASE-01-lobby.md)
+**◐ IN PROGRESS: Phase 01, Lobby system** (started 2026-11-23) → [docs/phases/PHASE-01-lobby.md](docs/phases/PHASE-01-lobby.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
@@ -12,7 +12,7 @@
 | # | Phase | Status | Date | Tag / notes |
 |---|---|---|---|---|
 | 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ✅ DONE | 2026-11-23 | `phase-00-done` |
-| 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ▶ NEXT | | |
+| 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ☐ NOT STARTED | | |
 | 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ☐ NOT STARTED | | |
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ☐ NOT STARTED | | |
