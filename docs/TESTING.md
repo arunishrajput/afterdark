@@ -46,8 +46,8 @@ Put these in `apps/server/src/views/leak.test.ts`. Extend them in every phase th
   - accuracy slider (5–50 m) to test weak GPS
   - a "go stale" toggle
 
-  It sends normal `loc:update` events, so the server path is the same as real GPS. `dev:teleport` exists only for bots.
-- **URL helpers for Playwright:** `?sim=1&lat=..&lng=..` starts the simulator at a position.
+  Walking sends normal `loc:update` events, so the server path is the same as real GPS. A long-press or marker drag teleports with `dev:teleport` (the bots use it too), because a big jump would otherwise fail the speed check (ADR-042). The simulator is active only while the lobby is in `testMode` and the player has it switched on; `?sim=1` pre-selects it.
+- **URL helpers for Playwright:** `?sim=1&lat=..&lng=..` starts the simulator at a position. In dev (or with `?sim=…`) `window.__afterdarkMap` is the Leaflet map, so tests can convert lat/lng to pixels and drive the real Geoman tools (`e2e/helpers.ts`).
 - In production, the `ALLOW_TEST_MODE` env var can turn test mode off entirely.
 
 ## 5. Bots (`tools/bots`)

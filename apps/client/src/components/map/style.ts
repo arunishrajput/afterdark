@@ -19,7 +19,11 @@ export const OUTSIDE_STYLE: L.PathOptions = {
   interactive: false,
 };
 
-export const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+/**
+ * Keyless raster tiles. The spec's CARTO Dark Matter URL now answers every tile
+ * with an "API KEY REQUIRED" placeholder (ADR-039), so we use the standard OSM
+ * tiles and darken them in CSS (`.dark-tiles`, see index.css).
+ */
+export const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 export const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
-export const TILE_SUBDOMAINS = 'abcd';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';

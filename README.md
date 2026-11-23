@@ -49,4 +49,4 @@ You should see **AfterDark · Connected ✓** with a ping in milliseconds.
 **Layout:** `apps/client` (React PWA), `apps/server` (authoritative Socket.IO server), `packages/shared` (config, protocol schemas, RNG, IDs), `e2e/` (Playwright). See [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Credits
-Map data © OpenStreetMap contributors, tiles © CARTO.
+Map data © OpenStreetMap contributors, tiles © OpenStreetMap.

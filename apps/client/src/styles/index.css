@@ -83,6 +83,11 @@ textarea {
   font-size: 10px;
 }
 
+/* OSM tiles, turned into a dark map: invert, then rotate the hues back. */
+.dark-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(0.95) saturate(0.45);
+}
+
 .self-marker,
 .radar-marker {
   background: none;

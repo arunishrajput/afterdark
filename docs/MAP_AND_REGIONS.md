@@ -82,7 +82,7 @@ Set by `playerVisibility`. **Dots never carry a username or tag in any mode.**
 - **Region counts:** the number of active, non-stale players whose latest good fix is in each region. They are bucketed into `0`, `1`, `2–3`, `4+`, recomputed every `regionCountRefreshS` (30 s), and sent to everyone. The viewer is included in their own region's count, which avoids an off-by-one leak.
 
 ## 7. Map rendering (client)
-- Tiles: CARTO **Dark Matter** (`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`), credited "© OpenStreetMap contributors © CARTO". Fallback: standard OSM tiles. No API key is needed.
+- Tiles: standard **OSM** raster tiles (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`), darkened in CSS (`.dark-tiles`), credited "© OpenStreetMap contributors". CARTO Dark Matter was the first choice but now answers with an "API KEY REQUIRED" placeholder (ADR-039). No API key is needed.
 - Layers:
   - boundary outline (neon edge, dim outside)
   - region outlines and labels

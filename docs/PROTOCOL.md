@@ -28,11 +28,11 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `lobby:create` | `{username, acceptedSafety: true}` | `{code, token, playerId}` | a socket not already in a lobby (`NOT_ALLOWED`) | 1 |
 | `lobby:join` | `{code, username, acceptedSafety: true}` | `{token, playerId}` | lobby phase only. Errors: `NOT_FOUND`, `GAME_IN_PROGRESS`, `LOBBY_FULL`, `NAME_TAKEN` | 1 |
 | `lobby:leave` | `{}` | — | any time; mid-game the player becomes a permanent disconnect | 1 |
-| `lobby:setReady` | `{ready}` | — | lobby; ready needs a good fix (Phase 2 or later) | 1 |
+| `lobby:setReady` | `{ready}` | — | lobby; `ready: true` needs a good fresh fix: `WEAK_GPS` (none or inaccurate) or `STALE` (old) | 1 |
 | `lobby:updateConfig` | `{patch: Partial<GameConfigEditable>}` | — | host, lobby; un-readies everyone if any value changed. `testMode: true` → `NOT_ALLOWED` when the server forbids test mode | 1 |
 | `lobby:kick` | `{playerId}` | — | host, lobby; not yourself (`NOT_ALLOWED`) | 1 |
-| `loc:update` | `{lat, lng, accuracy, ts, heading?, speed?}` | none (volatile emit, no ack) | in a lobby | 2 |
-| `lobby:setBoundary` | `{boundary: {type:'polygon', coords: [lng,lat][]} \| {type:'circle', center:{lat,lng}, radiusM}}` | `{areaM2}` | host | 2 |
+| `loc:update` | `{lat, lng, accuracy, ts, heading?, speed?}`. `ts` is server-aligned epoch ms (the client adds its clock offset) | none (volatile emit, no ack); invalid, rate-limited or rejected fixes are dropped silently | bound player. Own limit `locEventsPerSecond` (2/s), separate from the 10/s | 2 |
+| `lobby:setBoundary` | `{boundary: {type:'polygon', coords: [lng,lat][]} \| {type:'circle', center:{lat,lng}, radiusM}}` (polygon 3–500 points, radius ≤ 10 km) | `{areaM2}` | host, lobby. A rejected shape gets `INVALID_PAYLOAD` with a readable message (too small / too large / crosses itself). A changed boundary un-readies everyone and sends `lobby.mapChanged`; an identical one is a no-op | 2 |
 | `lobby:regenerateRegions` | `{regionCount?: 'auto' \| 2..6, seed?}` | — | host | 3 |
 | `lobby:renameRegion` | `{regionId, name}` | — | host | 3 |
 | `lobby:editTaskPoints` | `{add?: {lat,lng}[], remove?: string[], regenerate?: boolean}` | — | host | 3 |
@@ -59,7 +59,7 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `coop:join` | `{taskId}` | `{puzzle}` | assigned partner, or a camouflaged imposter at a waiting session | 10 |
 | `coop:submit` | `{taskId, answer}` | `{result}` | | 10 |
 | `lobby:playAgain` | `{}` | — | host, ended | 12 |
-| `dev:teleport` | `{lat, lng}` | — | **testMode only** | 2 |
+| `dev:teleport` | `{lat, lng}` | — | **testMode only**. Stores a fix with `teleportAccuracyM`, bypassing the speed check. Used by the simulator's long-press and by bots | 2 |
 | `dev:addBots` | `{count}` | — | **testMode only**, host | 4 |
 | `dev:autoComplete` | `{taskId}` | — | **testMode only** | 5 |
 
@@ -69,14 +69,14 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | Event | Payload | Frequency | Phase |
 |---|---|---|---|
 | `view` | `PlayerView` (full snapshot for that player) | on change, throttled to `viewThrottleMs` (200 ms) | 1 |
-| `radar` | `{dots: AnonDot[], at}` | every `radarIntervalMs` (1 s) during lobby and play | 2 |
+| `radar` | `{dots: AnonDot[], at}`, per player, volatile | every `radarIntervalMs` (1 s) on the room tick, during lobby and play (lobby: every other connected, located player) | 2 |
 | `event` | `GameEvent` (toast or overlay trigger) | as they happen | 1 |
 | `kicked` | `{reason: 'replaced' \| 'kicked'}`; the server then disconnects the socket | once | 1 |
 
 **Field formats (Phase 1, `schemas.ts`):** `username` is NFC-normalised, trimmed, runs of spaces collapsed, `[\p{L}\p{M}\p{N} _.-]`, 2–16 code points (ADR-034). `code` is trimmed and upper-cased, then 6 symbols from `lobbyCodeAlphabet`. `token` is 16–64 symbols and `playerId` 12–64 symbols of the URL-safe ID alphabet. All payload objects are strict (unknown keys → `INVALID_PAYLOAD`).
 
 ### `PlayerView` (outline; the full type is in `shared/src/types/view.ts`)
-**Built so far (Phase 1):** `v`, `serverNow`, `lobby.{code, phase, hostId, testMode, config, players, countdownEndsAt?}` and `me.{id, username, isHost, ready, status}`. `phase` is `'lobby' | 'starting'` (`starting` is a placeholder until Phase 4). `GameConfigPublic` = the host-editable keys (ADR-035). `countdownEndsAt` is present only while the start countdown runs. `PublicPlayer` has no `revealedRole` yet (Phase 8). `me.personalScore` and the other `me`/`game` fields arrive with their phases.
+**Built so far (Phase 2):** `v`, `serverNow`, `lobby.{code, phase, hostId, testMode, config, map, players, countdownEndsAt?}` and `me.{id, username, isHost, ready, status, location?}`. `lobby.map` is `{boundary?: {ring: [lng,lat][] (closed), areaM2}}`; Phase 3 adds regions, points, no-go zones and the Base. `me.location` is the viewer's **own** fix only: `{lat, lng, accuracy, quality: 'good'|'weak'|'stale', oob}`; it is absent until the server accepts a fix. Quality and `oob` are derived when the view is built (ADR-040). `phase` is `'lobby' | 'starting'` (`starting` is a placeholder until Phase 4). `GameConfigPublic` = the host-editable keys (ADR-035). `countdownEndsAt` is present only while the start countdown runs. `PublicPlayer` has no `revealedRole` yet (Phase 8). `me.personalScore` and the other `me`/`game` fields arrive with their phases.
 
 ```ts
 interface PlayerView {
@@ -131,10 +131,10 @@ The type and points arrive only in the `task:open` ack.
 **Leak invariant:** for two crew players who differ only in infected status, `JSON.stringify(view)` must have the **same set of keys** (values may differ). Leak tests assert this.
 
 ### `AnonDot`
-`{alias: string, lat, lng, flags: ('oob'|'stale'|'ally'|'exposed'|'infected')[]}`. The `ally`, `exposed` and `infected` flags are only ever sent to active imposters.
+`{alias: string, lat, lng, flags: ('oob'|'stale'|'ally'|'exposed'|'infected')[]}`. The `ally`, `exposed` and `infected` flags are only ever sent to active imposters. The alias is per viewer, rotates every `dotAliasRotateS`, and dots are sorted by alias (ADR-041). A radar frame never contains a player id or username.
 
 ### `GameEvent` (examples)
-Phase 1 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}` and `{type:'lobby.configChanged'}` (everyone was un-readied). All three go to every connected player.
+Phase 1–2 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}`, `{type:'lobby.configChanged'}` and `{type:'lobby.mapChanged'}` (the last two: everyone was un-readied). All go to every connected player.
 
 `lobby.countdown`, `game.spawnStarted`, `game.rolesRevealed`, `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.fooled`, `task.expired`, `task.rerolled`, `sabotage.started {until}`, `meeting.called {by}`, `meeting.result {...}`, `player.ejected {username, wasImposter}`, `zone.warning`, `zone.penalty`, `game.paused`, `game.resumed`, `game.ended`.
 

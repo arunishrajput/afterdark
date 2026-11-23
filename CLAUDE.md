@@ -45,7 +45,7 @@ When the user says **"Start the next phase"** (or "continue", or "resume"):
 
 ## Stack
 pnpm monorepo, TypeScript (strict).
-- `apps/client`: Vite + React + Tailwind + Zustand + react-leaflet + Leaflet-Geoman + vite-plugin-pwa. Map tiles: CARTO Dark Matter.
+- `apps/client`: Vite + React + Tailwind + Zustand + react-leaflet + Leaflet-Geoman + vite-plugin-pwa. Map tiles: OSM, darkened in CSS (ADR-039).
 - `apps/server`: Node + Express + Socket.IO. Authoritative, in-memory, pino logs.
 - `packages/shared`: types, zod schemas, config, turf-based geo, seeded RNG, minigames.
 - `tools/bots`: the bot CLI. `e2e/`: Playwright. Deploy: Render (one web service).

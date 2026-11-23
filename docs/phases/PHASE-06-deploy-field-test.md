@@ -21,7 +21,7 @@
   - serve `apps/client/dist` with immutable caching for hashed assets and `no-cache` for `index.html` and the service worker
   - SPA fallback to `index.html`
   - `trust proxy`
-  - helmet with a CSP that allows the CARTO/OSM tile hosts and Google Fonts
+  - helmet with a CSP that allows the OSM tile host (`tile.openstreetmap.org`) and Google Fonts
   - compression
   - Socket.IO restricted to the same origin
   - graceful shutdown on SIGTERM (notify clients with an event, then close)

@@ -13,13 +13,7 @@ import { Circle, MapContainer, Marker, Polygon, TileLayer, useMap } from 'react-
 import { BoundaryEditor } from './BoundaryEditor';
 import { ringToLatLngs, toLeaflet, WORLD_RING } from './geo';
 import { dotIcon, selfIcon } from './icons';
-import {
-  BOUNDARY_STYLE,
-  OUTSIDE_STYLE,
-  TILE_ATTRIBUTION,
-  TILE_SUBDOMAINS,
-  TILE_URL,
-} from './style';
+import { BOUNDARY_STYLE, OUTSIDE_STYLE, TILE_ATTRIBUTION, TILE_URL } from './style';
 
 const FIT_PADDING: [number, number] = [28, 28];
 const START_ZOOM = 17;
@@ -213,7 +207,7 @@ export default function MapView({
         <TileLayer
           url={TILE_URL}
           attribution={TILE_ATTRIBUTION}
-          subdomains={TILE_SUBDOMAINS}
+          className="dark-tiles"
           maxZoom={MAX_ZOOM}
           maxNativeZoom={19}
         />

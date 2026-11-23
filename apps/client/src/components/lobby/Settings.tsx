@@ -153,9 +153,11 @@ export function SettingsSheet({
   }
   const dirty = Object.keys(patch).length > 0;
 
+  // Until the lobby has enough players, suggest for the smallest game that can start.
+  const players = Math.max(playerCount, DEFAULT_CONFIG.minPlayers);
   const crew = Math.max(
     0,
-    playerCount - resolveImposterCount({ ...DEFAULT_CONFIG, ...draft }, playerCount),
+    players - resolveImposterCount({ ...DEFAULT_CONFIG, ...draft }, players),
   );
   const suggestedTarget = DEFAULT_CONFIG.targetScoreHintPerCrew * crew;
   const preset = matchingPreset(draft);

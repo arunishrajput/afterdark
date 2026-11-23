@@ -183,3 +183,35 @@ Accounts, profiles, XP and cosmetics; public rooms and matchmaking; chat; AR/cam
 ### ADR-038 · Clock offset from the lowest-RTT sample, not the median · Accepted (Phase 1)
 **Decision:** the client keeps Phase 0's estimator: of `clockSyncSamples` (5) pings, the lowest-RTT sample sets the offset. Task 01.9 said "median of 5".
 **Why:** the lowest round trip has the least room for path asymmetry, which is the main source of error (NTP-style). The median mixes in samples delayed by queueing. CONFIG.md already documented this.
+
+### ADR-039 · Map tiles: standard OSM, darkened in CSS (CARTO Dark Matter now needs a key) · Accepted (Phase 2)
+**Decision:** the map uses `https://tile.openstreetmap.org/{z}/{x}/{y}.png` with the CSS class `.dark-tiles` (`invert(1) hue-rotate(180deg)` plus dimming) to get a dark map. Attribution is "© OpenStreetMap contributors".
+**Why:** when built in Phase 2, every CARTO URL (`dark_all`, `dark_nolabels`, `rastertiles/…`) answered with a small placeholder tile reading "API KEY REQUIRED". OSM needs no key and was already the documented fallback. Verified by a screenshot.
+**Consequences:** OSM's tile policy suits light use (a hackathon, a few phones), not a public launch, so Phase 14 should revisit a keyed provider. Phase 6 CSP and Phase 13 tile caching must target `tile.openstreetmap.org`, not CARTO.
+**Rejected:** shipping the watermarked CARTO tiles; a vector style (needs MapLibre and a key).
+
+### ADR-040 · Location rules: derived quality, server-clock staleness, floored speed gap · Accepted (Phase 2)
+**Decision:**
+- Quality is **derived**, never stored: `fixQuality(fix, now, config)` gives `good` (accuracy ≤ `maxAccuracyM`), `weak`, or `stale` (nothing received for `staleAfterS`, measured on the server clock via `receivedAt`; stale outranks weak). `projectView` and the radar take `now` as an argument, so views stay pure; the room tick commit refreshes them each second.
+- The client sends `ts` already shifted to server time (`fix.ts + offsetMs`), so a wrong phone clock can't trip the future-fix check. Fixes more than `futureFixToleranceS` (5 s) ahead are rejected.
+- The speed check divides by `max(Δt, speedCheckMinDtS)` (1 s), so two stamps a few ms apart can't fake a huge speed, and an out-of-order stamp counts as the minimum gap rather than being dropped (a device clock stepping back must not freeze a player).
+- A rejected jump keeps the old position but stores `locPending`. Fixes that agree with each other (speed between them ≤ `maxSpeedMps`) extend the run; after `reanchorFixes` (3) the player is re-anchored. Any accepted fix clears the run.
+- `setReady(true)` needs a good fresh fix: `WEAK_GPS` if there is none or it is inaccurate, `STALE` if it is old. Un-readying never needs one. A fix that later degrades does **not** un-ready a player (flaky GPS would otherwise flap the countdown); Phase 4's spawn checks handle it.
+- New config keys (🔒): `futureFixToleranceS`, `speedCheckMinDtS`, `teleportAccuracyM`, `locEventsPerSecond`.
+**Known limit:** a weak, noisy fix is stored like any other, so the next good fix can look like a jump and take up to 3 fixes to re-anchor. Acceptable for now; revisit after field tests.
+
+### ADR-041 · Radar: per-viewer salted aliases, sorted, on the room tick · Accepted (Phase 2)
+**Decision:** `buildRadar(state, viewerId, now)` returns `{alias, lat, lng, flags}` per other connected, located player. The alias is 64 bits of FNV-1a over `radarSalt | viewer | target | epoch` (epoch = `floor(now / dotAliasRotateS)`), so it differs per viewer and rotates every 300 s. `radarSalt` is random per room and lives in `RoomState` but never in a view. Dots are sorted by alias so array order doesn't reveal join order. Flags are `stale` and `oob` only for now. Frames go out per player (never a room broadcast) on the Room tick, once per `radarIntervalMs` bucket, as a volatile emit. In the lobby every other player is shown ("all"-style); Phase 4 adds the visibility modes.
+**Why:** viewer-specific aliases stop two players comparing dots to identify a person; sorting and rotation stop longer-term tracking. FNV isn't a MAC, but the salt is secret and the aliases only have to be unlinkable by players, not by an attacker with server access.
+**Tested:** leak tests assert no player id, username, token or salt appears in any radar frame, and the integration test scans raw socket frames.
+
+### ADR-042 · GPS simulator: a source behind `testMode`; jumps use `dev:teleport` · Accepted (Phase 2)
+**Decision:**
+- Simulated GPS takes effect only while the lobby is in `testMode` **and** the player chose it (`?sim=1` pre-selects it; the Test tools panel toggles it). The host enables `testMode` in Settings, and everyone sees the badge.
+- The simulator publishes fixes 4 times a second into the same store, throttle and `loc:update` path as real GPS.
+- A long-press or marker drag **teleports** with `dev:teleport` (server-checked: testMode only), because a jump far beyond `maxSpeedMps` would otherwise be rejected and need about 10 s of heartbeats to re-anchor. Walking (WASD, D-pad) uses plain `loc:update`. TESTING.md said `dev:teleport` was for bots only; it is for both.
+- In dev or with `?sim=…`, `window.__afterdarkMap` exposes the Leaflet map so Playwright can map lat/lng to pixels. It exposes nothing else.
+
+### ADR-043 · Boundary editing: the server's ring is the source of truth · Accepted (Phase 2)
+**Decision:** the host draws a polygon, rectangle or circle with Geoman. The drawing is removed locally, sent as a `BoundaryInput`, and the ring that comes back in the view is rendered (as an editable polygon for the host). A circle is stored as its 64-gon, so later edits are polygon edits. Edits are sent 500 ms after the last change; the echo of our own edit doesn't rebuild the layer mid-drag. Self-intersection is blocked in the UI (`allowSelfIntersection: false`) and re-validated on the server. There is no "clear boundary": redrawing replaces it. Re-sending an identical ring is a no-op and doesn't un-ready anyone.
+**Why:** one authoritative copy avoids client/server drift, and an invalid drawing simply leaves the old boundary in place with the server's message in a toast.
