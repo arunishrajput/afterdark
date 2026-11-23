@@ -168,6 +168,8 @@ export type TaskCard =
       section: SectionId;
       /** Co-op cards only: the other participant's secret tag (TASKS §5). */
       partnerTag?: string;
+      /** The partner-slot card ("Requested by a teammate"): someone else rolled it (TASKS §5.2). */
+      requested?: true;
     }
   | {
       id: string;
@@ -177,6 +179,7 @@ export type TaskCard =
       regionName: string;
       section: SectionId;
       partnerTag?: string;
+      requested?: true;
       lat: number;
       lng: number;
       atPin: boolean;

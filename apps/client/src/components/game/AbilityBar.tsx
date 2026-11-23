@@ -6,7 +6,7 @@
 import type { AbilityId, PlayerView } from '@afterdark/shared';
 import { useState } from 'react';
 
-import { taskStop } from '../../net/actions';
+import { camouflage, taskStop } from '../../net/actions';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { Button } from '../ui/Button';
@@ -18,6 +18,7 @@ import { ProgressRing } from './ProgressRing';
 const NAMES: Partial<Record<AbilityId, { label: string; short: string }>> = {
   taskStop: { label: 'Task Stop', short: 'STOP' },
   fakeTask: { label: 'Fake Task', short: 'FAKE' },
+  camouflage: { label: 'Camouflage', short: 'CAMO' },
 };
 
 const REASON: Record<Exclude<AbilityUiState, 'ready' | 'cooldown'>, string> = {
@@ -51,6 +52,19 @@ export function AbilityBar({
     if (!res.ok) pushToast(res.message || messageFor(res.code));
   };
 
+  // Your phone turns into a crew phone at once: the next view carries the disguise.
+  const disguise = async () => {
+    setBusy(true);
+    const res = await camouflage();
+    setBusy(false);
+    if (!res.ok) pushToast(res.message || messageFor(res.code));
+  };
+  const use = (id: AbilityId) => {
+    if (id === 'taskStop') setConfirming(true);
+    else if (id === 'camouflage') void disguise();
+    else onPlaceFake();
+  };
+
   return (
     <div data-testid="ability-bar" className="flex items-start gap-4">
       {abilities.map((a) => {
@@ -66,8 +80,8 @@ export function AbilityBar({
               type="button"
               data-testid={`ability-${a.id}`}
               data-state={state}
-              disabled={state !== 'ready'}
-              onClick={() => (a.id === 'taskStop' ? setConfirming(true) : onPlaceFake())}
+              disabled={state !== 'ready' || busy}
+              onClick={() => use(a.id)}
               aria-label={
                 state === 'ready'
                   ? `Use ${name?.label}`

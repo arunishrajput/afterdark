@@ -125,3 +125,17 @@ export const placeFakeTask = (at: LatLng) => request('ability:fakeTask', at);
 export const startInfect = () => request('ability:infect', {});
 /** Stops a channel. Free: no cooldown. */
 export const cancelInfect = () => request('ability:cancelInfect', {});
+
+// ── Phase 10: co-op tasks and Camouflage ────────────────────────────────────
+
+/** Camouflage: for a short while your phone looks like a crew member's. Only you see the change. */
+export const camouflage = () => request('ability:camouflage', {});
+/** At the pin: open a waiting co-op session (the other player then joins). */
+export const coopStart = (taskId: string) => request('coop:start', { taskId });
+/** Join the waiting partner: with your own card's id, or the id a stand-in was offered. The reply holds your PIN. */
+export const coopJoin = (taskId: string) => request('coop:join', { taskId });
+/** Type the PIN your partner showed you. */
+export const coopSubmit = (taskId: string, pin: string) =>
+  request('coop:submit', { taskId, answer: { pin } });
+/** Step out of the wait or the puzzle; the other side keeps waiting. */
+export const coopCancel = (taskId: string) => request('coop:cancel', { taskId });

@@ -1,9 +1,13 @@
-/** The crew's task cards (UI_UX §2–§3): stage icon, "NE · Region A", distance and arrow, and the card menu. */
+/**
+ * The task cards (UI_UX §2–§3): stage icon, "NE · Region A", distance and arrow, and the card menu.
+ * Co-op cards say who to find and start or join the session at the pin. A disguised imposter's decoy
+ * cards look and behave the same but never reach the server.
+ */
 import type { PlayerView, TaskCard } from '@afterdark/shared';
 import { useMemo, useState } from 'react';
 
 import { useServerNow } from '../../hooks/useServerNow';
-import { reportUnsafe, rerollTask } from '../../net/actions';
+import { coopJoin, coopStart, reportUnsafe, rerollTask } from '../../net/actions';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import type { SelfPosition } from '../map/MapView';
@@ -13,6 +17,12 @@ import { formatClock, formatDistance } from './format';
 import { cardLabel, guidance, sectionAnchor } from './taskGeo';
 
 const CLOCK_REFRESH_MS = 1000;
+
+/** "Find GHOST-03 · NE · Region B" for a co-op card, "NE · Region B" otherwise (UI_UX §3). */
+const labelOf = (card: TaskCard): string =>
+  card.kind === 'coop' && card.partnerTag
+    ? `Find ${card.partnerTag} · ${cardLabel(card)}`
+    : cardLabel(card);
 
 const STAGE_ICON = { assigned: '🧭', pin: '📍', atPin: '🎯' } as const;
 const STAGE_NAME = { assigned: 'Head to the area', pin: 'Walk to the pin', atPin: 'At the pin' };
@@ -27,13 +37,25 @@ export function TaskPanel({
   self,
   onFocus,
   onStart,
+  cards: given,
+  decoyIds,
+  joinOffer,
+  quiet = false,
 }: {
   view: PlayerView;
   self: SelfPosition | undefined;
   onFocus: (card: TaskCard) => void;
   onStart: (card: TaskCard) => void;
+  /** The cards to show (default: the viewer's own). A disguised imposter passes decoys plus their real ones. */
+  cards?: readonly TaskCard[] | undefined;
+  /** Cards that are decoys: their menu is local and nothing reaches the server. */
+  decoyIds?: ReadonlySet<string> | undefined;
+  /** A disguised imposter beside a waiting crew member: the id to pass to `coop:join`. */
+  joinOffer?: { taskId: string } | undefined;
+  /** No "waiting for your next task" line when there is nothing to show (an imposter's panel). */
+  quiet?: boolean;
 }) {
-  const cards = view.game?.tasks ?? [];
+  const cards = given ?? view.game?.tasks ?? [];
   const [menuFor, setMenuFor] = useState<string | undefined>();
   const regions = view.lobby.map.regions;
   const pushToast = useGame((s) => s.pushToast);
@@ -61,12 +83,29 @@ export function TaskPanel({
   }, [cardKey, regions]);
 
   const act = async (run: () => ReturnType<typeof rerollTask>) => {
+    // A decoy only pretends: the menu closes and nothing is sent (the card would be unknown to the server).
+    if (menuCard && decoyIds?.has(menuCard.id)) {
+      setMenuFor(undefined);
+      return;
+    }
     const res = await run();
     if (!res.ok) pushToast(messageFor(res.code));
     else setMenuFor(undefined);
   };
 
-  if (cards.length === 0) {
+  /** Start or join the co-op session at the pin; the sheet that follows comes from the next view. */
+  const coopAction = async (card: Extract<TaskCard, { stage: 'pin' }>) => {
+    const res = await (card.partnerWaiting ? coopJoin(card.id) : coopStart(card.id));
+    if (!res.ok) pushToast(messageFor(res.code));
+  };
+  const joinAsPartner = async () => {
+    if (!joinOffer) return;
+    const res = await coopJoin(joinOffer.taskId);
+    if (!res.ok) pushToast(messageFor(res.code));
+  };
+
+  if (cards.length === 0 && !joinOffer) {
+    if (quiet) return null;
     return (
       <p className="rounded-2xl border border-white/10 bg-surface px-4 py-3 text-sm text-muted">
         Waiting for your next task…
@@ -98,9 +137,13 @@ export function TaskPanel({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold" data-testid="task-label">
-                  {cardLabel(card)}
+                  {labelOf(card)}
                 </span>
-                <span className="block text-xs text-muted">{STAGE_NAME[stage]}</span>
+                <span className="block text-xs text-muted">
+                  {card.kind === 'coop'
+                    ? `${card.requested ? 'Requested by a teammate' : 'Co-op'} · ${STAGE_NAME[stage]}`
+                    : STAGE_NAME[stage]}
+                </span>
               </span>
               {g && stage !== 'atPin' && (
                 <span className="flex flex-col items-center text-xs text-muted tabular-nums">
@@ -115,7 +158,7 @@ export function TaskPanel({
                 </span>
               )}
             </button>
-            {card.stage === 'pin' && card.atPin && (
+            {card.stage === 'pin' && card.atPin && card.kind !== 'coop' && (
               <Button
                 data-testid="task-start"
                 className="min-h-11 px-4"
@@ -123,6 +166,16 @@ export function TaskPanel({
                 onClick={() => onStart(card)}
               >
                 {jammed ? 'Jammed' : 'Start'}
+              </Button>
+            )}
+            {card.stage === 'pin' && card.atPin && card.kind === 'coop' && (
+              <Button
+                data-testid="coop-start"
+                className="min-h-11 px-4"
+                disabled={jammed}
+                onClick={() => void coopAction(card)}
+              >
+                {jammed ? 'Jammed' : card.partnerWaiting ? 'Join' : 'Start co-op'}
               </Button>
             )}
             <Button
@@ -137,6 +190,28 @@ export function TaskPanel({
           </article>
         );
       })}
+      {joinOffer && (
+        <article
+          data-testid="coop-join-offer"
+          className="flex items-center gap-3 rounded-2xl border border-accent bg-surface px-3 py-2 shadow-[0_0_14px_var(--accent-glow)]"
+        >
+          <span aria-hidden="true" className="text-2xl">
+            🎯
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-semibold">Co-op task nearby</span>
+            <span className="block text-xs text-muted">Someone is waiting for a partner</span>
+          </span>
+          <Button
+            data-testid="coop-join-partner"
+            className="min-h-11 px-4"
+            disabled={jammed}
+            onClick={() => void joinAsPartner()}
+          >
+            Join as partner
+          </Button>
+        </article>
+      )}
       <Sheet
         open={menuCard !== undefined}
         title="Task options"
@@ -148,10 +223,14 @@ export function TaskPanel({
             <Button
               variant="secondary"
               data-testid="task-reroll"
-              disabled={rerollLeft > 0}
+              disabled={rerollLeft > 0 || menuCard.requested === true}
               onClick={() => void act(() => rerollTask(menuCard.id))}
             >
-              {rerollLeft > 0 ? `Reroll ready in ${formatClock(rerollLeft)}` : 'Reroll this task'}
+              {menuCard.requested
+                ? 'A teammate asked for this one'
+                : rerollLeft > 0
+                  ? `Reroll ready in ${formatClock(rerollLeft)}`
+                  : 'Reroll this task'}
             </Button>
             {menuCard.stage === 'pin' && (
               <Button

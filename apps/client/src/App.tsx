@@ -1,9 +1,11 @@
 import type { PlayerView } from '@afterdark/shared';
 import { useEffect, useState } from 'react';
 
+import { playTheme } from './components/game/disguise';
 import { LocationProvider } from './components/LocationProvider';
 import { MeetingScreen } from './components/meeting/MeetingScreen';
 import { Toasts } from './components/ui/Toasts';
+import { useServerNow } from './hooks/useServerNow';
 import { Ended } from './screens/Ended';
 import { EntryForm } from './screens/EntryForm';
 import { Game } from './screens/Game';
@@ -45,11 +47,14 @@ function InGame({ view }: { view: PlayerView }) {
 }
 
 /** Crew blue and imposter red only while playing a normal screen; everything else (lobby, spawn, reveal, meetings, spectators, results) is neutral (UI_UX §1, ADR-028). */
-function themeOf(view: PlayerView | undefined): 'crew' | 'imposter' | 'neutral' {
+function themeOf(view: PlayerView | undefined, now: number): 'crew' | 'imposter' | 'neutral' {
   if (view?.lobby.phase !== 'playing' || !view.me.role) return 'neutral';
   if (view.game?.meeting || view.me.status === 'spectator') return 'neutral';
-  return view.me.role;
+  // A disguised imposter (Camouflage) wears crew blue, and snaps back to red when it ends.
+  return playTheme(view, now);
 }
+
+const THEME_REFRESH_MS = 500;
 
 function Screen() {
   const view = useGame((s) => s.view);
@@ -71,7 +76,9 @@ function Screen() {
 }
 
 export function App() {
-  const theme = useGame((s) => themeOf(s.view));
+  const view = useGame((s) => s.view);
+  const now = useServerNow(THEME_REFRESH_MS, view?.me.imposter?.camouflage !== undefined);
+  const theme = themeOf(view, now);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);

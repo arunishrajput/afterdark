@@ -2,6 +2,9 @@ import type { LatLng, PlayerView, TaskCard } from '@afterdark/shared';
 import { useState } from 'react';
 
 import { fakeSpotProblem } from '../components/game/abilityState';
+import { CoopLayer } from '../components/game/CoopSheet';
+import { cardsFor, disguiseOf } from '../components/game/disguise';
+import { DisguiseCue } from '../components/game/DisguiseCue';
 import { FakePlacerBar } from '../components/game/FakePlacerBar';
 import { GameMap } from '../components/game/GameMap';
 import { GameMenu } from '../components/game/HostMenu';
@@ -14,18 +17,25 @@ import {
 } from '../components/game/Hud';
 import { ImposterPanel } from '../components/game/ImposterPanel';
 import { JamOverlay } from '../components/game/JamOverlay';
+import { LongPress } from '../components/game/LongPress';
 import { MeetingButton } from '../components/game/MeetingButton';
 import { TaskPanel } from '../components/game/TaskPanel';
 import { TaskPlayer } from '../components/game/TaskPlayer';
+import { Sheet } from '../components/ui/Sheet';
 import { useSelfPosition } from '../hooks/useSelfPosition';
+import { useServerNow } from '../hooks/useServerNow';
 import { SimPanel } from '../sim/SimPanel';
 import { useLocation } from '../store/location';
 
 const CLASS_NAMES = { saboteur: 'Saboteur', phantom: 'Phantom', camouflage: 'Camouflage' } as const;
 
+const DISGUISE_REFRESH_MS = 500;
+
 /**
  * The game HUD (UI_UX §2–§3): timer, infection boxes, team score, the map, the
  * zone banner and edge glow, and the menu. Crew get task cards; imposters get the Infect bar.
+ * A disguised imposter (Camouflage) gets exactly the crew screen, with decoy cards, a hairline
+ * countdown on the top edge and the real controls behind a long press on the timer.
  */
 export function Game({ view }: { view: PlayerView }) {
   const { me, game, lobby } = view;
@@ -34,7 +44,12 @@ export function Game({ view }: { view: PlayerView }) {
   const imposter = me.imposter;
   const paused = game?.clock?.pausedAt !== undefined;
   const self = useSelfPosition(view);
-  const cards = game?.tasks ?? [];
+  const now = useServerNow(DISGUISE_REFRESH_MS, imposter !== undefined);
+  const disguise = disguiseOf(view, now);
+  const crewLook = me.role === 'crew' || disguise !== undefined;
+  const cards = cardsFor(view, disguise);
+  const decoyIds = new Set(disguise?.decoyTasks.map((c) => c.id));
+  const [controls, setControls] = useState(false);
   // The card being played is kept here: the server drops a card from the view the moment it is
   // completed, and the sheet still has the result to show.
   const [playing, setPlaying] = useState<TaskCard | undefined>();
@@ -47,8 +62,15 @@ export function Game({ view }: { view: PlayerView }) {
   return (
     <main className="relative mx-auto flex h-dvh max-w-md flex-col gap-2 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <ZoneGlow active={me.zone?.oob === true} />
+      {disguise && <DisguiseCue disguise={disguise} now={now} />}
       <header className="flex items-center gap-3 rounded-2xl border border-white/10 bg-surface px-3 py-2">
-        <MatchTimer clock={game?.clock} />
+        {disguise ? (
+          <LongPress onLong={() => setControls(true)}>
+            <MatchTimer clock={game?.clock} />
+          </LongPress>
+        ) : (
+          <MatchTimer clock={game?.clock} />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           {game?.crewCount !== undefined && game.threshold !== undefined && (
             <InfectionBoxes
@@ -69,7 +91,7 @@ export function Game({ view }: { view: PlayerView }) {
           view={view}
           simulated={simulated}
           tasks={
-            me.role === 'crew'
+            crewLook || cards.length > 0
               ? { cards, regions: lobby.map.regions, focusId: focus?.id, focusSeq: focus?.seq }
               : undefined
           }
@@ -95,10 +117,14 @@ export function Game({ view }: { view: PlayerView }) {
         )}
       </div>
 
-      {me.role === 'crew' && (
+      {(crewLook || cards.length > 0) && !(imposter && placing) && (
         <TaskPanel
           view={view}
           self={self}
+          cards={cards}
+          decoyIds={decoyIds}
+          joinOffer={disguise?.join}
+          quiet={!crewLook}
           onFocus={(card: TaskCard) => setFocus((f) => ({ id: card.id, seq: (f?.seq ?? 0) + 1 }))}
           onStart={(card: TaskCard) => setPlaying(card)}
         />
@@ -108,9 +134,21 @@ export function Game({ view }: { view: PlayerView }) {
         (placing ? (
           <FakePlacerBar view={view} center={center} onClose={() => setPlacing(false)} />
         ) : (
-          <ImposterPanel view={view} onPlaceFake={() => setPlacing(true)} />
+          !disguise && <ImposterPanel view={view} onPlaceFake={() => setPlacing(true)} />
         ))}
+      {disguise && (
+        <Sheet open={controls} title="Controls" onClose={() => setControls(false)}>
+          <ImposterPanel
+            view={view}
+            onPlaceFake={() => {
+              setControls(false);
+              setPlacing(true);
+            }}
+          />
+        </Sheet>
+      )}
       {playing && <TaskPlayer card={playing} onClose={() => setPlaying(undefined)} />}
+      <CoopLayer view={view} />
 
       <section
         aria-label="Your status"
@@ -121,7 +159,7 @@ export function Game({ view }: { view: PlayerView }) {
             data-testid="role-chip"
             className="font-display text-sm font-bold tracking-[0.2em] text-accent"
           >
-            {imposter
+            {imposter && !disguise
               ? `IMPOSTER · ${imposter.classes
                   .map((c) => CLASS_NAMES[c])
                   .join(' + ')
@@ -129,7 +167,7 @@ export function Game({ view }: { view: PlayerView }) {
               : 'CREW'}
           </p>
           <p className="font-mono text-sm text-muted">Tag {me.tag}</p>
-          {imposter && imposter.allies.length > 0 && (
+          {imposter && !disguise && imposter.allies.length > 0 && (
             <p data-testid="allies-chip" className="text-xs text-muted">
               Allies: {imposter.allies.map((a) => `${a.username} (${a.tag})`).join(', ')}
             </p>
