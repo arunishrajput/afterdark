@@ -147,7 +147,13 @@ describe.each(PHASES)('leak: game fixture in the %s phase', (phase) => {
 
   it('the public game numbers are identical for every viewer', () => {
     const strip = (v: (typeof views)[number]['view']) => {
-      const { regionCounts: _regionCounts, ...rest } = v.game ?? { regionCounts: [] };
+      // The viewer's own task cards and cooldown are private; everything else is shared.
+      const {
+        regionCounts: _regionCounts,
+        tasks: _tasks,
+        rerollReadyAt: _ready,
+        ...rest
+      } = v.game ?? { regionCounts: [] };
       return JSON.stringify(rest);
     };
     const first = strip(views[0]?.view as (typeof views)[number]['view']);

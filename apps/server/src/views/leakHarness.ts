@@ -31,7 +31,7 @@ export function keysDeep(value: unknown, prefix = ''): string[] {
   return [...out].sort();
 }
 
-/** Every key path a view may contain (through Phase 4). Anything else fails the test. */
+/** Every key path a view may contain (through Phase 5). Anything else fails the test. */
 export const ALLOWED_VIEW_KEYS = new Set([
   'lobby',
   'lobby.code',
@@ -126,6 +126,19 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'game.result',
   'game.result.winner',
   'game.result.reason',
+  // Phase 5: the viewer's own task cards (a card shows only what its stage has earned).
+  'game.tasks',
+  'game.tasks[].id',
+  'game.tasks[].kind',
+  'game.tasks[].stage',
+  'game.tasks[].regionId',
+  'game.tasks[].regionName',
+  'game.tasks[].section',
+  'game.tasks[].partnerTag',
+  'game.tasks[].lat',
+  'game.tasks[].lng',
+  'game.tasks[].atPin',
+  'game.rerollReadyAt',
 ]);
 
 /** Key names that must never appear in a lobby view, at any depth (before roles exist). */

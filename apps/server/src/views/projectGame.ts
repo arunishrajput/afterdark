@@ -12,6 +12,7 @@ import type { PlayerState, RoomState } from '../engine/state';
 import { projectRegionCounts } from '../engine/systems/regionCounts';
 import { spawnProgress } from '../engine/systems/spawn';
 import { compromisedCount } from '../engine/systems/victory';
+import { projectRerollReadyAt, projectTasks } from './projectTasks';
 
 const MS_PER_S = 1000;
 
@@ -57,7 +58,7 @@ export function projectOwnGame(
   return out;
 }
 
-/** Public game numbers: identical for every viewer. */
+/** Public game numbers (identical for every viewer), plus the viewer's own task cards. */
 export function projectGame(state: RoomState, viewerId: string, now: number): GameView {
   const game: GameView = { regionCounts: projectRegionCounts(state, viewerId, now) };
   if (state.phase === 'spawning' && state.spawnEndsAt !== undefined) {
@@ -78,6 +79,13 @@ export function projectGame(state: RoomState, viewerId: string, now: number): Ga
   game.threshold = g.threshold;
   game.crewCount = g.originalCrewCount;
   game.meetingsLeft = state.config.meetingsPerPlayer;
+  const me = state.players.find((p) => p.id === viewerId);
+  if (state.phase === 'playing' && me?.role) {
+    // The viewer's own cards: an imposter gets an empty list (Phase 10 adds their partner slot).
+    game.tasks = projectTasks(state, me);
+    const rerollReadyAt = projectRerollReadyAt(state, me, now);
+    if (rerollReadyAt !== undefined) game.rerollReadyAt = rerollReadyAt;
+  }
   if (state.phase === 'ended' && state.result) {
     game.result = { winner: state.result.winner, reason: state.result.reason };
   }
