@@ -209,6 +209,7 @@ interface Actions {
   myIds(): { me: string | undefined; tag: string | undefined; players: string[] };
   baseOf(): { lat: number; lng: number } | undefined;
   fakesOf(): { id: string; lat: number; lng: number; assigned: boolean }[];
+  cardsOf(): ({ stage: 'assigned' } | { stage: 'pin'; lat: number; lng: number })[];
 }
 
 /** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
@@ -281,67 +282,109 @@ export async function simTeleportToBase(page: Page) {
 export async function spotInHighlight(
   page: Page,
   index = 0,
+  rank = 0,
 ): Promise<{ lat: number; lng: number }> {
-  return page.evaluate((i) => {
-    const map = (
-      window as unknown as {
-        __afterdarkMap?: TestMap & {
-          containerPointToLatLng(p: [number, number]): { lat: number; lng: number };
-        };
-      }
-    ).__afterdarkMap;
-    if (!map) throw new Error('map test hook missing');
-    const path = document.querySelectorAll<SVGGeometryElement>('path.task-section')[i];
-    if (!path) throw new Error('no section highlight');
-    const svg = path.ownerSVGElement;
-    const ctm = path.getScreenCTM();
-    if (!svg || !ctm) throw new Error('no svg');
-    const box = path.getBBox();
-    const inside = (x: number, y: number) => path.isPointInFill(new DOMPoint(x, y));
-    // The point whose ring of neighbours is all inside the highlight is the safest from the edges.
-    let best: { x: number; y: number; score: number } | undefined;
-    const steps = 24;
-    for (let a = 0; a <= steps; a++) {
-      for (let b = 0; b <= steps; b++) {
-        const x = box.x + (box.width * a) / steps;
-        const y = box.y + (box.height * b) / steps;
-        if (!inside(x, y)) continue;
-        let score = 0;
-        for (const r of [6, 12, 18, 24]) {
-          for (let k = 0; k < 8; k++) {
-            const t = (k / 8) * 2 * Math.PI;
-            if (inside(x + r * Math.cos(t), y + r * Math.sin(t))) score++;
-          }
+  return page.evaluate(
+    ([i, skip]) => {
+      const map = (
+        window as unknown as {
+          __afterdarkMap?: TestMap & {
+            containerPointToLatLng(p: [number, number]): { lat: number; lng: number };
+          };
         }
-        if (!best || score > best.score) best = { x, y, score };
+      ).__afterdarkMap;
+      if (!map) throw new Error('map test hook missing');
+      const path = document.querySelectorAll<SVGGeometryElement>('path.task-section')[i];
+      if (!path) throw new Error('no section highlight');
+      const svg = path.ownerSVGElement;
+      const ctm = path.getScreenCTM();
+      if (!svg || !ctm) throw new Error('no svg');
+      const box = path.getBBox();
+      const inside = (x: number, y: number) => path.isPointInFill(new DOMPoint(x, y));
+      // The point whose ring of neighbours is all inside the highlight is the safest from the edges.
+      // A later `rank` (a retry) takes the next best spot that is not beside an earlier choice.
+      const spots: { x: number; y: number; score: number }[] = [];
+      const steps = 24;
+      for (let a = 0; a <= steps; a++) {
+        for (let b = 0; b <= steps; b++) {
+          const x = box.x + (box.width * a) / steps;
+          const y = box.y + (box.height * b) / steps;
+          if (!inside(x, y)) continue;
+          let score = 0;
+          for (const r of [6, 12, 18, 24]) {
+            for (let k = 0; k < 8; k++) {
+              const t = (k / 8) * 2 * Math.PI;
+              if (inside(x + r * Math.cos(t), y + r * Math.sin(t))) score++;
+            }
+          }
+          spots.push({ x, y, score });
+        }
       }
-    }
-    if (!best) throw new Error('no spot inside the highlight');
-    const screen = new DOMPoint(best.x, best.y).matrixTransform(ctm);
-    const frame = map.getContainer().getBoundingClientRect();
-    const ll = map.containerPointToLatLng([screen.x - frame.left, screen.y - frame.top]);
-    return { lat: ll.lat, lng: ll.lng };
-  }, index);
+      spots.sort((p, q) => q.score - p.score);
+      const chosen: typeof spots = [];
+      for (const s of spots) {
+        if (chosen.every((c) => Math.hypot(c.x - s.x, c.y - s.y) > 30)) chosen.push(s);
+        if (chosen.length > skip) break;
+      }
+      const best = chosen[Math.min(skip, chosen.length - 1)];
+      if (!best) throw new Error('no spot inside the highlight');
+      const screen = new DOMPoint(best.x, best.y).matrixTransform(ctm);
+      const frame = map.getContainer().getBoundingClientRect();
+      const ll = map.containerPointToLatLng([screen.x - frame.left, screen.y - frame.top]);
+      return { lat: ll.lat, lng: ll.lng };
+    },
+    [index, rank] as const,
+  );
 }
 
-/** lat/lng of the `index`-th revealed pin on the map. */
+/** lat/lng of the pin of the `index`-th task card, once that card has its pin revealed (read from the card, as the map would draw it). */
 export async function pinPosition(page: Page, index = 0): Promise<{ lat: number; lng: number }> {
-  return page.evaluate((i) => {
-    const map = (
-      window as unknown as {
-        __afterdarkMap?: TestMap & {
-          containerPointToLatLng(p: [number, number]): { lat: number; lng: number };
-        };
-      }
-    ).__afterdarkMap;
-    const pin = document.querySelectorAll<HTMLElement>('.task-pin')[i];
-    if (!map || !pin) throw new Error('no pin on the map');
-    const r = pin.getBoundingClientRect();
-    const frame = map.getContainer().getBoundingClientRect();
-    const ll = map.containerPointToLatLng([
-      r.left + r.width / 2 - frame.left,
-      r.top + r.height / 2 - frame.top,
-    ]);
-    return { lat: ll.lat, lng: ll.lng };
-  }, index);
+  const read = () =>
+    page.evaluate((i) => {
+      const card = (
+        window as unknown as { __afterdarkActions: Actions }
+      ).__afterdarkActions.cardsOf()[i];
+      return card && card.stage === 'pin' ? { lat: card.lat, lng: card.lng } : undefined;
+    }, index);
+  await expect.poll(read, { timeout: 10_000 }).toBeDefined();
+  const pin = await read();
+  if (!pin) throw new Error('the card has no pin yet');
+  return pin;
+}
+
+/** Walk card 0 through Stage 1 → Stage 2 → at the pin, ready to press Start. */
+export async function reachPin(page: Page, shot = 'test-results/phase05') {
+  const card = page.getByTestId('task-card').first();
+  await expect(card).toHaveAttribute('data-stage', 'assigned');
+  await expect(page.locator('path.task-section').first()).toBeVisible();
+  await page.waitForTimeout(1500); // map tiles, for the screenshot
+  await page.screenshot({ path: `${shot}-stage1-section.png` });
+
+  // Stage 1 → 2: stand inside the highlighted section; the server reveals the pin after 3 s.
+  // A thin wedge can be hard to hit, so try the next-best spot if the pin does not appear.
+  const REVEAL_TRIES = 3;
+  for (let rank = 0; rank < REVEAL_TRIES; rank++) {
+    await simTeleport(page, await spotInHighlight(page, 0, rank));
+    try {
+      // The pin appears (the spot may already be within reach of it, so "at the pin" is fine too).
+      await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 10_000 });
+      break;
+    } catch (error) {
+      if (rank === REVEAL_TRIES - 1) throw error;
+    }
+  }
+  await expect(page.locator('.task-pin').first()).toBeVisible();
+  await page.screenshot({ path: `${shot}-stage2-pin.png` });
+
+  // Stage 2 → at the pin.
+  await simTeleport(page, await pinPosition(page, 0));
+  await expect(card).toHaveAttribute('data-stage', 'atPin', { timeout: 10_000 });
+  await expect(page.getByTestId('task-start')).toBeVisible();
+}
+
+/** Press Start, get past "Stop somewhere safe". */
+export async function startTask(page: Page) {
+  await page.getByTestId('task-start').click();
+  await expect(page.getByTestId('safe-interstitial')).toHaveText('Stop somewhere safe');
+  await page.getByTestId('task-safe-start').click();
 }

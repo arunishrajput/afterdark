@@ -1,6 +1,6 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import { newPlayer, pinPosition, simTeleport, spotInHighlight, toPlaying } from './helpers';
+import { newPlayer, reachPin as reach, startTask, toPlaying } from './helpers';
 
 /**
  * Phase 5: one browser (a crew player in the GPS simulator) plus 7 bots. The player is sent to a
@@ -12,34 +12,6 @@ test.describe.configure({ timeout: 150_000 });
 const SHOT = 'test-results/phase05';
 const WRONG_ATTEMPT_PAUSE_MS = 3500; // the 3 s lockout after a wrong answer, plus a margin
 
-/** Walk card 0 through Stage 1 → Stage 2 → at the pin, ready to press Start. */
-async function reachPin(page: Page) {
-  const card = page.getByTestId('task-card').first();
-  await expect(card).toHaveAttribute('data-stage', 'assigned');
-  await expect(page.locator('path.task-section').first()).toBeVisible();
-  await page.waitForTimeout(1500); // map tiles, for the screenshot
-  await page.screenshot({ path: `${SHOT}-stage1-section.png` });
-
-  // Stage 1 → 2: stand inside the highlighted section; the server reveals the pin after 3 s.
-  await simTeleport(page, await spotInHighlight(page, 0));
-  // The pin appears (the spot may already be within reach of it, so "at the pin" is fine too).
-  await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 20_000 });
-  await expect(page.locator('.task-pin').first()).toBeVisible();
-  await page.screenshot({ path: `${SHOT}-stage2-pin.png` });
-
-  // Stage 2 → at the pin.
-  await simTeleport(page, await pinPosition(page, 0));
-  await expect(card).toHaveAttribute('data-stage', 'atPin', { timeout: 10_000 });
-  await expect(page.getByTestId('task-start')).toBeVisible();
-}
-
-/** Press Start, get past "Stop somewhere safe". */
-async function startTask(page: Page) {
-  await page.getByTestId('task-start').click();
-  await expect(page.getByTestId('safe-interstitial')).toHaveText('Stop somewhere safe');
-  await page.getByTestId('task-safe-start').click();
-}
-
 test('wires: section → pin → solve through the UI → the score goes up', async ({ browser }) => {
   const page = await newPlayer(browser);
   await toPlaying(page, { minigames: ['wires'] });
@@ -47,7 +19,7 @@ test('wires: section → pin → solve through the UI → the score goes up', as
   const before = await page.getByTestId('task-card').first().getAttribute('data-stage');
   expect(before).toBe('assigned');
 
-  await reachPin(page);
+  await reach(page, SHOT);
   await startTask(page);
   await expect(page.getByTestId('minigame-wires')).toBeVisible();
   await expect(page.getByTestId('task-points')).toHaveText('+4');
@@ -119,7 +91,7 @@ function score(code: number[], guess: number[]) {
 test('lock: the guess flow reads the feedback and solves the code', async ({ browser }) => {
   const page = await newPlayer(browser);
   await toPlaying(page, { minigames: ['lock'] });
-  await reachPin(page);
+  await reach(page, SHOT);
   await startTask(page);
   await expect(page.getByTestId('minigame-lock')).toBeVisible();
   await expect(page.getByTestId('task-points')).toHaveText('+5');
