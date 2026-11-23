@@ -7,6 +7,8 @@ import type { GameConfigEditable } from '../config/schema';
 import type { TaskPointSource } from '../geo/pool';
 import type { SectionId } from '../geo/sections';
 import type { LatLng, MultiPolygonCoords, Position, Ring } from '../geo/types';
+import type { LockAction, LockFeedback, LockPuzzle } from '../minigames/lock';
+import type { WiresAnswer, WiresPuzzle } from '../minigames/wires';
 import type { EndReason, ImposterClass, Phase, PlayerStatus, Role, Winner } from './domain';
 
 /**
@@ -93,10 +95,56 @@ export interface ResultView {
   reason: EndReason;
 }
 
+/** Solo today; `coop` arrives in Phase 10. */
+export type TaskKind = 'solo' | 'coop';
+
+/**
+ * One task card (TASKS §1), revealed in stages. `assigned`: only a direction.
+ * `pin`: also the exact point and whether the player is within reach. The
+ * minigame type and its points are never here: they arrive in the `task:open`
+ * ack. A fake task has exactly this shape (Invariant 4).
+ */
+export type TaskCard =
+  | {
+      id: string;
+      stage: 'assigned';
+      kind: TaskKind;
+      /** For the Stage 1 highlight: regions are public, so this reveals nothing. */
+      regionId: string;
+      regionName: string;
+      section: SectionId;
+      partnerTag?: string;
+    }
+  | {
+      id: string;
+      stage: 'pin';
+      kind: TaskKind;
+      regionId: string;
+      regionName: string;
+      section: SectionId;
+      partnerTag?: string;
+      lat: number;
+      lng: number;
+      atPin: boolean;
+    };
+
+/** The puzzle the server sends when a task is opened: never the solution. */
+export type TaskOpenAck =
+  | { type: 'wires'; points: number; puzzle: WiresPuzzle }
+  | { type: 'lock'; points: number; puzzle: LockPuzzle };
+
+export type TaskActionBody = LockAction;
+export type TaskActionAck = { feedback: LockFeedback };
+
+/** `fooled` is a fake task finished correctly (Phase 9). */
+export type TaskSubmitAck = { result: 'success' | 'wrong' | 'fooled'; points: number };
+
+export type TaskAnswerBody = WiresAnswer | number[];
+
 /**
  * Public game state. Every player gets the same values (ROLES.md visibility
- * matrix): nothing here depends on role or infection. The optional groups appear
- * with the phase that needs them.
+ * matrix): nothing here depends on role or infection, except the viewer's own
+ * task cards and cooldown. The optional groups appear with the phase that needs them.
  */
 export interface GameView {
   regionCounts: RegionCount[];
@@ -112,6 +160,10 @@ export interface GameView {
   threshold?: number;
   crewCount?: number;
   meetingsLeft?: number;
+  /** `playing` only, crew only: the viewer's own cards (an imposter gets none until Phase 10's partner slot). */
+  tasks?: TaskCard[];
+  /** `playing`, crew only: server epoch ms when the viewer may reroll again; absent when they may now. */
+  rerollReadyAt?: number;
   /** `ended` only. */
   result?: ResultView;
 }
@@ -234,4 +286,14 @@ export type GameEvent =
   | { type: 'game.ended'; winner: Winner; reason: EndReason }
   /** Private to the player who is out of bounds (RULES §9.2). */
   | { type: 'zone.warning' }
-  | { type: 'zone.penalty'; points: number };
+  | { type: 'zone.penalty'; points: number }
+  /** Private (Phase 5): a task's pin was revealed (Stage 2). */
+  | { type: 'task.revealed' }
+  /** Private: the player is within reach of a task's pin. */
+  | { type: 'task.atPin' }
+  /** Private: a task was completed for `points`. */
+  | { type: 'task.completed'; points: number }
+  /** Private: a minigame in progress was reset (the player left the pin, lost GPS, left the zone or reconnected). */
+  | { type: 'task.reset'; reason: 'range' | 'gps' | 'zone' | 'connection' }
+  /** Private: a task was replaced because its point was reported unsafe (by anyone). */
+  | { type: 'task.removed'; reason: 'unsafe' };

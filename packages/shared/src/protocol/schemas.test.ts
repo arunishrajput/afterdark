@@ -19,6 +19,11 @@ import {
   lobbyUpdateConfigSchema,
   locUpdateSchema,
   sessionResumeSchema,
+  taskActionSchema,
+  taskIdSchema,
+  taskRefSchema,
+  taskReportUnsafeSchema,
+  taskSubmitSchema,
   timePingSchema,
   usernameSchema,
 } from './schemas';
@@ -285,5 +290,41 @@ describe('Phase 4 payloads', () => {
     expect(devAddBotsSchema.safeParse({ count: 12 }).success).toBe(false);
     expect(devAddBotsSchema.safeParse({ count: 2.5 }).success).toBe(false);
     expect(devAddBotsSchema.safeParse({ count: 3, extra: 1 }).success).toBe(false);
+  });
+});
+
+describe('Phase 5 payloads', () => {
+  const id = 'AbCdEfGhIjKl';
+
+  it('task ids are 12 to 64 URL-safe symbols', () => {
+    expect(taskIdSchema.safeParse(id).success).toBe(true);
+    expect(taskIdSchema.safeParse('short').success).toBe(false);
+    expect(taskIdSchema.safeParse('has space 12345').success).toBe(false);
+    expect(taskIdSchema.safeParse('x'.repeat(65)).success).toBe(false);
+  });
+
+  it('open, cancel, reroll and autoComplete name only a task', () => {
+    expect(taskRefSchema.safeParse({ taskId: id }).success).toBe(true);
+    expect(taskRefSchema.safeParse({ taskId: id, extra: 1 }).success).toBe(false);
+    expect(taskRefSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('action and submit take any JSON body up to 2 KB', () => {
+    expect(taskSubmitSchema.safeParse({ taskId: id, answer: [1, 0, 2, 3] }).success).toBe(true);
+    expect(taskActionSchema.safeParse({ taskId: id, action: { guess: [1, 2, 3] } }).success).toBe(
+      true,
+    );
+    expect(taskSubmitSchema.safeParse({ taskId: id, answer: 'x'.repeat(3000) }).success).toBe(
+      false,
+    );
+    expect(taskSubmitSchema.safeParse({ taskId: id, answer: [1], extra: 1 }).success).toBe(false);
+  });
+
+  it('report unsafe takes an optional short reason', () => {
+    expect(taskReportUnsafeSchema.safeParse({ taskId: id }).success).toBe(true);
+    expect(taskReportUnsafeSchema.safeParse({ taskId: id, reason: 'a road' }).success).toBe(true);
+    expect(taskReportUnsafeSchema.safeParse({ taskId: id, reason: 'x'.repeat(101) }).success).toBe(
+      false,
+    );
   });
 });

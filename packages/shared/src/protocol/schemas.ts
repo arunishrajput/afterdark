@@ -226,3 +226,43 @@ export const devAddBotsSchema = z.strictObject({
   count: z.number().int().min(1).max(MAX_BOTS_PER_CALL),
 });
 export type DevAddBotsPayload = z.infer<typeof devAddBotsSchema>;
+
+// ── Phase 5: tasks ──────────────────────────────────────────────────────────
+
+/** Task ids are server-made 12-character tokens from the URL-safe alphabet. */
+const TASK_ID_PATTERN = new RegExp(`^[${escapeForClass(ID_ALPHABET)}]{12,64}$`);
+export const taskIdSchema = z.string().regex(TASK_ID_PATTERN);
+
+/** `task:open`, `task:cancel`, `task:reroll` and `dev:autoComplete` name one task. */
+export const taskRefSchema = z.strictObject({ taskId: taskIdSchema });
+export type TaskRefPayload = z.infer<typeof taskRefSchema>;
+
+/**
+ * `task:action` and `task:submit` carry a game-specific body. The envelope is
+ * checked here; the server parses the body with the minigame's own schema before
+ * it reaches any logic. The depth and size caps keep a hostile body cheap to parse.
+ */
+const MAX_BODY_BYTES = 2048;
+const jsonBodySchema = z.unknown().refine(
+  (v) => {
+    try {
+      return JSON.stringify(v).length <= MAX_BODY_BYTES;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'Body too large' },
+);
+
+export const taskActionSchema = z.strictObject({ taskId: taskIdSchema, action: jsonBodySchema });
+export type TaskActionPayload = z.infer<typeof taskActionSchema>;
+
+export const taskSubmitSchema = z.strictObject({ taskId: taskIdSchema, answer: jsonBodySchema });
+export type TaskSubmitPayload = z.infer<typeof taskSubmitSchema>;
+
+const REPORT_REASON_MAX = 100;
+export const taskReportUnsafeSchema = z.strictObject({
+  taskId: taskIdSchema,
+  reason: z.string().max(REPORT_REASON_MAX).optional(),
+});
+export type TaskReportUnsafePayload = z.infer<typeof taskReportUnsafeSchema>;

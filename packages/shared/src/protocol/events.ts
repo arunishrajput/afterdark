@@ -1,6 +1,13 @@
 /** Event names and typed Socket.IO maps (mirrors docs/PROTOCOL.md). */
 import type { KickReason } from '../types/domain';
-import type { GameEvent, PlayerView, RadarPayload } from '../types/view';
+import type {
+  GameEvent,
+  PlayerView,
+  RadarPayload,
+  TaskActionAck,
+  TaskOpenAck,
+  TaskSubmitAck,
+} from '../types/view';
 import type {
   DevAddBotsPayload,
   DevTeleportPayload,
@@ -20,6 +27,10 @@ import type {
   LobbyUpdateConfigPayload,
   LocUpdatePayload,
   SessionResumePayload,
+  TaskActionPayload,
+  TaskRefPayload,
+  TaskReportUnsafePayload,
+  TaskSubmitPayload,
   TimePingPayload,
 } from './schemas';
 
@@ -77,8 +88,15 @@ export interface ClientToServerEvents {
   'game:pause': (payload: GameCommandPayload, ack: AckCallback) => void;
   'game:resume': (payload: GameCommandPayload, ack: AckCallback) => void;
   'game:abort': (payload: GameCommandPayload, ack: AckCallback) => void;
+  'task:open': (payload: TaskRefPayload, ack: AckCallback<TaskOpenAck>) => void;
+  'task:action': (payload: TaskActionPayload, ack: AckCallback<TaskActionAck>) => void;
+  'task:submit': (payload: TaskSubmitPayload, ack: AckCallback<TaskSubmitAck>) => void;
+  'task:cancel': (payload: TaskRefPayload, ack: AckCallback) => void;
+  'task:reroll': (payload: TaskRefPayload, ack: AckCallback) => void;
+  'task:reportUnsafe': (payload: TaskReportUnsafePayload, ack: AckCallback) => void;
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
   'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
+  'dev:autoComplete': (payload: TaskRefPayload, ack: AckCallback) => void;
 }
 
 export interface KickedPayload {
