@@ -22,7 +22,7 @@
 - [x] **01.1 Shared protocol.** In `protocol/events.ts` and `protocol/schemas.ts`, add `Ack`, `ErrorCode` and every Phase 1 event from PROTOCOL.md with zod schemas. Add `types/domain.ts` (Player, Lobby, Phase) and `types/view.ts` (`PlayerView` lobby subset).
   - *Accept:* schema tests cover valid and invalid usernames (length, charset `[\p{L}\p{N} _.-]`, trimming) and codes.
 - [x] **01.2 Lobby code generator.** 6 characters from the CONFIG alphabet, using the seeded RNG for tests and crypto in prod, with no collisions among live lobbies.
-- [ ] **01.3 Engine: lobby state and reducer** (`engine/state.ts`, `engine/systems/lobby.ts`), pure, with the injected clock. Commands:
+- [x] **01.3 Engine: lobby state and reducer** (`engine/state.ts`, `engine/systems/lobby.ts`), pure, with the injected clock. Commands:
   - create
   - join: phase check, max 12, unique name case-insensitively, `acceptedSafety` must be true
   - leave

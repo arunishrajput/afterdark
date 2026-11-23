@@ -33,6 +33,8 @@ export const DEFAULT_CONFIG = {
   spawnMinSeparationM: 40,
   roleRevealS: 10,
   lobbyIdleTimeoutMin: 30,
+  lobbyIdleSweepS: 60,
+  hostDisconnectGraceS: 30,
 
   // Map, regions and visibility
   minBoundaryAreaM2: 15_000,
@@ -134,4 +136,6 @@ export const DEFAULT_CONFIG = {
   clockSyncSamples: 5,
   clockSyncIntervalMs: 30_000,
   ackTimeoutMs: 5000,
+  tickIntervalMs: 1000,
+  socketEventsPerSecond: 10,
 } as const satisfies GameConfig;

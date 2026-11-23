@@ -53,6 +53,8 @@ export const gameConfigSchema = z.strictObject({
   spawnMinSeparationM: positive(),
   roleRevealS: positiveInt(),
   lobbyIdleTimeoutMin: positiveInt(),
+  lobbyIdleSweepS: positiveInt(),
+  hostDisconnectGraceS: positiveInt(),
 
   // Map, regions and visibility
   minBoundaryAreaM2: positive(),
@@ -137,6 +139,8 @@ export const gameConfigSchema = z.strictObject({
   clockSyncSamples: positiveInt(),
   clockSyncIntervalMs: positiveInt(),
   ackTimeoutMs: positiveInt(),
+  tickIntervalMs: positiveInt(),
+  socketEventsPerSecond: positiveInt(),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;

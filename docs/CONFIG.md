@@ -35,6 +35,8 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `spawnMinSeparationM` | 40 | — | 🔒 | Lower limit only. The generator spreads spawns as far apart as it can. |
 | `roleRevealS` | 10 | — | 🔒 | Length of the hold-to-reveal screen before play begins. |
 | `lobbyIdleTimeoutMin` | 30 | — | 🔒 | A lobby with no connected players is deleted after this. |
+| `lobbyIdleSweepS` | 60 | — | 🔒 | How often the server looks for idle lobbies to delete. |
+| `hostDisconnectGraceS` | 30 | — | 🔒 | In the lobby, a host disconnected this long hands host status to the earliest-joined connected player (ADR-036). |
 
 ## Map, regions and visibility
 | Key | Default | Range | Host | Notes |
@@ -149,3 +151,5 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `clockSyncSamples` | 5 | — | 🔒 | `time:ping` round trips per clock sync; the lowest-RTT sample sets the offset. |
 | `clockSyncIntervalMs` | 30000 | — | 🔒 | How often the client re-syncs its server-clock offset. |
 | `ackTimeoutMs` | 5000 | — | 🔒 | Client gives up waiting for an ack after this. |
+| `tickIntervalMs` | 1000 | — | 🔒 | Server room tick (countdowns, timers, win checks). |
+| `socketEventsPerSecond` | 10 | — | 🔒 | Basic per-socket rate limit for client → server events; extra events get `RATE_LIMITED`. |
