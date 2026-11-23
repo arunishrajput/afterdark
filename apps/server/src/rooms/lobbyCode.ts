@@ -3,7 +3,7 @@
  * unique among live lobbies. Production draws from Web Crypto; tests inject a
  * seeded `Rng` so codes are reproducible.
  */
-import { DEFAULT_CONFIG, randomString,type Rng } from '@afterdark/shared';
+import { DEFAULT_CONFIG, randomString, type Rng } from '@afterdark/shared';
 
 /** Returns `length` random symbols from `alphabet`. */
 export type CodeSource = (length: number, alphabet: string) => string;
