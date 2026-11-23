@@ -176,4 +176,7 @@ export const DEFAULT_CONFIG = {
   botWanderLegM: 60,
   botTaskMinS: 10,
   botTaskMaxS: 30,
+  botVoteSkipPercent: 30,
+  botMeetingMinS: 150,
+  botMeetingMaxS: 400,
 } as const satisfies GameConfig;

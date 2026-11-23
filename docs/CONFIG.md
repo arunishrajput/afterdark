@@ -186,3 +186,6 @@ Used by the bot CLI and the in-process bots from `dev:addBots` (TESTING §5, ADR
 | `botWanderLegM` | 60 | — | 🔒 | Longest random leg a bot walks while wandering. |
 | `botTaskMinS` | 10 | — | 🔒 | A crew bot at its pin waits at least this long (game-free real seconds) before finishing the task. |
 | `botTaskMaxS` | 30 | — | 🔒 | …and at most this long. |
+| `botVoteSkipPercent` | 30 | 0–100 | 🔒 | Chance that a bot votes Skip instead of a random active player. |
+| `botMeetingMinS` | 150 | — | 🔒 | With bots added with `meetings: 'random'`: each bot calls its meeting once, at a random game time between this many seconds into play… |
+| `botMeetingMaxS` | 400 | — | 🔒 | …and this many. |

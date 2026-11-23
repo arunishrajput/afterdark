@@ -27,6 +27,8 @@ import type {
   LobbySetBoundaryPayload,
   LobbySetNoGoZonesPayload,
   LobbySetReadyPayload,
+  MeetingCommandPayload,
+  MeetingVotePayload,
   LobbyUpdateConfigPayload,
   LocUpdatePayload,
   SessionResumePayload,
@@ -99,6 +101,9 @@ export interface ClientToServerEvents {
   'task:reportUnsafe': (payload: TaskReportUnsafePayload, ack: AckCallback) => void;
   'ability:infect': (payload: GameCommandPayload, ack: AckCallback<InfectAck>) => void;
   'ability:cancelInfect': (payload: GameCommandPayload, ack: AckCallback) => void;
+  'meeting:call': (payload: MeetingCommandPayload, ack: AckCallback) => void;
+  'meeting:skipDiscussion': (payload: MeetingCommandPayload, ack: AckCallback) => void;
+  'meeting:vote': (payload: MeetingVotePayload, ack: AckCallback) => void;
   'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
   'dev:addBots': (payload: DevAddBotsPayload, ack: AckCallback) => void;
   'dev:advanceClock': (payload: DevAdvanceClockPayload, ack: AckCallback) => void;

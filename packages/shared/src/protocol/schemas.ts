@@ -226,6 +226,8 @@ export const devAddBotsSchema = z.strictObject({
   count: z.number().int().min(1).max(MAX_BOTS_PER_CALL),
   /** How imposter bots play (default `wander`: they walk and never infect). Applies to the whole room. */
   imposterBehaviour: z.enum(['wander', 'chase']).optional(),
+  /** `random`: each bot calls one meeting at a random time (default `off`: bots only join meetings others call). Applies to the whole room. */
+  meetings: z.enum(['off', 'random']).optional(),
 });
 export type DevAddBotsPayload = z.infer<typeof devAddBotsSchema>;
 
@@ -235,6 +237,18 @@ export const devAdvanceClockSchema = z.strictObject({
   seconds: z.number().int().min(1).max(MAX_ADVANCE_S),
 });
 export type DevAdvanceClockPayload = z.infer<typeof devAdvanceClockSchema>;
+
+// ── Phase 8: meetings ───────────────────────────────────────────────────────
+
+/** `meeting:call` and `meeting:skipDiscussion` carry nothing: the server knows who and when. */
+export const meetingCommandSchema = z.strictObject({});
+export type MeetingCommandPayload = z.infer<typeof meetingCommandSchema>;
+
+/** `meeting:vote`: a player id, or `'skip'`. A player id never equals `'skip'` (ids are 16+ characters). */
+export const meetingVoteSchema = z.strictObject({
+  target: z.union([z.literal('skip'), playerIdSchema]),
+});
+export type MeetingVotePayload = z.infer<typeof meetingVoteSchema>;
 
 // ── Phase 5: tasks ──────────────────────────────────────────────────────────
 

@@ -25,6 +25,8 @@ export interface PublicPlayer {
   ready: boolean;
   connected: boolean;
   status: PlayerStatus;
+  /** Set once the player has been ejected: the meeting reveal is public to everyone (ADR-019). */
+  revealedRole?: Role;
 }
 
 /** One of a region's 9 sections: its area and whether tasks can be sent there. */
@@ -95,6 +97,56 @@ export interface ResultView {
   reason: EndReason;
 }
 
+/** The stages of a meeting, in order (MEETINGS §3). The `Called` instant is the start of `gather`. */
+export type MeetingStage = 'gather' | 'discuss' | 'vote' | 'result';
+
+/** One roster row of a meeting: public to everyone, spectators included. */
+export interface MeetingRosterEntry {
+  playerId: string;
+  username: string;
+  status: PlayerStatus;
+  connected: boolean;
+}
+
+/** One line of the result: `target` is a player id or `'skip'`. Never who voted (ROLES.md). */
+export interface MeetingTally {
+  target: string;
+  count: number;
+}
+
+/** What the vote decided. No `ejectedId` means nobody was ejected (MEETINGS §4). */
+export interface MeetingOutcome {
+  ejectedId?: string;
+  ejectedUsername?: string;
+  /** Always revealed with an ejection, never the tag, class or infection (ADR-019). */
+  wasImposter?: boolean;
+}
+
+/**
+ * The running meeting (MEETINGS). The same shape for every viewer, crew, imposter
+ * or spectator: only `myVote` is the viewer's own.
+ */
+export interface MeetingView {
+  stage: MeetingStage;
+  /** Server epoch ms when this stage ends, if nothing finishes it early. With `pausedAt`, remaining time is `endsAt − pausedAt`. */
+  endsAt: number;
+  /** Present while the host has paused the game. */
+  pausedAt?: number;
+  /** Username of the caller (public, ROLES.md). */
+  calledBy: string;
+  /** Everyone who has reached the Base so far. */
+  gathered: string[];
+  roster: MeetingRosterEntry[];
+  /** Players who did what this stage waits for: arrived, skipped the discussion or voted (counts only). */
+  progress: { done: number; total: number };
+  /** The viewer's own vote once cast: a player id or `'skip'`. */
+  myVote?: string;
+  /** `result` only. */
+  tallies?: MeetingTally[];
+  /** `result` only. */
+  outcome?: MeetingOutcome;
+}
+
 /** Solo today; `coop` arrives in Phase 10. */
 export type TaskKind = 'solo' | 'coop';
 
@@ -159,7 +211,10 @@ export interface GameView {
   compromised?: number;
   threshold?: number;
   crewCount?: number;
+  /** The viewer's own remaining meetings (they call their own, MEETINGS §2). */
   meetingsLeft?: number;
+  /** While a meeting runs. */
+  meeting?: MeetingView;
   /** `playing` only, crew only: the viewer's own cards (an imposter gets none until Phase 10's partner slot). */
   tasks?: TaskCard[];
   /** `playing`, crew only: server epoch ms when the viewer may reroll again; absent when they may now. */
@@ -314,15 +369,19 @@ export type GameEvent =
   /** Private: a task was completed for `points`. */
   | { type: 'task.completed'; points: number }
   /** Private: a minigame in progress was reset (the player left the pin, lost GPS, left the zone or reconnected). */
-  | { type: 'task.reset'; reason: 'range' | 'gps' | 'zone' | 'connection' }
+  | { type: 'task.reset'; reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting' }
   /** Private: a task was replaced because its point was reported unsafe (by anyone). */
   | { type: 'task.removed'; reason: 'unsafe' }
   /** Public (Phase 7): a crew member just became compromised. Says nothing about who. */
   | { type: 'game.compromised'; count: number }
   /** Private to the imposter (Phase 7): their Infect channel finished. The target is never told. */
   | { type: 'infect.completed' }
-  /** Private to the imposter: their channel failed (no cooldown). `range` is a gap beyond the tolerance, `target` means the target stopped being eligible (E6, E7), `meeting` is Phase 8. */
-  | { type: 'infect.failed'; reason: 'range' | 'target' | 'meeting' };
+  /** Private to the imposter: their channel failed (no cooldown). `range` is a gap beyond the tolerance, `target` means the target stopped being eligible (E6, E7), `meeting` means a meeting was called. */
+  | { type: 'infect.failed'; reason: 'range' | 'target' | 'meeting' }
+  /** Public (Phase 8): a meeting was called by `by` (a username). Every phone shows the alarm. */
+  | { type: 'meeting.called'; by: string }
+  /** Public: the vote is over. `ejected` is absent when nobody was ejected. */
+  | { type: 'meeting.result'; ejected?: { username: string; wasImposter: boolean } };
 
 /** The ack of `ability:infect`. */
 export interface InfectAck {

@@ -119,6 +119,8 @@ export type {
   LobbySetReadyPayload,
   LobbyUpdateConfigPayload,
   LocUpdatePayload,
+  MeetingCommandPayload,
+  MeetingVotePayload,
   SessionResumePayload,
   TaskActionPayload,
   TaskRefPayload,
@@ -148,6 +150,8 @@ export {
   lobbySetReadySchema,
   lobbyUpdateConfigSchema,
   locUpdateSchema,
+  meetingCommandSchema,
+  meetingVoteSchema,
   playerIdSchema,
   regionNameSchema,
   sessionResumeSchema,
@@ -167,6 +171,8 @@ export type { SetupIssue, SetupSummary } from './rules/setup';
 export { pointsNeeded, summarizeSetup, validateSetup } from './rules/setup';
 export type { StartBlocker } from './rules/start';
 export { resolveImposterCount, startBlockers } from './rules/start';
+export type { VoteCounts } from './rules/meeting';
+export { resolveVote } from './rules/meeting';
 export type { Progress } from './rules/victory';
 export { infectionThreshold, winnerOnTimeUp } from './rules/victory';
 export { drawTags, formatTag, TAG_PATTERN, TAG_WORDS } from './tags';
@@ -196,6 +202,11 @@ export type {
   LocationQuality,
   LocationView,
   MapSetupPublic,
+  MeetingOutcome,
+  MeetingRosterEntry,
+  MeetingStage,
+  MeetingTally,
+  MeetingView,
   MeView,
   PlayerView,
   PublicPlayer,
