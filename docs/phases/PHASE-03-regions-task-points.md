@@ -19,13 +19,13 @@
 - **Out:** using these for tasks (Phase 5) or meetings (Phase 8).
 
 ## Tasks
-- [ ] **03.1 Sampling utilities** (`geo/sampling.ts`): seeded uniform points in a polygon minus holes (rejection sampling), and best-candidate sampling with minimum spacing. Test: every point is inside, spacing is respected, results are deterministic per seed.
-- [ ] **03.2 Region partition** (`geo/regions.ts`): k-means++ → `@turf/voronoi` → `@turf/intersect` clip → sliver merge → small-region retry, with auto k by area (CONFIG) and reading-order naming. Tests:
+- [x] **03.1 Sampling utilities** (`geo/sampling.ts`): seeded uniform points in a polygon minus holes (rejection sampling), and best-candidate sampling with minimum spacing. Test: every point is inside, spacing is respected, results are deterministic per seed.
+- [x] **03.2 Region partition** (`geo/regions.ts`): k-means++ → `@turf/voronoi` → `@turf/intersect` clip → sliver merge → small-region retry, with auto k by area (CONFIG) and reading-order naming. Tests:
   - no overlaps (pairwise intersection area ≈ 0)
   - union area ≈ boundary area minus no-go area (within 1%)
   - deterministic for the same seed
   - works for a circle, a rectangle, an L-shape and a concave "C" shape
-- [ ] **03.3 Section frame** (`geo/sections.ts`):
+- [x] **03.3 Section frame** (`geo/sections.ts`):
   - origin = pole of inaccessibility (the `polylabel` package), with the fallbacks
   - ρ = distance from the origin to the furthest vertex
   - `sectionOf(point, regions)` → `{regionId, section} | null`
@@ -37,17 +37,17 @@
   - bearings exactly on the 22.5° borders are handled
   - the Centre radius is 0.35ρ
   - concave regions behave
-- [ ] **03.4 Task-point pool:** generated per usable section (`taskPointsPerSection`, `taskPointMinSpacingM`) and stored with `{id, lat, lng, regionId, section, source, disabled}`. Host edits: add (the server computes the section and rejects points outside the boundary or in a no-go zone), remove, regenerate.
-- [ ] **03.5 No-go zones and Base.** `lobby:setNoGoZones` validates the polygons, removes pool points inside them and recomputes the regions. `lobby:setBase` must be inside the boundary and outside no-go zones; its default is the centroid of the largest region snapped to the nearest pool point.
-- [ ] **03.6 Setup validation.** `validateSetup(lobby)` returns a list of missing or invalid items: boundary, Base, usable points ≥ 4 × players over ≥ 2 regions. The countdown requires it to be valid (RULES E39). Every setup change un-readies everyone.
-- [ ] **03.7 Region counts and visibility.**
+- [x] **03.4 Task-point pool:** generated per usable section (`taskPointsPerSection`, `taskPointMinSpacingM`) and stored with `{id, lat, lng, regionId, section, source, disabled}`. Host edits: add (the server computes the section and rejects points outside the boundary or in a no-go zone), remove, regenerate.
+- [x] **03.5 No-go zones and Base.** `lobby:setNoGoZones` validates the polygons, removes pool points inside them and recomputes the regions. `lobby:setBase` must be inside the boundary and outside no-go zones; its default is the centroid of the largest region snapped to the nearest pool point.
+- [x] **03.6 Setup validation.** `validateSetup(lobby)` returns a list of missing or invalid items: boundary, Base, usable points ≥ 4 × players over ≥ 2 regions. The countdown requires it to be valid (RULES E39). Every setup change un-readies everyone.
+- [x] **03.7 Region counts and visibility.**
   - Region counts are computed every 30 s, bucketed, include the viewer, and exclude spectators and stale players. They go into `view.game.regionCounts`, and are also shown in the lobby for testing.
   - The radar respects `playerVisibility`: `nearby` (40 m), `regions` (no dots) or `all`.
   - Extend the leak tests: in `regions` mode the radar is empty; dot flags stay public only.
-- [ ] **03.8 Host setup wizard.** Steps ① Boundary (from Phase 2) → ② Regions (count selector, regenerate, rename with inline edit) → ③ Task points (tap to add, tap a point to delete, regenerate; points coloured by region) → ④ No-go zones (polygon draw) → ⑤ Base (tap to place) → ⑥ Settings. Each step shows ✓ when valid. A "Preview sections" toggle draws the 9 sections of the selected region with labels.
-- [ ] **03.9 Player lobby map:** boundary, regions with labels, Base and region counts. Task points are visible in the lobby so everyone can review them for safety, and are hidden during play.
-- [ ] **03.10 E2E:** the host draws a boundary, sees N regions, renames one, deletes a point, places the Base, and the checklist turns green. The guest sees the same map.
-- [ ] **03.11 Wrap up.** Update the docs (MAP_AND_REGIONS if any algorithm detail changed, PROTOCOL, PROGRESS). Commit, tag, push.
+- [x] **03.8 Host setup wizard.** Steps ① Boundary (from Phase 2) → ② Regions (count selector, regenerate, rename with inline edit) → ③ Task points (tap to add, tap a point to delete, regenerate; points coloured by region) → ④ No-go zones (polygon draw) → ⑤ Base (tap to place) → ⑥ Settings. Each step shows ✓ when valid. A "Preview sections" toggle draws the 9 sections of the selected region with labels.
+- [x] **03.9 Player lobby map:** boundary, regions with labels, Base and region counts. Task points are visible in the lobby so everyone can review them for safety, and are hidden during play.
+- [x] **03.10 E2E:** the host draws a boundary, sees N regions, renames one, deletes a point, places the Base, and the checklist turns green. The guest sees the same map.
+- [x] **03.11 Wrap up.** Update the docs (MAP_AND_REGIONS if any algorithm detail changed, PROTOCOL, PROGRESS). Commit, tag, push.
 
 ## Acceptance criteria
 - The GDD test passes: "A task assigned to North-East of Region A is not computed relative to the whole map", proved by the `sectionOf` tests.
