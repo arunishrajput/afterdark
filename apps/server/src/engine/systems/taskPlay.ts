@@ -21,6 +21,7 @@ import { type Effect, RuleError } from '../types';
 import { requireGoodFix } from './location';
 import { findPlayer } from './players';
 import { isTasker, refillSlots, resetOpen, taskRng } from './tasks';
+import { requireTasksUnlocked } from './taskStop';
 import { isZoneLocked } from './zone';
 
 const MS_PER_S = 1000;
@@ -64,6 +65,7 @@ export function openTask(
   effects: Effect[],
 ): void {
   const { p, task } = resolve(state, playerId, taskId);
+  requireTasksUnlocked(state, now);
   requireInZone(p);
   if (task.stage !== 'pin') throw new RuleError('NOT_ALLOWED', 'Find the pin first');
   requireGoodFix(p, state.config, now);
@@ -108,9 +110,11 @@ export function actOnTask(
   playerId: string,
   taskId: string,
   action: unknown,
+  now: number,
   effects: Effect[],
 ): void {
   const { p, task } = resolve(state, playerId, taskId);
+  requireTasksUnlocked(state, now);
   requireInZone(p);
   const open = requireOpen(task);
   const game = gameOf(task);
@@ -167,6 +171,7 @@ export function submitTask(
   effects: Effect[],
 ): void {
   const { p, task, game } = resolve(state, playerId, taskId);
+  requireTasksUnlocked(state, now);
   requireInZone(p);
   const open = requireOpen(task);
   const gameMs = gameNow(game.clock, now);

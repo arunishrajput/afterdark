@@ -219,6 +219,8 @@ export interface GameView {
   tasks?: TaskCard[];
   /** `playing`, crew only: server epoch ms when the viewer may reroll again; absent when they may now. */
   rerollReadyAt?: number;
+  /** While a Task Stop lock runs (public, ROLES.md): nobody can open or submit a task until `until`. Says nothing about who. */
+  taskLock?: { until: number };
   /** `ended` only. */
   result?: ResultView;
 }
@@ -262,12 +264,32 @@ export interface ZoneView {
   graceEndsAt?: number;
 }
 
-/** Another imposter, as an imposter sees them (ROLES.md: username, tag and class). */
+/** A class ability (RULES §7.2–7.4). Infect is not one: every imposter has it (`InfectView`). */
+export type AbilityId = 'taskStop' | 'fakeTask' | 'camouflage';
+
+/** One ability's state, in server epoch ms. `activeUntil` is for abilities with a duration (Camouflage, Phase 10). */
+export interface AbilityState {
+  id: AbilityId;
+  /** When the ability is ready again; in the past when it is ready now. */
+  readyAt: number;
+  activeUntil?: number;
+}
+
+/** A Phantom's own fake task: where it sits and whether a crew slot has taken it yet (ROLES.md: whether a task is fake). */
+export interface FakeView {
+  id: string;
+  lat: number;
+  lng: number;
+  assigned: boolean;
+}
+
+/** Another imposter, as an imposter sees them (ROLES.md: username, tag, class and cooldowns). */
 export interface ImposterAlly {
   playerId: string;
   username: string;
   tag: string;
   classes: ImposterClass[];
+  abilities: AbilityState[];
 }
 
 /** The imposter's own Infect state (RULES §7.1). Times are server epoch ms. */
@@ -290,6 +312,10 @@ export interface ImposterView {
   classes: ImposterClass[];
   allies: ImposterAlly[];
   infect: InfectView;
+  /** The class abilities this imposter can use now (Phase 9: Task Stop, Fake Task). */
+  abilities: AbilityState[];
+  /** The Phantom's own fakes, queued or handed out (empty for everyone else). */
+  fakes: FakeView[];
   /** Everyone exposed or infected, whichever imposter caused it (ROLES.md). */
   compromisedIds: string[];
   /** The subset still incubating; the rest of `compromisedIds` are infected. */
@@ -369,7 +395,10 @@ export type GameEvent =
   /** Private: a task was completed for `points`. */
   | { type: 'task.completed'; points: number }
   /** Private: a minigame in progress was reset (the player left the pin, lost GPS, left the zone or reconnected). */
-  | { type: 'task.reset'; reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting' }
+  | {
+      type: 'task.reset';
+      reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting' | 'sabotage';
+    }
   /** Private: a task was replaced because its point was reported unsafe (by anyone). */
   | { type: 'task.removed'; reason: 'unsafe' }
   /** Public (Phase 7): a crew member just became compromised. Says nothing about who. */
@@ -378,10 +407,22 @@ export type GameEvent =
   | { type: 'infect.completed' }
   /** Private to the imposter: their channel failed (no cooldown). `range` is a gap beyond the tolerance, `target` means the target stopped being eligible (E6, E7), `meeting` means a meeting was called. */
   | { type: 'infect.failed'; reason: 'range' | 'target' | 'meeting' }
+  /** Public (Phase 9): a Task Stop began. Every phone shows SYSTEMS JAMMED until `until` (server epoch ms). Says nothing about who. */
+  | { type: 'sabotage.started'; until: number }
   /** Public (Phase 8): a meeting was called by `by` (a username). Every phone shows the alarm. */
   | { type: 'meeting.called'; by: string }
   /** Public: the vote is over. `ejected` is absent when nobody was ejected. */
   | { type: 'meeting.result'; ejected?: { username: string; wasImposter: boolean } };
+
+/** The ack of `ability:taskStop`: when the lock ends (server epoch ms). */
+export interface TaskStopAck {
+  lockEndsAt: number;
+}
+
+/** The ack of `ability:fakeTask`: the id the fake will carry as a task. */
+export interface FakeTaskAck {
+  fakeId: string;
+}
 
 /** The ack of `ability:infect`. */
 export interface InfectAck {

@@ -11,6 +11,7 @@ import { distanceM, type MeetingStage } from '@afterdark/shared';
 import { gameNow, pauseClock, resumeClock } from '../clock';
 import type { MeetingState, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
+import { applyPostMeetingGrace } from './abilities';
 import { countVotes, eject, SKIP } from './ejection';
 import { cancelAllChannels } from './infection';
 import { fixQuality } from './location';
@@ -169,7 +170,7 @@ function resolveVotes(state: RoomState, m: MeetingState, effects: Effect[]): voi
     ejectedId === undefined ? undefined : state.players.find((p) => p.id === ejectedId);
   if (ejected) {
     m.ejectedId = ejected.id;
-    const { wasImposter } = eject(ejected);
+    const { wasImposter } = eject(state, ejected);
     effects.push({
       kind: 'event',
       to: 'all',
@@ -190,8 +191,9 @@ function endMeeting(state: RoomState, m: MeetingState, now: number): void {
   game.lastMeetingEndedGameMs = gameMs;
   const graceUntil = gameMs + state.config.postMeetingGraceS * MS_PER_S;
   for (const p of state.players) {
-    // Imposters can't strike at the crowded Base: Infect is blocked as a cooldown (Phase 9 does the same for abilities).
+    // Imposters can't strike at the crowded Base: Infect and every ability wait out the grace as a cooldown (ADR-073).
     if (p.infect) p.infect.readyAtGameMs = Math.max(p.infect.readyAtGameMs, graceUntil);
+    applyPostMeetingGrace(p, graceUntil);
     // The forfeit timer was suspended: someone gone during the meeting counts from its end.
     if (p.disconnectedAt !== undefined)
       p.disconnectedAt = Math.min(now, p.disconnectedAt + (now - m.startedAt));

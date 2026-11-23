@@ -12,6 +12,7 @@ import { distanceM, type LatLng } from '@afterdark/shared';
 import { gameNow, isRunning, wallTimeOf } from '../clock';
 import type { PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
+import { freezeAbilityCooldowns } from './abilities';
 import { fixQuality, requireGoodFix } from './location';
 import { findPlayer } from './players';
 import { compromisedCount } from './victory';
@@ -105,6 +106,7 @@ export function cancelAllChannels(state: RoomState, reason: 'meeting', effects: 
 /** RULES §9.3: an out-of-bounds imposter's cooldown does not run down. */
 function freezeCooldowns(state: RoomState, gameMs: number, elapsedMs: number): void {
   if (elapsedMs <= 0) return;
+  freezeAbilityCooldowns(state, gameMs, elapsedMs);
   for (const p of state.players) {
     if (p.infect && p.zone && p.infect.readyAtGameMs > gameMs - elapsedMs) {
       p.infect.readyAtGameMs += elapsedMs;

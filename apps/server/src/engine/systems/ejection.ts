@@ -7,6 +7,7 @@
 import { type MeetingTally, resolveVote } from '@afterdark/shared';
 
 import type { PlayerState, RoomState } from '../state';
+import { removeQueuedFakes } from './fakeTask';
 import { activePlayers } from './players';
 
 export const SKIP = 'skip';
@@ -34,15 +35,17 @@ export function countVotes(
 }
 
 /** Turns the ejected player into a spectator and applies MEETINGS §5. Returns what to reveal. */
-export function eject(p: PlayerState): { wasImposter: boolean } {
+export function eject(state: RoomState, p: PlayerState): { wasImposter: boolean } {
   const wasImposter = p.role === 'imposter';
   p.spectator = true;
   if (p.role) p.revealedRole = p.role;
   // Their tasks go (co-op partners get a new one in Phase 10), points already earned stay in the team score.
   delete p.tasks;
   if (wasImposter) {
-    // Abilities are gone. Queued fakes are removed with them in Phase 9 (the queue has no owner yet).
+    // Abilities are gone, and so are the fakes still waiting in the queue (a fake a crew slot already holds stays, RULES §7.3).
     delete p.infect;
+    delete p.abilities;
+    removeQueuedFakes(state, p.id);
   } else if (p.infection !== 'infected') {
     // Healthy or exposed crew: compromised from now on, any exposure cancelled. An infected one is already counted.
     delete p.infection;

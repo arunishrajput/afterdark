@@ -221,6 +221,10 @@ export type LobbySetBasePayload = z.infer<typeof lobbySetBaseSchema>;
 export const gameCommandSchema = z.strictObject({});
 export type GameCommandPayload = z.infer<typeof gameCommandSchema>;
 
+/** `ability:fakeTask` (Phase 9): where the Phantom pins the fake. The server checks the spot. */
+export const fakeTaskSchema = latLngSchema;
+export type FakeTaskPayload = z.infer<typeof fakeTaskSchema>;
+
 /** `dev:addBots` (test mode, host): how many in-process bots to add and how imposter bots play. The room's player cap is the real limit. */
 const MAX_BOTS_PER_CALL = 11;
 export const devAddBotsSchema = z.strictObject({

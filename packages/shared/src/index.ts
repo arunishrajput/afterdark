@@ -118,6 +118,7 @@ export type {
   DevSetMinigamesPayload,
   DevTeleportPayload,
   ErrorCode,
+  FakeTaskPayload,
   GameCommandPayload,
   LobbyCreatePayload,
   LobbyEditTaskPointsPayload,
@@ -148,6 +149,7 @@ export {
   devSetMinigamesSchema,
   devTeleportSchema,
   ERROR_CODES,
+  fakeTaskSchema,
   gameCommandSchema,
   lobbyCodeSchema,
   lobbyCreateSchema,
@@ -200,10 +202,14 @@ export type {
 } from './types/domain';
 export { GAME_PHASES, IMPOSTER_CLASSES, PHASES } from './types/domain';
 export type {
+  AbilityId,
+  AbilityState,
   AnonDot,
   ClockView,
   DotFlag,
   ExposureView,
+  FakeTaskAck,
+  FakeView,
   GameConfigPublic,
   GameEvent,
   GameView,
@@ -235,6 +241,7 @@ export type {
   TaskKind,
   TaskOpenAck,
   TaskPointPublic,
+  TaskStopAck,
   TaskSubmitAck,
   ZoneView,
 } from './types/view';

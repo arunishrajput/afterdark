@@ -32,7 +32,7 @@ export interface Toast {
 /** A private task event the UI reacts to (a counter, so the same event twice still changes the store). */
 export interface TaskSignal {
   seq: number;
-  reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting';
+  reason: 'range' | 'gps' | 'zone' | 'connection' | 'meeting' | 'sabotage';
 }
 
 /** The latest `meeting.called`: who called it and when it arrived (for the full-screen alarm). */
@@ -107,6 +107,7 @@ const TASK_RESET_COPY = {
   zone: 'You left the zone. The task was reset.',
   connection: 'Connection lost. The task was reset.',
   meeting: 'A meeting was called. The task was reset.',
+  sabotage: 'Systems jammed. The task was reset.',
 } as const;
 
 const INFECT_FAILED_COPY = {
@@ -150,6 +151,7 @@ export function toastFor(event: GameEvent): string | undefined {
       return 'Exposed. Walk away to start the incubation.';
     case 'infect.failed':
       return INFECT_FAILED_COPY[event.reason];
+    case 'sabotage.started':
     case 'meeting.called':
     case 'meeting.result':
     case 'lobby.countdown':

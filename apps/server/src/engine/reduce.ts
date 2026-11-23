@@ -1,5 +1,6 @@
 /** `reduce(state, cmd, now)`: the single entry point for player commands. Pure. */
 import type { RoomState } from './state';
+import * as abilities from './systems/abilities';
 import * as control from './systems/control';
 import { advance } from './systems/game';
 import * as infection from './systems/infection';
@@ -95,7 +96,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         play.openTask(draft, cmd.playerId, cmd.taskId, now, effects);
         break;
       case 'taskAction':
-        play.actOnTask(draft, cmd.playerId, cmd.taskId, cmd.action, effects);
+        play.actOnTask(draft, cmd.playerId, cmd.taskId, cmd.action, now, effects);
         break;
       case 'taskSubmit':
         play.submitTask(draft, cmd.playerId, cmd.taskId, cmd.answer, now, effects);
@@ -114,6 +115,12 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'infectCancel':
         infection.cancelInfect(draft, cmd.playerId);
+        break;
+      case 'abilityTaskStop':
+        abilities.useAbility(draft, cmd.playerId, 'taskStop', {}, now, effects);
+        break;
+      case 'abilityFakeTask':
+        abilities.useAbility(draft, cmd.playerId, 'fakeTask', { at: cmd.at }, now, effects);
         break;
       case 'meetingCall':
         meetings.callMeeting(draft, cmd.playerId, now, effects);

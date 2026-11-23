@@ -127,6 +127,7 @@ describe('game start flow over sockets', () => {
           username: other?.me.username,
           tag: other?.me.tag,
           classes: other?.me.imposter?.classes,
+          abilities: other?.me.imposter?.abilities,
         },
       ]);
       expect(v.me.imposter?.classes).toHaveLength(1);

@@ -2,6 +2,7 @@
 import type {
   BoundaryInput,
   ErrorCode,
+  FakeTaskAck,
   GameConfigEditablePatch,
   GameEvent,
   InfectAck,
@@ -13,6 +14,7 @@ import type {
   SoloMinigameType,
   TaskActionAck,
   TaskOpenAck,
+  TaskStopAck,
   TaskSubmitAck,
 } from '@afterdark/shared';
 
@@ -47,6 +49,8 @@ export type Command =
   | { type: 'taskReportUnsafe'; playerId: string; taskId: string }
   | { type: 'infectStart'; playerId: string }
   | { type: 'infectCancel'; playerId: string }
+  | { type: 'abilityTaskStop'; playerId: string }
+  | { type: 'abilityFakeTask'; playerId: string; at: LatLng }
   | { type: 'meetingCall'; playerId: string }
   | { type: 'meetingSkipDiscussion'; playerId: string }
   | { type: 'meetingVote'; playerId: string; target: string }
@@ -62,7 +66,9 @@ export type CommandReply =
   | { type: 'open'; ack: TaskOpenAck }
   | { type: 'action'; ack: TaskActionAck }
   | { type: 'submit'; ack: TaskSubmitAck }
-  | { type: 'infect'; ack: InfectAck };
+  | { type: 'infect'; ack: InfectAck }
+  | { type: 'taskStop'; ack: TaskStopAck }
+  | { type: 'fakeTask'; ack: FakeTaskAck };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =

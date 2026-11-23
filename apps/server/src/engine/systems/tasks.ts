@@ -171,7 +171,7 @@ function nextTask(state: RoomState, p: PlayerState, now: number): TaskState | un
   if (fake) {
     const rng = taskRng(state);
     return {
-      id: newTaskId(rng),
+      id: fake.id,
       kind: 'solo',
       lat: fake.lat,
       lng: fake.lng,
@@ -179,6 +179,7 @@ function nextTask(state: RoomState, p: PlayerState, now: number): TaskState | un
       section: fake.section,
       type: pickMinigameType(rng, state.config, ['keyfetch']),
       fake: true,
+      fakeOwnerId: fake.ownerId,
       stage: 'assigned',
       atPin: false,
     };
@@ -229,7 +230,7 @@ export function nearTarget(
   return false;
 }
 
-export type ResetReason = 'range' | 'gps' | 'zone' | 'connection' | 'meeting';
+export type ResetReason = 'range' | 'gps' | 'zone' | 'connection' | 'meeting' | 'sabotage';
 
 /** Throws away a minigame in progress (progress resets; reveals and held keys are kept, TASKS §6). */
 export function resetOpen(

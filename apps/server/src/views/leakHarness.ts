@@ -31,7 +31,7 @@ export function keysDeep(value: unknown, prefix = ''): string[] {
   return [...out].sort();
 }
 
-/** Every key path a view may contain (through Phase 8). Anything else fails the test. */
+/** Every key path a view may contain (through Phase 9). Anything else fails the test. */
 export const ALLOWED_VIEW_KEYS = new Set([
   'lobby',
   'lobby.code',
@@ -106,6 +106,20 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'me.imposter.allies[].username',
   'me.imposter.allies[].tag',
   'me.imposter.allies[].classes',
+  // Phase 9: class abilities and the Phantom's own fakes (ally cooldowns are imposter-visible, ROLES.md).
+  'me.imposter.allies[].abilities',
+  'me.imposter.allies[].abilities[].id',
+  'me.imposter.allies[].abilities[].readyAt',
+  'me.imposter.allies[].abilities[].activeUntil',
+  'me.imposter.abilities',
+  'me.imposter.abilities[].id',
+  'me.imposter.abilities[].readyAt',
+  'me.imposter.abilities[].activeUntil',
+  'me.imposter.fakes',
+  'me.imposter.fakes[].id',
+  'me.imposter.fakes[].lat',
+  'me.imposter.fakes[].lng',
+  'me.imposter.fakes[].assigned',
   'me.imposter.infect',
   'me.imposter.infect.readyAt',
   'me.imposter.infect.channel',
@@ -149,6 +163,9 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'game.tasks[].lng',
   'game.tasks[].atPin',
   'game.rerollReadyAt',
+  // Phase 9: a Task Stop lock is public (no field says who).
+  'game.taskLock',
+  'game.taskLock.until',
   // Phase 8: the running meeting (the same shape for everyone; only `myVote` is the viewer's own).
   'game.meeting',
   'game.meeting.stage',

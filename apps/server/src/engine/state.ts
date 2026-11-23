@@ -4,6 +4,7 @@
  * from this state cannot leak one.
  */
 import {
+  type AbilityId,
   DEFAULT_CONFIG,
   type EndReason,
   type GameConfig,
@@ -86,6 +87,8 @@ export interface TaskState {
   section: SectionId;
   type: SoloMinigameType;
   fake?: true;
+  /** A fake only: the Phantom who planted it. Server-only (it frees that Phantom's count when the task goes). */
+  fakeOwnerId?: string;
   /** `assigned` → `pin` once the player held the section for `sectionEntryHoldS`. Never goes back. */
   stage: 'assigned' | 'pin';
   /** Game ms when the current run of good fixes inside the section began. */
@@ -95,8 +98,12 @@ export interface TaskState {
   open?: OpenTaskState;
 }
 
-/** A fake task waiting for the next crew slot that refills (Phase 9 fills the queue). */
+/** A fake task waiting for the next crew slot that refills (RULES §7.3). */
 export interface QueuedFake {
+  /** The id the task will carry once a slot takes it (same format as any task id). */
+  id: string;
+  /** The Phantom who planted it: ejecting them removes it, and it counts toward their `fakeTaskMaxActive`. */
+  ownerId: string;
   lat: number;
   lng: number;
   regionId: string;
@@ -121,6 +128,12 @@ export interface InfectState {
   channel?: InfectChannel;
   /** Successful infections, for the results screen's top infector (SCORING). */
   completed: number;
+}
+
+/** One class ability's cooldown (RULES §7.2–7.3). Game ms, so a pause and a meeting freeze it. */
+export interface AbilityRuntime {
+  /** Game ms when the ability is ready again (pushed back while the imposter is out of bounds, RULES §9.3). */
+  readyAtGameMs: number;
 }
 
 /** What a target carries between the end of a channel and becoming infected (RULES §7.1.3). Server-only. */
@@ -167,6 +180,8 @@ export interface PlayerState {
   exposure?: ExposureState;
   /** Imposters only, from the role reveal. */
   infect?: InfectState;
+  /** Imposters only: the class abilities that exist in this build (Phase 9: Task Stop, Fake Task). */
+  abilities?: Partial<Record<AbilityId, AbilityRuntime>>;
   zone?: ZoneState;
   /** Ejected by a vote (MEETINGS §5): sees public information only, and is nobody's target. */
   spectator?: true;
@@ -249,6 +264,8 @@ export interface GameState {
   matchEndsAtGameMs: number;
   /** Game ms of the last infection update, to freeze cooldowns while an imposter is out of bounds. */
   lastInfectGameMs: number;
+  /** A Task Stop lock (RULES §7.2): until this game ms nobody can open or submit a task. Game time, so a meeting freezes it (E23). */
+  taskLock?: { untilGameMs: number };
   /** The meeting in progress, if any. Game time is stopped while it exists. */
   meeting?: MeetingState;
   /** Game ms when the last meeting ended (the next one waits `meetingCooldownS`). */

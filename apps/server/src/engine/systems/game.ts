@@ -13,6 +13,7 @@ import { activePlayers } from './players';
 import { assignRoles } from './roles';
 import { spawnPhaseDone, updateSpawnReach } from './spawn';
 import { assignInitialTasks, updateTasks } from './tasks';
+import { expireTaskLock } from './taskStop';
 import { checkVictory } from './victory';
 import { updateZone } from './zone';
 
@@ -48,6 +49,7 @@ export function advance(state: RoomState, now: number, effects: Effect[]): void 
   }
   if (state.phase === 'playing') {
     updateMeeting(state, now, effects);
+    expireTaskLock(state, now);
     updateZone(state, now, effects);
     updateInfection(state, now, effects);
     updateTasks(state, now, effects);

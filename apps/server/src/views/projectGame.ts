@@ -5,14 +5,16 @@
  * status, and a crew view has no `imposter` key at all (ROLES.md visibility
  * matrix, leak tests 1, 2 and 4).
  */
-import type { GameView, ImposterView, MeView } from '@afterdark/shared';
+import type { AbilityState, FakeView, GameView, ImposterView, MeView } from '@afterdark/shared';
 
 import { clockView, gameNow } from '../engine/clock';
 import type { PlayerState, RoomState } from '../engine/state';
+import { abilitiesOf } from '../engine/systems/abilities';
 import { meetingsLeft } from '../engine/systems/meetings';
 import { isActive } from '../engine/systems/players';
 import { projectRegionCounts } from '../engine/systems/regionCounts';
 import { spawnProgress } from '../engine/systems/spawn';
+import { isTaskLocked } from '../engine/systems/taskStop';
 import { compromisedCount } from '../engine/systems/victory';
 import { projectMeeting } from './projectMeeting';
 import { projectRerollReadyAt, projectTasks } from './projectTasks';
@@ -28,6 +30,28 @@ function deadlineAt(state: RoomState, gameMs: number, now: number): number {
   const g = state.game;
   if (!g) return now;
   return g.clock.started ? clockView(g.clock, gameMs, now).endsAt : g.revealEndsAt + gameMs;
+}
+
+/** An imposter's class abilities with their ready times as constant server-epoch deadlines. */
+function projectAbilities(state: RoomState, p: PlayerState, now: number): AbilityState[] {
+  return abilitiesOf(p).map(([id, a]) => ({
+    id,
+    readyAt: deadlineAt(state, a.readyAtGameMs, now),
+  }));
+}
+
+/** The Phantom's own fakes: the ones waiting in the queue, then the ones a crew slot holds (ROLES.md). Only their own are ever listed. */
+function projectFakes(state: RoomState, me: PlayerState): FakeView[] {
+  if (!me.abilities?.fakeTask) return [];
+  const queued = (state.game?.fakeQueue ?? [])
+    .filter((f) => f.ownerId === me.id)
+    .map((f) => ({ id: f.id, lat: f.lat, lng: f.lng, assigned: false }));
+  const held = state.players.flatMap((p) =>
+    (p.tasks ?? [])
+      .filter((t) => t.fake && t.fakeOwnerId === me.id)
+      .map((t) => ({ id: t.id, lat: t.lat, lng: t.lng, assigned: true })),
+  );
+  return [...held, ...queued];
 }
 
 /**
@@ -51,6 +75,8 @@ function projectImposter(state: RoomState, me: PlayerState, now: number): Impost
           }
         : {}),
     },
+    abilities: projectAbilities(state, me, now),
+    fakes: projectFakes(state, me),
     compromisedIds: affected.map((p) => p.id),
     exposures: affected
       .filter((p) => p.infection === 'exposed')
@@ -69,6 +95,7 @@ function projectImposter(state: RoomState, me: PlayerState, now: number): Impost
         username: p.username,
         tag: p.tag ?? '',
         classes: [...(p.classes ?? [])],
+        abilities: projectAbilities(state, p, now),
       })),
   };
 }
@@ -123,6 +150,9 @@ export function projectGame(state: RoomState, viewerId: string, now: number): Ga
   game.crewCount = g.originalCrewCount;
   const me = state.players.find((p) => p.id === viewerId);
   if (me) game.meetingsLeft = isActive(me) ? meetingsLeft(state, me) : 0;
+  if (state.phase === 'playing' && g.taskLock && isTaskLocked(state, now)) {
+    game.taskLock = { until: deadlineAt(state, g.taskLock.untilGameMs, now) };
+  }
   const meeting = projectMeeting(state, viewerId);
   if (meeting) game.meeting = meeting;
   if (state.phase === 'playing' && me?.role) {

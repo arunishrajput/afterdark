@@ -15,6 +15,7 @@ import {
 
 import { createClock } from '../clock';
 import type { RoomState } from '../state';
+import { initialAbilities } from './abilities';
 import { activePlayers } from './players';
 
 const MS_PER_S = 1000;
@@ -52,6 +53,7 @@ export function assignRoles(state: RoomState, now: number): void {
       p.classes =
         config.imposterAbilityMode === 'all' || own === undefined ? [...IMPOSTER_CLASSES] : [own];
       p.infect = { readyAtGameMs: config.abilityInitialCooldownS * MS_PER_S, completed: 0 };
+      p.abilities = initialAbilities(config, p.classes);
     } else {
       p.role = 'crew';
     }

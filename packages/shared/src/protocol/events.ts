@@ -1,12 +1,14 @@
 /** Event names and typed Socket.IO maps (mirrors docs/PROTOCOL.md). */
 import type { KickReason } from '../types/domain';
 import type {
+  FakeTaskAck,
   GameEvent,
   InfectAck,
   PlayerView,
   RadarPayload,
   TaskActionAck,
   TaskOpenAck,
+  TaskStopAck,
   TaskSubmitAck,
 } from '../types/view';
 import type {
@@ -15,6 +17,7 @@ import type {
   DevSetMinigamesPayload,
   DevTeleportPayload,
   ErrorCode,
+  FakeTaskPayload,
   GameCommandPayload,
   LobbyCreatePayload,
   LobbyEditTaskPointsPayload,
@@ -101,6 +104,8 @@ export interface ClientToServerEvents {
   'task:reportUnsafe': (payload: TaskReportUnsafePayload, ack: AckCallback) => void;
   'ability:infect': (payload: GameCommandPayload, ack: AckCallback<InfectAck>) => void;
   'ability:cancelInfect': (payload: GameCommandPayload, ack: AckCallback) => void;
+  'ability:taskStop': (payload: GameCommandPayload, ack: AckCallback<TaskStopAck>) => void;
+  'ability:fakeTask': (payload: FakeTaskPayload, ack: AckCallback<FakeTaskAck>) => void;
   'meeting:call': (payload: MeetingCommandPayload, ack: AckCallback) => void;
   'meeting:skipDiscussion': (payload: MeetingCommandPayload, ack: AckCallback) => void;
   'meeting:vote': (payload: MeetingVotePayload, ack: AckCallback) => void;

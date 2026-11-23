@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { abilityIdsFor } from '../engine/systems/abilities';
 import {
   ALLOWED_VIEW_KEYS,
   buildGameFixture,
@@ -118,12 +119,15 @@ describe.each(PHASES)('leak: game fixture in the %s phase', (phase) => {
       expect(allies.map((a) => a.playerId).sort()).toEqual(others.map((o) => o.player.id).sort());
       for (const a of allies) {
         const real = state.players.find((p) => p.id === a.playerId);
-        expect(a).toEqual({
+        const { abilities, ...rest } = a;
+        expect(rest).toEqual({
           playerId: real?.id,
           username: real?.username,
           tag: real?.tag,
           classes: real?.classes,
         });
+        // An ally's cooldowns: the abilities their class has, nothing else.
+        expect(abilities.map((x) => x.id)).toEqual(abilityIdsFor(real?.classes ?? []));
       }
       const json = JSON.stringify(view);
       for (const c of crew)
