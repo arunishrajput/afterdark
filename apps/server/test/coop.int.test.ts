@@ -5,7 +5,7 @@
  * partner's "phone", and a whole bot game with co-op on plays through. The pairing itself is
  * injected into the room (the draw is random); everything after it is the real protocol.
  */
-import { DEFAULT_CONFIG, type GameEvent, type LatLng, type TaskCard } from '@afterdark/shared';
+import { DEFAULT_CONFIG, type GameEvent, type LatLng } from '@afterdark/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { CoopSession, RoomState } from '../src/engine/state';
