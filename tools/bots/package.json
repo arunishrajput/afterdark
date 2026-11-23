@@ -1,0 +1,19 @@
+{
+  "name": "@afterdark/bots",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AfterDark bot players: join a lobby over Socket.IO, ready up, walk to the spawn, then wander.",
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@afterdark/shared": "workspace:*",
+    "socket.io-client": "^4.8.4"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

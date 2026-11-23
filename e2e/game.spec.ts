@@ -77,6 +77,7 @@ test('1 human + 7 bots: spawn → crew reveal → HUD → pause → abort', asyn
   await expect(page.getByTestId('team-score')).toContainText('0 / 100');
   await expect(page.getByTestId('role-chip')).toHaveText('CREW');
   await expect(page.getByTestId('map')).toBeVisible();
+  await page.waitForTimeout(2000); // let the map tiles load before the screenshot
   await page.screenshot({ path: `${SHOT}-crew-hud.png` });
 
   // Pause freezes the timer; resume restarts it.

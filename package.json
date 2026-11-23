@@ -18,7 +18,8 @@
     "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "e2e": "playwright test",
-    "tunnel": "cloudflared tunnel --url http://localhost:5173"
+    "tunnel": "cloudflared tunnel --url http://localhost:5173",
+    "bots": "pnpm --filter @afterdark/bots start"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

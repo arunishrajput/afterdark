@@ -38,7 +38,21 @@ export function attachRoom(ctx: GatewayContext, room: Room, now: () => number): 
     }
   });
 
+  // Phase changes are logged with no player data at all (Invariant 8: never log positions, tokens or roles).
+  let lastPhase = room.state.phase;
   room.subscribe((state, effects) => {
+    if (state.phase !== lastPhase) {
+      lastPhase = state.phase;
+      ctx.logger.info(
+        {
+          code: state.code,
+          phase: state.phase,
+          players: state.players.length,
+          ...(state.result ? { winner: state.result.winner, reason: state.result.reason } : {}),
+        },
+        'game phase',
+      );
+    }
     for (const effect of effects) {
       if (effect.kind === 'event') {
         const ids =
