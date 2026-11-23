@@ -13,6 +13,7 @@ import type { RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { requireGoodFix } from './location';
 import { findPlayer } from './players';
+import { relayoutAfterConfig, setupSummaryOf } from './setup';
 
 const MS_PER_S = 1000;
 
@@ -44,7 +45,7 @@ export function evaluateCountdown(state: RoomState, now: number, effects: Effect
     startBlockers(state.config, {
       playerCount: state.players.length,
       readyCount: state.players.filter((p) => p.ready).length,
-      boundarySet: state.boundary !== undefined,
+      setup: setupSummaryOf(state),
     }).length === 0;
 
   if (startable && state.countdownEndsAt === undefined) {
@@ -114,6 +115,7 @@ export function updateConfig(
   }
   if (Object.keys(changes).length === 0) return;
   Object.assign(state.config, changes); // the draft is a private deep copy
+  relayoutAfterConfig(state, changes);
   for (const p of state.players) p.ready = false;
   effects.push({ kind: 'event', to: 'all', event: { type: 'lobby.configChanged' } });
 }

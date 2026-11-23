@@ -4,11 +4,11 @@
  * viewer and the target, and rotates every `dotAliasRotateS`, so a dot can't be
  * followed across the whole game or matched between two viewers. Pure.
  *
- * Phase 2 (lobby) shows every other connected, located player, "all"-style,
- * for convenience while gathering. Phase 4 adds the nearby/regions modes and
- * the imposter-only flags.
+ * `playerVisibility` decides who appears (ADR-008): `nearby` (within
+ * `nearbyRadiusM` of the viewer's own latest fix), `regions` (nobody; region
+ * counts only) or `all`. Phase 4 adds the imposter-only flags.
  */
-import { type AnonDot, type DotFlag, hashSeed, pointInRing } from '@afterdark/shared';
+import { type AnonDot, distanceM, type DotFlag, hashSeed, pointInRing } from '@afterdark/shared';
 
 import type { RoomState } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
@@ -26,10 +26,17 @@ function alias(salt: string, viewerId: string, targetId: string, epoch: number):
 }
 
 export function buildRadar(state: RoomState, viewerId: string, now: number): AnonDot[] {
+  const { playerVisibility, nearbyRadiusM } = state.config;
+  if (playerVisibility === 'regions') return [];
+  const viewerFix = state.players.find((p) => p.id === viewerId)?.loc;
+  if (playerVisibility === 'nearby' && !viewerFix) return [];
   const epoch = Math.floor(now / (state.config.dotAliasRotateS * MS_PER_S));
   const dots: AnonDot[] = [];
   for (const p of state.players) {
     if (p.id === viewerId || !p.connected || p.left || !p.loc) continue;
+    if (playerVisibility === 'nearby' && viewerFix && distanceM(viewerFix, p.loc) > nearbyRadiusM) {
+      continue;
+    }
     const flags: DotFlag[] = [];
     if (fixQuality(p.loc, now, state.config) === 'stale') flags.push('stale');
     if (state.boundary && !pointInRing(p.loc, state.boundary.ring)) flags.push('oob');

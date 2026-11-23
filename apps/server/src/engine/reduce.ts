@@ -3,6 +3,7 @@ import type { RoomState } from './state';
 import * as lobby from './systems/lobby';
 import * as location from './systems/location';
 import * as map from './systems/map';
+import * as setup from './systems/setup';
 import { type Command, type Effect, type ReduceResult, RuleError } from './types';
 
 export type { ReduceResult } from './types';
@@ -41,6 +42,21 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'teleport':
         location.teleport(draft, cmd.playerId, cmd.lat, cmd.lng, now);
+        break;
+      case 'regenerateRegions':
+        setup.regenerateRegions(draft, cmd.playerId, cmd.input, effects);
+        break;
+      case 'renameRegion':
+        setup.renameRegion(draft, cmd.playerId, cmd.regionId, cmd.name, effects);
+        break;
+      case 'editTaskPoints':
+        setup.editTaskPoints(draft, cmd.playerId, cmd.input, effects);
+        break;
+      case 'setNoGoZones':
+        setup.setNoGoZones(draft, cmd.playerId, cmd.zones, effects);
+        break;
+      case 'setBase':
+        setup.setBase(draft, cmd.playerId, cmd.base, effects);
         break;
     }
   } catch (err) {

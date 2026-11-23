@@ -5,6 +5,8 @@
 import { offsetByMeters, toPosition } from '@afterdark/shared';
 
 import { createRoomState, type RoomState } from '../engine/state';
+import { applyLayout } from '../engine/systems/layout';
+import { refreshRegionCounts } from '../engine/systems/regionCounts';
 import { SessionRegistry } from '../rooms/sessions';
 
 /**
@@ -56,6 +58,8 @@ export interface LobbyFixtureOptions {
   countdownEndsAt?: number;
   /** Everyone has a fix (player `i` stands `10·i` m east of HOME) and the host has a 150 m boundary. */
   located?: boolean;
+  /** With `located`: also generate regions, task points and the Base, and take a region-count snapshot. */
+  layout?: boolean;
 }
 
 export const FIXTURE_NOW = 1_700_000_000_000;
@@ -100,6 +104,10 @@ export function buildLobbyFixture(opts: LobbyFixtureOptions = {}): LobbyFixture 
         receivedAt: FIXTURE_NOW,
       };
     });
+  }
+  if (opts.located && opts.layout) {
+    applyLayout(state, { regeneratePoints: true, keepNames: false });
+    refreshRegionCounts(state, FIXTURE_NOW);
   }
   const tokens = new Map(state.players.map((p) => [p.id, sessions.issue(state.code, p.id)]));
   return { state, tokens };

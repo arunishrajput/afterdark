@@ -12,10 +12,15 @@ import {
   type PlayerView,
   pointInRing,
   type PublicPlayer,
+  type RegionPublic,
+  sectionBigEnough,
+  type SectionId,
+  type TaskPointPublic,
 } from '@afterdark/shared';
 
-import type { PlayerState, RoomState } from '../engine/state';
+import type { PlayerState, RoomState, SetupRegion } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
+import { projectRegionCounts } from '../engine/systems/regionCounts';
 
 /** The view without the per-send envelope (`v`, `serverNow`), so it can be diffed. */
 export type PlayerViewBody = Omit<PlayerView, 'v' | 'serverNow'>;
@@ -35,9 +40,50 @@ function projectPlayer(p: PlayerState, hostId: string): PublicPlayer {
   };
 }
 
+function projectRegion(
+  r: SetupRegion,
+  sectionUsable: (regionId: string, id: SectionId, areaM2: number) => boolean,
+): RegionPublic {
+  return {
+    id: r.id,
+    name: r.name,
+    area: r.area,
+    origin: { lat: r.origin.lat, lng: r.origin.lng },
+    rhoM: r.rhoM,
+    areaM2: r.areaM2,
+    sections: r.sections.map((s) => ({
+      id: s.id,
+      areaM2: s.areaM2,
+      usable: sectionUsable(r.id, s.id, s.areaM2),
+    })),
+  };
+}
+
+/** Setup is public to every player (they all see the map). The task pool is shown only in the lobby. */
 function projectMap(state: RoomState): MapSetupPublic {
-  const { boundary } = state;
-  return boundary ? { boundary: { ring: boundary.ring, areaM2: boundary.areaM2 } } : {};
+  const { boundary, setup, config } = state;
+  const lobby = state.phase === 'lobby';
+  const pointsIn = new Set(
+    setup.taskPoints.filter((p) => !p.disabled).map((p) => `${p.regionId}:${p.section}`),
+  );
+  const usable = (regionId: string, id: SectionId, areaM2: number) =>
+    sectionBigEnough(areaM2, config) && pointsIn.has(`${regionId}:${id}`);
+  return {
+    ...(boundary ? { boundary: { ring: boundary.ring, areaM2: boundary.areaM2 } } : {}),
+    regions: setup.regions.map((r) => projectRegion(r, usable)),
+    taskPoints: lobby
+      ? setup.taskPoints.map((p): TaskPointPublic => ({
+          id: p.id,
+          lat: p.lat,
+          lng: p.lng,
+          regionId: p.regionId,
+          section: p.section,
+          source: p.source,
+        }))
+      : [],
+    noGo: setup.noGo,
+    ...(setup.base ? { base: { lat: setup.base.lat, lng: setup.base.lng } } : {}),
+  };
 }
 
 /** Only the viewer's own fix, and only what the lobby UI needs from it. */
@@ -80,5 +126,8 @@ export function projectView(state: RoomState, playerId: string, now: number): Pl
       status: 'active',
       ...(location ? { location } : {}),
     },
+    ...(state.setup.regions.length > 0
+      ? { game: { regionCounts: projectRegionCounts(state, playerId, now) } }
+      : {}),
   };
 }

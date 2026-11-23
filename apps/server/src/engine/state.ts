@@ -3,7 +3,18 @@
  * holds session tokens (they live in the session registry), so a view built
  * from this state cannot leak one.
  */
-import { DEFAULT_CONFIG, type GameConfig, type Phase, type Position } from '@afterdark/shared';
+import {
+  DEFAULT_CONFIG,
+  type GameConfig,
+  hashSeed,
+  type LatLng,
+  type Phase,
+  type Position,
+  type Region,
+  type Ring,
+  type SectionId,
+  type TaskPoint,
+} from '@afterdark/shared';
 
 /** The latest accepted GPS fix. Positions live in memory only (Invariant 8). */
 export interface StoredFix {
@@ -36,6 +47,35 @@ export interface PlayerState {
   locPending?: PendingFix[];
 }
 
+/** A region with its compass frame and the area of each of its 9 sections (computed once per layout). */
+export interface SetupRegion extends Region {
+  sections: { id: SectionId; areaM2: number }[];
+}
+
+/** Players per region at the last refresh (RULES: region counts are stale on purpose). */
+export interface RegionCountSnapshot {
+  /** Server ms of the refresh. */
+  at: number;
+  /** Which region each counted player was in; players not listed were not counted. */
+  regionOf: Record<string, string>;
+}
+
+/** Everything the host sets up besides the boundary (MAP_AND_REGIONS §1). */
+export interface MapSetupState {
+  /** Seed of the region layout (the host can ask for a new one). */
+  seed: number;
+  /** Seed of the auto task points (changes when only the points are regenerated). */
+  poolSeed: number;
+  noGo: Ring[];
+  regions: SetupRegion[];
+  taskPoints: TaskPoint[];
+  base?: LatLng;
+  /** True while the Base is the generated default, so a new layout may move it. */
+  baseIsDefault: boolean;
+  /** Next number for task-point ids (`p1`, `p2`…). */
+  nextPointNo: number;
+}
+
 export interface RoomState {
   code: string;
   phase: Phase;
@@ -51,6 +91,9 @@ export interface RoomState {
   allowTestMode: boolean;
   /** The playable area: a closed `[lng, lat]` ring and its area. */
   boundary?: { ring: Position[]; areaM2: number };
+  /** Regions, task points, no-go zones and the Base. */
+  setup: MapSetupState;
+  regionCounts?: RegionCountSnapshot;
   /** Secret input to the rotating radar aliases. Never put it in a view. */
   radarSalt: string;
 }
@@ -72,6 +115,15 @@ export function createRoomState(input: CreateRoomInput): RoomState {
     config: structuredClone(input.config ?? DEFAULT_CONFIG),
     players: [{ id: input.hostId, username: input.username, ready: false, connected: true }],
     allowTestMode: input.allowTestMode,
+    setup: {
+      seed: hashSeed(input.code),
+      poolSeed: hashSeed(input.code),
+      noGo: [],
+      regions: [],
+      taskPoints: [],
+      baseIsDefault: true,
+      nextPointNo: 1,
+    },
     radarSalt: input.radarSalt,
   };
 }

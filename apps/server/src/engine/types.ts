@@ -4,7 +4,11 @@ import type {
   ErrorCode,
   GameConfigEditablePatch,
   GameEvent,
+  LatLng,
+  LobbyEditTaskPointsPayload,
+  LobbyRegenerateRegionsPayload,
   LocUpdatePayload,
+  Position,
 } from '@afterdark/shared';
 
 import type { RoomState } from './state';
@@ -20,7 +24,12 @@ export type Command =
   | { type: 'disconnect'; playerId: string }
   | { type: 'locUpdate'; playerId: string; fix: LocUpdatePayload }
   | { type: 'setBoundary'; playerId: string; boundary: BoundaryInput }
-  | { type: 'teleport'; playerId: string; lat: number; lng: number };
+  | { type: 'teleport'; playerId: string; lat: number; lng: number }
+  | { type: 'regenerateRegions'; playerId: string; input: LobbyRegenerateRegionsPayload }
+  | { type: 'renameRegion'; playerId: string; regionId: string; name: string }
+  | { type: 'editTaskPoints'; playerId: string; input: LobbyEditTaskPointsPayload }
+  | { type: 'setNoGoZones'; playerId: string; zones: Position[][] }
+  | { type: 'setBase'; playerId: string; base: LatLng };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =

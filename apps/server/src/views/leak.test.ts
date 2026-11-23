@@ -2,13 +2,14 @@
  * Leak tests (TESTING.md §3), mandatory from Phase 1. Extend these whenever a
  * view gains a field: add the path to ALLOWED_VIEW_KEYS and assert who may see it.
  */
+import { sectionOf } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
 import { buildLobbyFixture, FIXTURE_NOW, FORBIDDEN_KEY_NAMES, keysDeep } from './leakHarness';
 import { projectView } from './projectView';
 import { buildRadar } from './radar';
 
-/** Every key path a Phase 1 view may contain. Anything else fails the test. */
+/** Every key path a view may contain (through Phase 3). Anything else fails the test. */
 const ALLOWED_VIEW_KEYS = new Set([
   'lobby',
   'lobby.code',
@@ -20,6 +21,30 @@ const ALLOWED_VIEW_KEYS = new Set([
   'lobby.map.boundary',
   'lobby.map.boundary.ring',
   'lobby.map.boundary.areaM2',
+  'lobby.map.regions',
+  'lobby.map.regions[].id',
+  'lobby.map.regions[].name',
+  'lobby.map.regions[].area',
+  'lobby.map.regions[].origin',
+  'lobby.map.regions[].origin.lat',
+  'lobby.map.regions[].origin.lng',
+  'lobby.map.regions[].rhoM',
+  'lobby.map.regions[].areaM2',
+  'lobby.map.regions[].sections',
+  'lobby.map.regions[].sections[].id',
+  'lobby.map.regions[].sections[].areaM2',
+  'lobby.map.regions[].sections[].usable',
+  'lobby.map.taskPoints',
+  'lobby.map.taskPoints[].id',
+  'lobby.map.taskPoints[].lat',
+  'lobby.map.taskPoints[].lng',
+  'lobby.map.taskPoints[].regionId',
+  'lobby.map.taskPoints[].section',
+  'lobby.map.taskPoints[].source',
+  'lobby.map.noGo',
+  'lobby.map.base',
+  'lobby.map.base.lat',
+  'lobby.map.base.lng',
   'lobby.players',
   'lobby.players[].id',
   'lobby.players[].username',
@@ -40,6 +65,10 @@ const ALLOWED_VIEW_KEYS = new Set([
   'me.location.accuracy',
   'me.location.quality',
   'me.location.oob',
+  'game',
+  'game.regionCounts',
+  'game.regionCounts[].regionId',
+  'game.regionCounts[].bucket',
 ]);
 
 const NOW = FIXTURE_NOW;
@@ -57,6 +86,7 @@ const fixtures = {
   }),
   mixed: buildLobbyFixture({ players: 12, readyIds: ['p1', 'p4'], disconnectedIds: ['p2', 'p0'] }),
   located: buildLobbyFixture({ players: 8, located: true }),
+  laidOut: buildLobbyFixture({ players: 8, located: true, layout: true }),
 };
 
 describe.each(Object.entries(fixtures))('leak: %s lobby', (_name, { state, tokens }) => {
@@ -132,6 +162,85 @@ describe.each(Object.entries(fixtures))('leak: %s lobby', (_name, { state, token
   it('the roster is identical for every viewer (public data only)', () => {
     const first = JSON.stringify(views[0]?.view.lobby);
     for (const { view } of views) expect(JSON.stringify(view.lobby)).toBe(first);
+  });
+});
+
+describe('leak: setup, region counts and the task pool (Phase 3)', () => {
+  const { state } = buildLobbyFixture({ players: 8, located: true, layout: true });
+  const views = state.players.map((p) => ({ id: p.id, view: projectView(state, p.id, NOW) }));
+  const labels = new Set(state.config.regionCountBuckets.map((b) => b.label));
+
+  it('the fixture really has regions, points and a Base', () => {
+    expect(state.setup.regions.length).toBeGreaterThanOrEqual(2);
+    expect(state.setup.taskPoints.length).toBeGreaterThan(20);
+    expect(state.setup.base).toBeDefined();
+  });
+
+  it('setup is identical for every viewer (public data only)', () => {
+    const first = JSON.stringify(views[0]?.view.lobby.map);
+    for (const { view } of views) expect(JSON.stringify(view.lobby.map)).toBe(first);
+  });
+
+  it('region counts are bucket labels (never exact numbers) and never carry player ids', () => {
+    for (const { view } of views) {
+      expect(view.game?.regionCounts).toHaveLength(state.setup.regions.length);
+      for (const c of view.game?.regionCounts ?? []) {
+        expect(Object.keys(c).sort()).toEqual(['bucket', 'regionId']);
+        expect(labels.has(c.bucket)).toBe(true);
+      }
+    }
+    const json = JSON.stringify(views.map((v) => v.view.game));
+    for (const p of state.players) expect(json).not.toContain(p.id);
+  });
+
+  it('a viewer is counted in their own region', () => {
+    for (const { id, view } of views) {
+      const me = state.players.find((p) => p.id === id);
+      const mine = sectionOf(
+        me?.loc ?? { lat: 0, lng: 0 },
+        state.setup.regions,
+        state.config.sectionCentreRatio,
+      );
+      const bucket = view.game?.regionCounts.find((c) => c.regionId === mine?.regionId)?.bucket;
+      expect(bucket, id).toBeDefined();
+      expect(bucket).not.toBe('0');
+    }
+  });
+
+  it('the task pool is hidden once the lobby is over (the pin points are secret during play)', () => {
+    const started = structuredClone(state);
+    started.phase = 'starting';
+    for (const p of started.players) {
+      expect(projectView(started, p.id, NOW).lobby.map.taskPoints).toEqual([]);
+    }
+    expect(projectView(state, 'p1', NOW).lobby.map.taskPoints.length).toBeGreaterThan(0);
+  });
+
+  it('no task-point or Base field leaks a username or token (point ids look like p1, as do the fixture’s player ids)', () => {
+    const { tokens } = buildLobbyFixture({ players: 8, located: true, layout: true });
+    const json = JSON.stringify(views.map((v) => v.view.lobby.map));
+    for (const p of state.players) expect(json).not.toContain(p.username);
+    for (const token of tokens.values()) expect(json).not.toContain(token);
+    expect(json).not.toContain('playerId');
+  });
+
+  describe.each(['nearby', 'regions', 'all'] as const)('radar in %s mode', (mode) => {
+    const s = structuredClone(state);
+    s.config.playerVisibility = mode;
+    it('keeps dot flags public-only and the dot shape fixed', () => {
+      for (const p of s.players) {
+        for (const d of buildRadar(s, p.id, NOW)) {
+          expect(Object.keys(d).sort()).toEqual(['alias', 'flags', 'lat', 'lng']);
+          for (const f of d.flags) expect(['oob', 'stale']).toContain(f);
+        }
+      }
+    });
+  });
+
+  it('regions mode shows no dots at all', () => {
+    const s = structuredClone(state);
+    s.config.playerVisibility = 'regions';
+    for (const p of s.players) expect(buildRadar(s, p.id, NOW)).toEqual([]);
   });
 });
 

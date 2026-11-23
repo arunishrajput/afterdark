@@ -25,8 +25,9 @@ function place(state: RoomState, id: string, eastM: number, now = T0, accuracy =
   return res.state;
 }
 
-function fixture(n = 4) {
+function fixture(n = 4, visibility: 'nearby' | 'regions' | 'all' = 'all') {
   let { state } = buildLobbyFixture({ players: n });
+  state.config.playerVisibility = visibility;
   state = place(state, 'p0', 0);
   state = place(state, 'p1', 10);
   state = place(state, 'p2', 20);
@@ -34,7 +35,7 @@ function fixture(n = 4) {
   return state;
 }
 
-describe('buildRadar (MAP_AND_REGIONS §6, lobby: every other player)', () => {
+describe('buildRadar (MAP_AND_REGIONS §6, visibility all: every other player)', () => {
   it('shows every other located player and never the viewer', () => {
     const dots = buildRadar(fixture(), 'p0', T0);
     expect(dots).toHaveLength(3);
@@ -86,6 +87,7 @@ describe('buildRadar (MAP_AND_REGIONS §6, lobby: every other player)', () => {
 
   it('aliases are unique within one radar frame', () => {
     const { state } = buildLobbyFixture({ players: 12 });
+    state.config.playerVisibility = 'all';
     let s = state;
     for (let i = 0; i < 12; i++) s = place(s, `p${i}`, i * 5);
     const aliases = buildRadar(s, 'p0', T0).map((d) => d.alias);
@@ -123,5 +125,43 @@ describe('buildRadar (MAP_AND_REGIONS §6, lobby: every other player)', () => {
     s = place(s, 'p1', 10, T0, DEFAULT_CONFIG.maxAccuracyM + 20);
     const d = buildRadar(s, 'p0', T0).find((x) => x.lng === offsetByMeters(HOME, 10, 0).lng);
     expect(d?.flags).toEqual([]);
+  });
+});
+
+describe('buildRadar visibility modes (ADR-008)', () => {
+  it('nearby: only players within nearbyRadiusM of the viewer, measured from their own fix', () => {
+    let s = fixture(4, 'nearby');
+    const later = T0 + 10 * S; // long enough for the speed check to accept the moves
+    s = place(s, 'p3', 80, later); // 80 m from p0, 70 m from p1, 60 m from p2
+    expect(buildRadar(s, 'p0', later)).toHaveLength(2); // p1 (10 m), p2 (20 m)
+    expect(buildRadar(s, 'p3', later)).toHaveLength(0); // the nearest is 60 m away
+    s = place(s, 'p2', 45, later + 5 * S); // 45 m from p0, 35 m from p3
+    expect(buildRadar(s, 'p3', later + 5 * S)).toHaveLength(1);
+  });
+
+  it('nearby: the edge of the radius is inclusive and a viewer with no fix sees nobody', () => {
+    const { state } = buildLobbyFixture({ players: 3 });
+    let s = state;
+    s = place(s, 'p1', 0);
+    s = place(s, 'p2', DEFAULT_CONFIG.nearbyRadiusM - 1);
+    expect(buildRadar(s, 'p1', T0)).toHaveLength(1);
+    expect(buildRadar(s, 'p0', T0)).toEqual([]); // p0 never sent a fix
+  });
+
+  it('nearby follows the host’s nearbyRadiusM', () => {
+    let s = fixture(4, 'nearby');
+    s.config.nearbyRadiusM = 100;
+    s = place(s, 'p3', 80, T0 + 10 * S);
+    expect(buildRadar(s, 'p0', T0 + 10 * S)).toHaveLength(3);
+  });
+
+  it('regions: no dots at all', () => {
+    expect(buildRadar(fixture(4, 'regions'), 'p0', T0)).toEqual([]);
+  });
+
+  it('all: everyone, however far', () => {
+    let s = fixture(4, 'all');
+    s = place(s, 'p3', 800, T0 + 100 * S);
+    expect(buildRadar(s, 'p0', T0 + 100 * S)).toHaveLength(3);
   });
 });
