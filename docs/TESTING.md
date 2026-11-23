@@ -48,6 +48,7 @@ Put these in `apps/server/src/views/leak.test.ts`. Extend them in every phase th
 
   Walking sends normal `loc:update` events, so the server path is the same as real GPS. A long-press or marker drag teleports with `dev:teleport` (the bots use it too), because a big jump would otherwise fail the speed check (ADR-042). The simulator is active only while the lobby is in `testMode` and the player has it switched on; `?sim=1` pre-selects it.
 - **URL helpers for Playwright:** `?sim=1&lat=..&lng=..` starts the simulator at a position. In dev (or with `?sim=…`) `window.__afterdarkMap` is the Leaflet map, so tests can convert lat/lng to pixels and drive the real Geoman tools (`e2e/helpers.ts`).
+- **Task hooks (Phase 5):** `dev:setMinigames` limits the minigame types (so a spec can test `wires` or `lock` alone). Pages in dev or with `?sim` expose `window.__afterdarkActions = {devSetMinigames, simTeleport}`; `e2e/helpers.ts` has `toPlaying`, `spotInHighlight` (a spot inside the highlighted section, found from the SVG), `pinPosition` and `simTeleport`.
 - In production, the `ALLOW_TEST_MODE` env var can turn test mode off entirely.
 - **Reproducible roles:** the env var `TEST_ROOM_SALT` gives every new room that secret salt, so spawns and roles repeat. It is ignored unless test mode is allowed. The e2e server uses `e2e-a`: the host of an 8-player lobby is crew and the host of a 5-player lobby is an imposter (`e2e/game.spec.ts` relies on this; if you reuse a dev server that was started without the salt, those specs fail on the role).
 
@@ -60,8 +61,8 @@ Two ways to get bots (ADR-056), both driven by the same shared `BotWalker`:
   - joins with a name like `bot-3`
   - readies with a simulated fix near the Base
   - walks toward its spawn at ~1.4 m/s with GPS jitter (±3 m)
-  - walks toward its task points and opens them
-  - in testMode, completes each task after a 10–30 s delay using `dev:autoComplete`, or by solving it with test-only solvers
+  - (Phase 5) crew bots work through their first task card: they find a spot in the card's section (`pointInSection`), hold there until the pin appears, walk to the pin and open the task
+  - in testMode, completes each task after a `botTaskMinS`–`botTaskMaxS` (10–30 s) delay using `dev:autoComplete`; the integration tests and e2e specs solve puzzles with test-only solvers written in the test files
   - joins its co-op tasks
   - votes at random (or Skip) in meetings
 - **Imposter bots:**

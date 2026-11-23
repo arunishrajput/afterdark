@@ -41,12 +41,12 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `game:forceStart` | `{}` | — | host, `spawning` only (`NOT_HOST`, `WRONG_PHASE`): roles are assigned now even if some players have not reached their spawn | 4 |
 | `game:pause` / `game:resume` | `{}` | — | host, `playing` only. While paused every other command except `loc:update`, `dev:teleport`, `lobby:leave`, connecting and the host's own pause/resume/abort is rejected with `PAUSED`. Pausing twice or resuming when not paused is a no-op | 4 |
 | `game:abort` | `{}` | — | host, `spawning`, `reveal` or `playing` (`WRONG_PHASE` in the lobby or after the end). Ends the game with no winner | 4 |
-| `task:open` | `{taskId}` | `{type, points, puzzle}` | crew, task AT_PIN | 5 |
-| `task:action` | `{taskId, action}` | `{feedback}` | multi-step games | 5 |
-| `task:submit` | `{taskId, answer}` | `{result: 'success' \| 'wrong' \| 'fooled', points}` | | 5 |
-| `task:cancel` | `{taskId}` | — | | 5 |
-| `task:reroll` | `{taskId}` | — | cooldown 180 s | 5 |
-| `task:reportUnsafe` | `{taskId, reason?}` | — | | 5 |
+| `task:open` | `{taskId}` | `{type, points, puzzle}` (`type` is `wires` or `lock` for now; never the solution) | crew, in the zone, stage `pin`, a good fix within `reachRadiusM`. Re-opening an open task returns the same puzzle. Errors: `NOT_ALLOWED` (imposter, not revealed, another task open), `NOT_FOUND`, `WEAK_GPS`, `STALE`, `OUT_OF_RANGE`, `TASKS_LOCKED`, `WRONG_PHASE`, `PAUSED` | 5 |
+| `task:action` | `{taskId, action}` (body ≤ 2 KB, parsed by the game's schema) | `{feedback}` (lock: `{exact, misplaced, guessesLeft, solved, rerolled}`) | multi-step games, task open. `INVALID_PAYLOAD` for a bad move or a game without actions | 5 |
+| `task:submit` | `{taskId, answer}` (body ≤ 2 KB) | `{result: 'success' \| 'wrong' \| 'fooled', points}`; a wrong answer is a normal result and locks submitting for `taskWrongLockoutS` (`COOLDOWN` meanwhile) | task open. `INVALID_PAYLOAD` for a malformed answer, `NOT_ALLOWED` if nothing is open | 5 |
+| `task:cancel` | `{taskId}` | — | closes the minigame; the task stays where it was | 5 |
+| `task:reroll` | `{taskId}` | — | any stage; per-player cooldown `rerollCooldownS` (180 s of game time), `COOLDOWN` before it | 5 |
+| `task:reportUnsafe` | `{taskId, reason?}` (reason ≤ 100 chars, ignored) | — | no cooldown. The point is disabled for the game and every task on it is replaced (others get `task.removed`) | 5 |
 | `ability:infect` | `{}` | `{channelEndsAt}` | imposter; nearest eligible target is chosen on the server | 7 |
 | `ability:cancelInfect` | `{}` | — | | 7 |
 | `meeting:call` | `{}` | — | active player | 8 |
@@ -61,7 +61,8 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `lobby:playAgain` | `{}` | — | host, ended | 12 |
 | `dev:teleport` | `{lat, lng}` | — | **testMode only**. Stores a fix with `teleportAccuracyM`, bypassing the speed check. Used by the simulator's long-press and by bots | 2 |
 | `dev:addBots` | `{count: 1..11}` | — | **testMode only**, host, lobby phase. Errors: `NOT_ALLOWED` (test mode off), `NOT_HOST`, `WRONG_PHASE`, `LOBBY_FULL` (it would pass `maxPlayers`; nothing is added). In-process bots named `bot-N` join, send fixes and ready up on the room tick | 4 |
-| `dev:autoComplete` | `{taskId}` | — | **testMode only** | 5 |
+| `dev:autoComplete` | `{taskId}` | — | **testMode only**; the task must be open. Finishes it as if solved | 5 |
+| `dev:setMinigames` | `{types: SoloMinigameType[]}` (1–7) | — | **testMode only**, host, lobby phase. Limits which minigames new tasks can be; types with no game yet are dropped (`INVALID_PAYLOAD` if none is left) | 5 |
 
 `dev:*` events are rejected with `NOT_ALLOWED` unless the lobby's `testMode` is true. They are also rejected in production when the env var `ALLOW_TEST_MODE=false`.
 
@@ -130,6 +131,8 @@ interface PlayerView {
 
 The type and points arrive only in the `task:open` ack.
 
+**Phase 5 view fields:** while `playing`, every viewer with a role gets `game.tasks: TaskCard[]` (their own cards; `[]` for an imposter) and, only while a reroll cooldown runs, `game.rerollReadyAt` (server epoch ms, crew only; omitted while the clock is stopped). A card is `{id, stage:'assigned', kind, regionId, regionName, section}` or, once revealed, `{id, stage:'pin', kind, regionId, regionName, section, lat, lng, atPin}` (`partnerTag` arrives with Phase 10). `regionId` is public (regions are) and lets the client highlight the section. `kind` is `'solo'` for now. Fake and real cards are identical. The `task:open` ack is `{type, points, puzzle}` where `points` is the config value of `type` for real **and** fake tasks.
+
 **Leak invariant:** for two crew players who differ only in infected status, `JSON.stringify(view)` must have the **same set of keys** (values may differ). Leak tests assert this.
 
 ### `AnonDot`
@@ -137,6 +140,8 @@ The type and points arrive only in the `task:open` ack.
 
 ### `GameEvent` (examples)
 Phase 1–3 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}`, `{type:'lobby.configChanged'}` and `{type:'lobby.mapChanged'}` (the last two: everyone was un-readied; `mapChanged` now covers the boundary, regions, points, no-go zones and the Base). All go to every connected player.
+
+Phase 5 events (all private to the player concerned): `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.reset {reason: 'range'|'gps'|'zone'|'connection'}` (an open minigame was dropped) and `task.removed {reason:'unsafe'}` (a task was swapped because its point was reported). `task.fooled` and `task.expired` arrive with Phases 9–10 (a fake's `fooled` already travels in the submit ack).
 
 Phase 4 events: `lobby.startFailed {reason:'spawns'}` (all; the countdown ended but the area is too small to spread everyone out, E3), `game.spawnStarted`, `game.rolesRevealed`, `game.playStarted`, `game.paused`, `game.resumed`, `game.ended {winner, reason}` (all; `winner` is `'crew'|'imposters'|'draw'|null`, `reason` is `score|ejection|infection|time|forfeit|abort`), `zone.warning` and `zone.penalty {points}` (private to the player out of bounds).
 

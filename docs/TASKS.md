@@ -29,16 +29,18 @@ Each minigame lives in `packages/shared/src/minigames/<type>.ts` and exports one
 ```ts
 interface MinigameDef<P, S, A, Act = never, F = never> {
   type: MinigameType;
-  generate(rng: Rng, difficulty: 1 | 2 | 3): { puzzle: P; solution: S }; // server only
-  verify(puzzle: P, solution: S, answer: A): boolean;                     // server only
-  act?(puzzle: P, solution: S, state: unknown, action: Act): { state: unknown; feedback: F }; // optional multi-step games
+  generate(rng: Rng, difficulty: 1 | 2 | 3, params: MinigameParams): { puzzle: P; solution: S }; // server only
+  verify(puzzle: P, solution: S, answer: A, state: St | undefined): boolean;   // server only
+  act?(puzzle: P, solution: S, state: St | undefined, action: Act, rng: Rng):
+    { state: St; feedback: F; solution?: S };                                  // optional multi-step games; may swap the solution
   answerSchema: ZodType<A>;
   actionSchema?: ZodType<Act>;
 }
 ```
+(`MinigameParams` carries the tunable sizes: `wiresPairs`, `lockDigits`, `lockDigitMax`, `lockMaxGuesses`. The server erases the types with `eraseMinigame` and parses every answer and action with the game's own schema; a malformed one is `INVALID_PAYLOAD`. ADR-062.)
 - The server generates the puzzle on `task:open`, stores the solution in the task's server state, and sends only `puzzle`.
 - Multi-step games such as the lock use `task:action` for feedback.
-- Client renderers live in `apps/client/src/components/minigames/<Type>.tsx`, all following the same `{puzzle, onSubmit, onAction, disabled}` interface.
+- Client renderers live in `apps/client/src/components/minigames/<Type>.tsx`, all following the same `{puzzle, onSubmit, onAction, disabled}` interface (`onAction` resolves with the server's feedback). Each is lazy-loaded when a task of its type opens.
 - Every game must:
   - work with one hand, with tap targets of at least 44 px
   - avoid colour-only cues (use shapes and labels too)
@@ -49,8 +51,8 @@ interface MinigameDef<P, S, A, Act = never, F = never> {
 ## 4. Catalog
 | Type | Name | Players | Points | How it works | Answer the server checks |
 |---|---|---|---|---|---|
-| `wires` | Wire Connect | Solo | 4 | 4 coloured wire ends on the left and 4 on the right, shuffled; each side has a symbol as well as a colour. Drag to connect matching pairs. | Mapping `left→right` equals the solution |
-| `lock` | Lock Breaker | Solo | 5 | Guess a 3-digit code using digits 0–5. Each guess (`task:action`) returns "correct place" and "correct digit, wrong place" counts. You have 8 guesses; after that the lock re-rolls and you start again. | The final guess equals the code |
+| `wires` | Wire Connect | Solo | 4 | 4 coloured wire ends on the left and 4 on the right, shuffled; each side has a symbol as well as a colour. Drag to connect matching pairs. | Mapping `left→right` equals the solution. Both ends of a wire share colour **and** symbol. v1 is tap-to-pair, not drag (ADR-063). |
+| `lock` | Lock Breaker | Solo | 5 | Guess a 3-digit code using digits 0–5. Each guess (`task:action`) returns "correct place" and "correct digit, wrong place" counts. You have 8 guesses; after that the lock re-rolls and you start again. | The final guess equals the code **and** an earlier `task:action` guess matched it (ADR-062: no blind submits). A malformed guess costs nothing. |
 | `pattern` | Pattern Memory | Solo | 5 | A 3×3 pad flashes a sequence 5 steps long; repeat it. | Sequence matches |
 | `signal` | Signal Decode | Solo | 6 | A short word (4–5 letters) is shown as symbols with a partial key. Fill in the rest. | Decoded word matches |
 | `slide` | Sliding Puzzle | Solo | 7 | 3×3 tile puzzle shuffled with 20–30 random legal moves, so it is always solvable. | The submitted move list, replayed on the server, solves it |
@@ -61,6 +63,8 @@ interface MinigameDef<P, S, A, Act = never, F = never> {
 **Difficulty:** in v1 everything uses difficulty 1. The field is kept for later tuning.
 
 **Key Fetch and Task Stop:** a key already picked up is **kept** through Task Stop and meetings. Only the final interaction at Point 2 resets.
+
+**Implemented in Phase 5:** `wires` and `lock` (`minigamesEnabled`); the registry is `packages/shared/src/minigames/index.ts`. A task's type is rolled when the task is assigned and kept on the server until `task:open`.
 
 ## 5. Co-op tasks
 1. **Generation:** when a crew member A's slot rolls co-op, pick partner B uniformly at random from active, connected players other than A, crew or imposter. B must not already hold a partner task, and must not be A's partner on another co-op task. If nobody is eligible, a solo task is generated instead.
@@ -77,6 +81,8 @@ interface MinigameDef<P, S, A, Act = never, F = never> {
 8. **Cooldown recovery** for imposters: see RULES §7.5.
 
 ## 6. Interruptions
+Implemented in Phase 5 (ADR-061): leaving the pin (> `reachRadiusM + taskAbandonExtraM`), a stale fix, zone lock and a disconnect (a `task.reset` event with the reason); weak GPS keeps an open minigame but blocks reveals and opening (E5); the host pause rejects every task command. Task Stop and meetings arrive with Phases 8–9.
+
 | Event | Effect on a minigame in progress | Effect on reveals | Effect on held keys |
 |---|---|---|---|
 | Task Stop | Reset; can't open or submit for 30 s | Kept | Kept |
