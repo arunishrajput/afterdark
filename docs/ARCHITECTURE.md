@@ -30,15 +30,15 @@
 ├─ package.json            # root scripts: dev, build, test, lint, typecheck, verify, e2e, bots, tunnel
 ├─ pnpm-workspace.yaml     tsconfig.base.json  eslint.config.js  .prettierrc  .nvmrc  render.yaml (Phase 6)
 ├─ packages/shared/src/
-│   ├─ config/   defaults.ts  schema.ts           # GameConfig + zod ranges (mirrors docs/CONFIG.md)
+│   ├─ config/   defaults.ts  schema.ts           # GameConfig inferred from zod ranges (ADR-032)
 │   ├─ protocol/ events.ts  schemas.ts            # mirrors docs/PROTOCOL.md
 │   ├─ types/    domain.ts  view.ts
 │   ├─ geo/      distance.ts  boundary.ts  regions.ts  sections.ts  sampling.ts  index.ts
 │   ├─ minigames/ index.ts  wires.ts  lock.ts  …  data/crosswords.ts
 │   ├─ rng.ts    tags.ts   ids.ts
 ├─ apps/server/src/
-│   ├─ index.ts  app.ts  env.ts  logger.ts
-│   ├─ socket/   gateway.ts  handlers/*.ts  rateLimit.ts
+│   ├─ index.ts  app.ts  env.ts  logger.ts  version.ts
+│   ├─ socket/   gateway.ts  handler.ts (validated())  types.ts  handlers/*.ts  rateLimit.ts
 │   ├─ rooms/    RoomManager.ts  Room.ts
 │   ├─ engine/   state.ts  reduce.ts  tick.ts  clock.ts
 │   │            systems/ lobby.ts location.ts spawn.ts roles.ts tasks.ts infection.ts abilities.ts
@@ -51,6 +51,7 @@
 │   ├─ sim/ GpsSimulator.tsx         # testMode
 │   ├─ screens/ Home Join Lobby HostSetup Spawn RoleReveal Game Meeting Results Spectator HowToPlay
 │   └─ components/ map/ hud/ minigames/ ui/
+├─ apps/server/test/ # integration tests (socket.io-client vs in-process server)
 ├─ tools/bots/      # bot CLI (socket.io-client): join, ready, walk, do tasks, imposter behaviour
 └─ e2e/             # Playwright specs (multi-context, testMode)
 ```

@@ -130,3 +130,28 @@ Dots never carry an identity. Region counts are bucketed and refreshed every 30 
 
 ### ADR-029 · Out of scope for v1 · Accepted
 Accounts, profiles, XP and cosmetics; public rooms and matchmaking; chat; AR/camera minigames; background location (browsers can't do it); persistent storage; native apps; indoor positioning (test mode covers indoor demos).
+
+### ADR-030 · Toolchain pins: Node 24 LTS for CI/Render, TypeScript 6.0 · Accepted (Phase 0)
+**Decision:** `.nvmrc` = `24` and `engines.node` = `>=24 <27`. CI and Render use Node 24, and local development on Node 26 also works. TypeScript is pinned to `~6.0`.
+**Why:** Render's current default is Node 24 and its docs don't mention Node 26, so 24 is the safe production target. The bounded range follows Render's advice to always set an upper limit. TypeScript 7 (the native Go port) is the npm `latest`, but it has no stable JS API, and typescript-eslint 8 requires `typescript <6.1`. Type-aware linting is worth more than the faster compiler.
+**Revisit:** when typescript-eslint supports TS 7, or Render documents Node 26.
+**Rejected:** TS 7 with linting that isn't type-aware; pinning Node 26 without confirming that Render supports it.
+
+### ADR-031 · Shared is consumed as TypeScript source; the server is bundled with tsup · Accepted (Phase 0)
+**Decision:** `@afterdark/shared` exports `./src/index.ts` and has no build step. Vite (client), tsx (server dev) and Vitest compile it directly. The production server is one ESM bundle built by tsup, with `noExternal: ['@afterdark/shared']`.
+**Why:** no watch/build ordering between packages and no stale `dist`. Node can't run `.ts` straight out of a workspace package in production, so the server bundle inlines it.
+**Rejected:** project references with `tsc -b`, which add `composite` configs and a build order for no benefit at this size.
+
+### ADR-032 · Config: the type is inferred from the zod schema; auto rules are data · Accepted (Phase 0)
+**Decision:** `GameConfig` is `z.infer<typeof gameConfigSchema>`, and `DEFAULT_CONFIG` is checked with `satisfies GameConfig`. The schema has host ranges for editable keys and sanity checks for fixed ones. `HOST_CONFIG_TIER` lists the editable keys (basic ✅ / advanced ⚙️), and `editableConfigPatchSchema` (strict and partial) validates `lobby:updateConfig`. Numbers that CONFIG.md had only in prose notes became keys: `imposterCountAuto`, `minCrewRemaining`, `regionCountAutoMaxAreaM2`, `lobbyCodeAlphabet`, `reanchorFixes`, `targetScoreHintPerCrew` and `coopPersonalPoints`. The client's network tuning also became keys: `clockSyncSamples`, `clockSyncIntervalMs` and `ackTimeoutMs`.
+**Why:** this enforces Invariant 6 (every number comes from config) with one source of truth for both the type and the validation, so the two can't drift apart.
+
+### ADR-033 · Lint-enforced invariants and tooling defaults · Accepted (Phase 0)
+**Decision:**
+- ESLint bans `Date.now()`, `new Date()` and `Math.random()` in `apps/server/src/engine/**` and `views/**` (Invariant 5).
+- `no-console` applies to the server and shared code (pino only).
+- pino redacts `token`, `lat`, `lng` and `role` paths as a safety net for Invariant 8.
+- Markdown is excluded from Prettier, because the hand-formatted spec tables would churn.
+- pnpm 11's `allowBuilds` allows only `esbuild`'s postinstall.
+- Socket handlers go through `validated()` (zod before logic, a uniform `Ack`, and safe when the client sends no ack callback).
+**Why:** a rule the machine checks can't be forgotten in a later session.

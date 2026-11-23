@@ -4,15 +4,15 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**◐ IN PROGRESS: Phase 00, Project Setup and Scaffolding** (started 2026-11-23) → [docs/phases/PHASE-00-setup.md](docs/phases/PHASE-00-setup.md)
+**▶ NEXT: Phase 01, Lobby system** → [docs/phases/PHASE-01-lobby.md](docs/phases/PHASE-01-lobby.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
 ## Phase table
 | # | Phase | Status | Date | Tag / notes |
 |---|---|---|---|---|
-| 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ◐ IN PROGRESS | 2026-11-23 | |
-| 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ☐ NOT STARTED | | |
+| 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ✅ DONE | 2026-11-23 | `phase-00-done` |
+| 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ▶ NEXT | | |
 | 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ☐ NOT STARTED | | |
 | 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ☐ NOT STARTED | | |
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ☐ NOT STARTED | | |
@@ -28,19 +28,55 @@
 | 14 | [Hardening & demo](docs/phases/PHASE-14-hardening-demo.md) | ☐ NOT STARTED | | |
 
 ## Handoff notes for the next session
-- The repo isn't a git repository yet, and nothing has been committed. Phase 00 does `git init`, the first commit of these docs, and creates the GitHub repo (ask the user for the name and visibility).
-- On 2026-11-23 the machine had: Node v26.8.2, pnpm 11.21.0, git 2.54.0, gh 2.98.0 (logged in as the repo owner, with `repo` and `workflow` scopes), cloudflared and ngrok, Docker, Homebrew. The git identity is configured.
-- The Playwright MCP is available to Claude for visual checks.
-- All game design is final for v1. See `docs/DECISIONS.md` for the choices Claude made that the creator can override.
+_From Phase 00 (2026-11-23):_
+- **Repo:** https://github.com/arunishrajput/afterdark (public, `main`, CI green). Every phase pushes to `main` and tags `phase-NN-done`.
+- **Protocol pattern:** add each event to `packages/shared/src/protocol/schemas.ts` (zod) and `events.ts` (the typed `ClientToServerEvents`/`ServerToClientEvents` maps), then register it in `apps/server/src/socket/gateway.ts` wrapped in `validated(event, schema, logger, fn)`. To reject with a protocol error code, throw `new HandlerError('NOT_HOST', '…')`. `validated()` turns anything else into `INTERNAL`.
+- **socket.io-client typing quirk:** `socket.timeout(ms).emitWithAck(...)` is typed `any`. Cast the awaited result to `Ack<T>`, and **never** assign `emitWithAck` to a variable, because it loses `this` and throws at runtime (lint catches this with `unbound-method`). See `apps/client/src/net/socket.ts` and the `ping()` helper in `apps/server/test/socket.test.ts`.
+- **Config:** `DEFAULT_CONFIG` / `gameConfigSchema` / `editableConfigPatchSchema` / `HOST_CONFIG_TIER` come from `@afterdark/shared`. `lobby:updateConfig` should parse with `editableConfigPatchSchema` (strict: non-editable keys are rejected). `GameConfigPublic` (PROTOCOL `PlayerView.lobby.config`) doesn't exist yet. Phase 1 defines it, probably as `GameConfigEditable` plus the fixed keys the client needs.
+- **Server deps injection:** `createServer({logger, now, version})`. Tests pass a fake `now` and a silent logger and listen on port 0 (see `apps/server/test/socket.test.ts`). Phase 1's RoomManager should receive `now` and an RNG factory the same way (Invariant 5, which lint enforces under `engine/` and `views/`).
+- **Client:** the zustand store is in `apps/client/src/store/index.ts` (connection slice only for now). `useConnection.getState().offsetMs` gives the server-clock offset for countdowns. Theme switching uses `document.documentElement.dataset.theme`.
+- **E2E:** `playwright.config.ts` starts the server and the client as two `webServer`s on `127.0.0.1` (and reuses running ones locally). Phase 1's multi-tab lobby specs can open several `browser.newContext()`s.
+- **Local quirk:** another project on this machine ("Dead Signal") often holds `[::1]:5173`, so `localhost:5173` may show that app. Use `http://127.0.0.1:5173`. CI is unaffected.
 
 ## Environment
-_Filled in by Phase 00: Node major pinned, pnpm version, repo URL, CI status._
+- Node: local v26.8.2; **pinned 24** (`.nvmrc`) for CI and Render, `engines >=24 <27` (ADR-030)
+- pnpm 11.21.0 (`packageManager`); `allowBuilds: {esbuild: true}` in `pnpm-workspace.yaml`
+- TypeScript ~6.0.3 (not 7: typescript-eslint requires <6.1, ADR-030); Vite 8, React 19, Tailwind 4, Zustand 5, Socket.IO 4.8, Express 5, zod 4, pino 10, Vitest 5, ESLint 10, Playwright 1.65
+- git 2.54.0, gh 2.98.0 (logged in, `repo` and `workflow` scopes), cloudflared (Homebrew)
+- Repo: https://github.com/arunishrajput/afterdark (public)
+- CI: GitHub Actions `.github/workflows/ci.yml` (verify + Playwright e2e). Green at `phase-00-done`.
 
 ## Manual actions pending for the human
-_None right now._ (Phase 00 will ask for the GitHub repo name and visibility.)
+1. **Optional: fewer permission prompts (task 00.14).** Claude was not allowed to write its own permission allowlist, which is correct, because an agent shouldn't grant itself permissions. If you want fewer prompts, create `.claude/settings.json` in the repo root yourself with the content below, review it, then commit it (or ask Claude to commit it). It allows routine `pnpm`, `git` (no force-push or hard reset), `gh run` and `node` commands. Note that `pnpm *` and `node *` can run arbitrary scripts, so only add it if you're comfortable with that.
+   ```json
+   {
+     "$schema": "https://json.schemastore.org/claude-code-settings.json",
+     "permissions": {
+       "allow": [
+         "Bash(pnpm *)",
+         "Bash(git status)", "Bash(git status *)",
+         "Bash(git diff)", "Bash(git diff *)",
+         "Bash(git log)", "Bash(git log *)",
+         "Bash(git add *)", "Bash(git commit *)",
+         "Bash(git push)", "Bash(git push *)",
+         "Bash(git tag *)",
+         "Bash(git pull)", "Bash(git pull *)",
+         "Bash(gh run *)", "Bash(gh repo view)", "Bash(gh repo view *)",
+         "Bash(node *)"
+       ],
+       "deny": [
+         "Bash(git push --force*)", "Bash(git push -f*)",
+         "Bash(git push * --force*)", "Bash(git push * -f*)",
+         "Bash(git reset --hard*)", "Bash(git clean *)"
+       ]
+     }
+   }
+   ```
 
 ## Known issues / tech debt
-_None yet._ Format: `- 🔴/🟠/🟢 <issue> (found in phase NN): <notes>`
+Format: `- 🔴/🟠/🟢 <issue> (found in phase NN): <notes>`
+- 🟢 Local port clash (found in phase 00): another project's Vite server listens on `[::1]:5173`, so `http://localhost:5173` can open that app instead. Use `http://127.0.0.1:5173`. Playwright already does.
+- 🟢 Status-dot colours (found in phase 00): the connected/connecting dot uses Tailwind `emerald`/`amber` rather than theme tokens, because UI_UX §1 has no success or warning token. Revisit when the design system grows (Phase 13).
 
 ## Backlog (deferred ideas, not scheduled)
 - Second co-op minigame `coop_signal` (stretch in Phase 11).
@@ -53,4 +89,5 @@ _The human pastes results here using the checklist in docs/TESTING.md §6. Mark 
 ## Session log
 | Date | Phase | Summary |
 |---|---|---|
+| 2026-11-23 | 00 | Set up the git repo and public GitHub repo; pnpm monorepo (shared/server/client); strict TS 6.0 + type-aware ESLint + Prettier; shared config (full CONFIG table as a zod schema), mulberry32 RNG, IDs, protocol `Ack`/`time:ping`; Express + Socket.IO server with `/health`, `/version` and validated `time:ping`; React + Tailwind client showing Connected ✓ + ping; Playwright smoke; CI green. 37 unit/integration + 2 e2e tests. Deviation: 00.14 (permission allowlist) handed to the human. ADR-030–033. |
 | 2026-11-23 | (pre-project) | Wrote the specs (PRD, rules, roles, scoring, config, map/regions, tasks, meetings, protocol, architecture, UI/UX, testing, manual setup, decisions, INFILTR8 notes), the build plan with 15 phase files, CLAUDE.md and this tracker. Merged the creator's concept with the INFILTR8 GDD and added meetings and voting. |
