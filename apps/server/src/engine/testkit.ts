@@ -161,3 +161,45 @@ export function toPlaying(state = newLobby()): { state: RoomState; now: number }
 }
 
 export { DEFAULT_CONFIG };
+
+/** Crew players of a running game, in join order. */
+export function crewOf(state: RoomState) {
+  return state.players.filter((p) => p.role === 'crew');
+}
+
+/** A crew member's task by slot index (throws when missing). */
+export function taskAt(state: RoomState, playerId: string, index = 0) {
+  const t = state.players.find((p) => p.id === playerId)?.tasks?.[index];
+  if (!t) throw new Error(`no task ${index} for ${playerId}`);
+  return t;
+}
+
+/** Any other enabled pool point in the same section as the task (a spot that is in the section but not at the pin). */
+export function otherPointInSection(
+  state: RoomState,
+  task: { pointId?: string; regionId: string; section: string },
+): LatLng {
+  const pt = state.setup.taskPoints.find(
+    (p) =>
+      !p.disabled &&
+      p.id !== task.pointId &&
+      p.regionId === task.regionId &&
+      p.section === task.section,
+  );
+  if (!pt) throw new Error('no second point in that section');
+  return { lat: pt.lat, lng: pt.lng };
+}
+
+/**
+ * Teleport a player to `at`, then step the game forward one second at a time for
+ * `seconds` (fixes refreshed each step) so holds and timers run for real.
+ */
+export function stayAt(state: RoomState, id: string, at: LatLng, from: number, seconds: number) {
+  let s = moveTo(state, id, at, from);
+  let t = from;
+  for (let i = 0; i < seconds; i++) {
+    t += S;
+    s = advanceTo(s, t);
+  }
+  return { state: s, now: t };
+}

@@ -16,6 +16,8 @@ import {
   type Ring,
   type Role,
   type SectionId,
+  type SoloMinigameType,
+  type TaskKind,
   type TaskPoint,
   type Winner,
 } from '@afterdark/shared';
@@ -55,6 +57,50 @@ export interface ZoneState {
   penalties: number;
 }
 
+/** A minigame the player has opened: the puzzle and, server-side only, its solution. */
+export interface OpenTaskState {
+  puzzle: unknown;
+  solution: unknown;
+  /** Progress of a multi-step game (the lock's guess count), built by the game's `act`. */
+  progress?: unknown;
+  /** Game ms until which a submit is refused after a wrong answer. */
+  lockedUntilGameMs?: number;
+}
+
+/**
+ * One task a player holds (TASKS §1). The minigame `type` is hidden from the
+ * client until the task is opened; everything else a view shows comes from the
+ * stage. A fake task (Phase 9) is the same object with `fake` set.
+ */
+export interface TaskState {
+  /** Server-made, 16 URL-safe symbols (the same format for real and fake tasks). */
+  id: string;
+  kind: TaskKind;
+  /** The pool point this task sits on; absent for a fake (it has its own spot). */
+  pointId?: string;
+  lat: number;
+  lng: number;
+  regionId: string;
+  section: SectionId;
+  type: SoloMinigameType;
+  fake?: true;
+  /** `assigned` → `pin` once the player held the section for `sectionEntryHoldS`. Never goes back. */
+  stage: 'assigned' | 'pin';
+  /** Game ms when the current run of good fixes inside the section began. */
+  holdSince?: number;
+  /** Within `reachRadiusM` of the pin on a good fix right now. */
+  atPin: boolean;
+  open?: OpenTaskState;
+}
+
+/** A fake task waiting for the next crew slot that refills (Phase 9 fills the queue). */
+export interface QueuedFake {
+  lat: number;
+  lng: number;
+  regionId: string;
+  section: SectionId;
+}
+
 export interface PlayerState {
   id: string;
   username: string;
@@ -76,6 +122,10 @@ export interface PlayerState {
   /** Imposters only. */
   classes?: ImposterClass[];
   personalScore?: number;
+  /** Crew only, from the start of play: `taskSlots` tasks, refilled as they leave (RULES §6.1). */
+  tasks?: TaskState[];
+  /** Game ms when this player may reroll again (RULES §6.5). */
+  rerollReadyAtGameMs?: number;
   /**
    * Infection status (Phase 7 fills it in). It lives in the state from Phase 4 so
    * the leak tests can prove a crew view looks the same for any status.
@@ -124,6 +174,12 @@ export interface GameState {
   originalCrewCount: number;
   threshold: number;
   teamScore: number;
+  /** Counts task rolls, so each roll has its own seeded RNG (ids, sections, points, types). */
+  taskSeq: number;
+  /** Game ms when each pool point last left a player's hands (completed or rerolled): it rests for `taskPointReuseCooldownS`. */
+  pointUsedAtGameMs: Record<string, number>;
+  /** Fakes waiting for a free crew slot, oldest first (TASKS §2). */
+  fakeQueue: QueuedFake[];
   /** Game-time deadline of the match (`playTimeMin`). */
   matchEndsAtGameMs: number;
 }

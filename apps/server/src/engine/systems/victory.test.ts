@@ -145,11 +145,29 @@ describe('V5: forfeit (RULES §10.6)', () => {
   });
 });
 
-describe('V1–V3 are still stubs (they arrive in phases 5, 7, 8)', () => {
-  it('a full team score does not end the game yet', () => {
+describe('V1 team score (RULES §12)', () => {
+  it('ends the game as a crew win the moment the team score reaches the target', () => {
     const { state, now } = toPlaying(newLobby({ players: 6 }));
     const s = structuredClone(state);
-    if (s.game) s.game.teamScore = 500;
+    if (s.game) s.game.teamScore = s.config.targetScore;
+    const next = tick(s, now + 10 * S).state;
+    expect(next.phase).toBe('ended');
+    expect(next.result).toEqual({ winner: 'crew', reason: 'score' });
+  });
+
+  it('a score just under the target does not', () => {
+    const { state, now } = toPlaying(newLobby({ players: 6 }));
+    const s = structuredClone(state);
+    if (s.game) s.game.teamScore = s.config.targetScore - 1;
     expect(tick(s, now + 10 * S).state.phase).toBe('playing');
+  });
+
+  it('beats time-up when both happen on the same tick (strict order V1 before V4)', () => {
+    const { state, now } = toPlaying(newLobby({ players: 6 }));
+    const s = structuredClone(state);
+    if (s.game) s.game.teamScore = s.config.targetScore;
+    const end = now + s.config.playTimeMin * 60 * S;
+    const next = advanceTo(s, end);
+    expect(next.result).toEqual({ winner: 'crew', reason: 'score' });
   });
 });

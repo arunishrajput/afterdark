@@ -62,6 +62,15 @@ export function attachRoom(ctx: GatewayContext, room: Room, now: () => number): 
         for (const id of ids) socketOfPlayer(ctx, id)?.emit('event', effect.event);
         continue;
       }
+      if (effect.kind === 'reply') continue; // answered in the caller's ack, never sent as a frame
+      if (effect.kind === 'audit') {
+        // Point ids only: never a position, a name or a role (Invariant 8).
+        ctx.logger.info(
+          { code: state.code, pointId: effect.pointId },
+          'unsafe task point reported',
+        );
+        continue;
+      }
       // A player left or was kicked: end their session and release their socket.
       const socket = socketOfPlayer(ctx, effect.playerId);
       ctx.sessions.revoke(effect.playerId, effect.reason);

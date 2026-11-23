@@ -64,6 +64,9 @@ export function assignRoles(state: RoomState, now: number): void {
     originalCrewCount: crew,
     threshold: infectionThreshold(config, crew),
     teamScore: 0,
+    taskSeq: 0,
+    pointUsedAtGameMs: {},
+    fakeQueue: [],
     matchEndsAtGameMs: config.playTimeMin * MS_PER_MIN,
   };
 }

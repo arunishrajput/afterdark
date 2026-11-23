@@ -2,9 +2,9 @@
  * Win checks (RULES §12), called after every reducer run and every tick. The
  * first condition met ends the game, in strict order V1 → V6. Pure.
  *
- * Done here: V4 (time-up) and V5 (forfeit). V6 (abort) is a host command, see
- * `control.ts`. V1–V3 are stubbed below and arrive with the phases that can
- * trigger them.
+ * Done here: V1 (team score), V4 (time-up) and V5 (forfeit). V6 (abort) is a host
+ * command, see `control.ts`. V2 and V3 are stubbed below and arrive with the
+ * phases that can trigger them.
  */
 import { winnerOnTimeUp } from '@afterdark/shared';
 
@@ -34,7 +34,11 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
   const game = state.game;
   if ((state.phase !== 'reveal' && state.phase !== 'playing') || !game) return;
 
-  // V1 team score ≥ targetScore → crew            TODO(phase 05): tasks add team score
+  // V1 team score ≥ targetScore → crew (checked first, RULES §12).
+  if (state.phase === 'playing' && game.teamScore >= state.config.targetScore) {
+    endGame(state, 'crew', 'score', effects);
+    return;
+  }
   // V2 every imposter ejected → crew              TODO(phase 08): ejection
   // V3 compromised ≥ threshold → imposters        TODO(phase 07): infection, and 08: wrong ejection
 

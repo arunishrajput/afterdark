@@ -9,6 +9,9 @@ import type {
   LobbyRegenerateRegionsPayload,
   LocUpdatePayload,
   Position,
+  TaskActionAck,
+  TaskOpenAck,
+  TaskSubmitAck,
 } from '@afterdark/shared';
 
 import type { RoomState } from './state';
@@ -33,12 +36,30 @@ export type Command =
   | { type: 'forceStart'; playerId: string }
   | { type: 'pause'; playerId: string }
   | { type: 'resume'; playerId: string }
-  | { type: 'abort'; playerId: string };
+  | { type: 'abort'; playerId: string }
+  | { type: 'taskOpen'; playerId: string; taskId: string }
+  | { type: 'taskAction'; playerId: string; taskId: string; action: unknown }
+  | { type: 'taskSubmit'; playerId: string; taskId: string; answer: unknown }
+  | { type: 'taskCancel'; playerId: string; taskId: string }
+  | { type: 'taskReroll'; playerId: string; taskId: string }
+  | { type: 'taskReportUnsafe'; playerId: string; taskId: string }
+  /** Test mode only (`dev:autoComplete`): finish an open task as if solved. */
+  | { type: 'devAutoComplete'; playerId: string; taskId: string };
+
+/** What a task command answers its caller with (the ack's data). It goes to nobody else. */
+export type CommandReply =
+  | { type: 'open'; ack: TaskOpenAck }
+  | { type: 'action'; ack: TaskActionAck }
+  | { type: 'submit'; ack: TaskSubmitAck };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =
   | { kind: 'event'; to: 'all' | readonly string[]; event: GameEvent }
-  | { kind: 'removed'; playerId: string; reason: 'left' | 'kicked' };
+  | { kind: 'removed'; playerId: string; reason: 'left' | 'kicked' }
+  /** The answer to the command's own caller. The socket layer returns it in the ack and sends it nowhere else. */
+  | { kind: 'reply'; playerId: string; reply: CommandReply }
+  /** Something to log without player data (Invariant 8): a point id, never a position or a name. */
+  | { kind: 'audit'; what: 'unsafePoint'; pointId: string };
 
 export type ReduceResult =
   | { ok: true; state: RoomState; effects: Effect[] }

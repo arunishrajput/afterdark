@@ -10,6 +10,7 @@ import { endGame } from './end';
 import { activePlayers } from './players';
 import { assignRoles } from './roles';
 import { spawnPhaseDone, updateSpawnReach } from './spawn';
+import { assignInitialTasks, updateTasks } from './tasks';
 import { checkVictory } from './victory';
 import { updateZone } from './zone';
 
@@ -31,6 +32,7 @@ function beginPlay(state: RoomState, now: number, effects: Effect[]): void {
   if (!state.game) return;
   state.phase = 'playing';
   startClock(state.game.clock, now);
+  assignInitialTasks(state, now);
   effects.push({ kind: 'event', to: 'all', event: { type: 'game.playStarted' } });
 }
 
@@ -42,6 +44,9 @@ export function advance(state: RoomState, now: number, effects: Effect[]): void 
   if (state.phase === 'reveal' && state.game && now >= state.game.revealEndsAt) {
     beginPlay(state, now, effects);
   }
-  if (state.phase === 'playing') updateZone(state, now, effects);
+  if (state.phase === 'playing') {
+    updateZone(state, now, effects);
+    updateTasks(state, now, effects);
+  }
   checkVictory(state, now, effects);
 }

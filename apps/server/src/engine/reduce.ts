@@ -6,6 +6,7 @@ import * as lobby from './systems/lobby';
 import * as location from './systems/location';
 import * as map from './systems/map';
 import * as setup from './systems/setup';
+import * as play from './systems/taskPlay';
 import { type Command, type Effect, type ReduceResult, RuleError } from './types';
 
 export type { ReduceResult } from './types';
@@ -50,6 +51,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'disconnect':
         lobby.disconnect(draft, cmd.playerId, now);
+        play.resetOnDisconnect(draft, cmd.playerId, effects);
         break;
       case 'locUpdate':
         location.locUpdate(draft, cmd.playerId, cmd.fix, now);
@@ -86,6 +88,27 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'abort':
         control.abort(draft, cmd.playerId, effects);
+        break;
+      case 'taskOpen':
+        play.openTask(draft, cmd.playerId, cmd.taskId, now, effects);
+        break;
+      case 'taskAction':
+        play.actOnTask(draft, cmd.playerId, cmd.taskId, cmd.action, effects);
+        break;
+      case 'taskSubmit':
+        play.submitTask(draft, cmd.playerId, cmd.taskId, cmd.answer, now, effects);
+        break;
+      case 'taskCancel':
+        play.cancelTask(draft, cmd.playerId, cmd.taskId);
+        break;
+      case 'taskReroll':
+        play.rerollTask(draft, cmd.playerId, cmd.taskId, now);
+        break;
+      case 'taskReportUnsafe':
+        play.reportUnsafe(draft, cmd.playerId, cmd.taskId, now, effects);
+        break;
+      case 'devAutoComplete':
+        play.autoCompleteTask(draft, cmd.playerId, cmd.taskId, now, effects);
         break;
     }
   } catch (err) {
