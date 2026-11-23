@@ -20,6 +20,7 @@ import { type Effect, RuleError } from '../types';
 import { activateCamouflage, isCamouflaged } from './camouflage';
 import { activateFakeTask, checkFakeTask } from './fakeTask';
 import { requireGoodFix } from './location';
+import { logEvent, type LogType } from './log';
 import { findPlayer } from './players';
 import { activateTaskStop, checkTaskStop } from './taskStop';
 import { isOutOfBounds, isZoneLocked } from './zone';
@@ -83,6 +84,13 @@ export const ABILITIES: Partial<Record<AbilityId, AbilityDef>> = {
   },
 };
 
+/** The log entry each ability leaves (results timeline). */
+const ABILITY_LOG: Record<AbilityId, LogType> = {
+  taskStop: 'taskStop',
+  fakeTask: 'fakePlanted',
+  camouflage: 'camouflage',
+};
+
 /** The implemented abilities of a class set, in registry order (`all` mode passes every class). */
 export function abilityIdsFor(classes: readonly ImposterClass[]): AbilityId[] {
   return Object.values(ABILITIES)
@@ -132,6 +140,7 @@ export function useAbility(
   if (gameMs < own.readyAtGameMs) throw new RuleError('COOLDOWN', 'That ability is recharging');
   def.canActivate(state, actor, payload, now);
   def.activate(state, actor, payload, now, effects);
+  logEvent(state, now, ABILITY_LOG[id], [playerId], {});
   own.readyAtGameMs = gameMs + def.cooldownS(state.config) * MS_PER_S;
 }
 

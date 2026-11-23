@@ -14,6 +14,7 @@ import type { PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { freezeAbilityCooldowns } from './abilities';
 import { fixQuality, requireGoodFix } from './location';
+import { logEvent } from './log';
 import { findPlayer } from './players';
 import { compromisedCount } from './victory';
 import { isOutOfBounds, isZoneLocked } from './zone';
@@ -118,6 +119,7 @@ function complete(
   state: RoomState,
   imp: PlayerState,
   target: PlayerState,
+  now: number,
   gameMs: number,
   effects: Effect[],
 ): void {
@@ -127,6 +129,7 @@ function complete(
   delete imp.infect.channel;
   imp.infect.completed += 1;
   imp.infect.readyAtGameMs = gameMs + state.config.infectionCooldownS * MS_PER_S;
+  logEvent(state, now, 'infectDone', [imp.id, target.id], {});
   effects.push({ kind: 'event', to: [imp.id], event: { type: 'infect.completed' } });
 }
 
@@ -171,7 +174,7 @@ function updateChannels(state: RoomState, now: number, gameMs: number, effects: 
       continue;
     }
     if (channel.inRange && gameMs >= channel.endsAtGameMs)
-      complete(state, imp, target, gameMs, effects);
+      complete(state, imp, target, now, gameMs, effects);
   }
 }
 
@@ -198,6 +201,7 @@ function updateIncubation(state: RoomState, now: number, gameMs: number, effects
       }
     }
     if (ex.incubationEndsAtGameMs !== undefined && gameMs >= ex.incubationEndsAtGameMs) {
+      logEvent(state, now, 'infected', [target.id], { by: ex.byId });
       target.infection = 'infected';
       delete target.exposure;
       effects.push({

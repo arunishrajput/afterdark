@@ -172,6 +172,10 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | Key | Default | Range | Host | Notes |
 |---|---|---|---|---|
 | `forfeitAfterS` | 180 | — | 🔒 | A side with no connected active players for this long loses. |
+| `walkStepM` | 6 | — | 🔒 | Distance walked (results screen) grows only when a fix is at least this far from the last counted spot, so GPS jitter while standing still adds nothing. A jump too fast for `maxSpeedMps` is not counted. |
+| `eventLogMax` | 4000 | — | 🔒 | The server's per-game event log keeps at most this many entries (oldest dropped). Runs from the first role reveal to the end of the game and is never sent before then. |
+| `scoreSampleS` | 30 | — | 🔒 | The results screen's team-score chart is sampled every this many seconds of game time. |
+| `rematchDropAfterS` | 300 | — | 🔒 | **Play again** removes players who are still disconnected after this long, and everyone who left. |
 | `viewThrottleMs` | 200 | — | 🔒 | At most 5 view snapshots per second per player. |
 | `radarIntervalMs` | 1000 | — | 🔒 | How often nearby/all dots are sent. |
 | `clockSyncSamples` | 5 | — | 🔒 | `time:ping` round trips per clock sync; the lowest-RTT sample sets the offset. |

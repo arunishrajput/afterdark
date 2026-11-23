@@ -27,6 +27,7 @@ import {
 } from '@afterdark/shared';
 
 import type { GameClock } from './clock';
+import type { LogEntry } from './systems/log';
 
 /** The latest accepted GPS fix. Positions live in memory only (Invariant 8). */
 export interface StoredFix {
@@ -235,6 +236,10 @@ export interface PlayerState {
   wronglyEjected?: true;
   /** Meetings this player has called (allowance `meetingsPerPlayer`). */
   meetingsCalled?: number;
+  /** Metres walked during play (results screen): see `location.ts › addWalk`. Server-only until the game has ended. */
+  walkedM?: number;
+  /** The last spot that counted toward `walkedM`. */
+  walkFrom?: { lat: number; lng: number };
 }
 
 /** A region with its compass frame and the area of each of its 9 sections (computed once per layout). */
@@ -316,6 +321,8 @@ export interface GameState {
   taskLock?: { untilGameMs: number };
   /** The meeting in progress, if any. Game time is stopped while it exists. */
   meeting?: MeetingState;
+  /** Everything notable that happened, for the results screen (`systems/log.ts`). Server-only until the game has ended. */
+  log: LogEntry[];
   /** Game ms when the last meeting ended (the next one waits `meetingCooldownS`). */
   lastMeetingEndedGameMs?: number;
 }

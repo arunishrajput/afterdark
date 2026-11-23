@@ -63,7 +63,13 @@ describe('Camouflage ability (10.5, RULES §7.4)', () => {
       expect(get(res.state, p.id)).toEqual(p);
     }
     expect(get(res.state, f.imp).infect).toEqual(get(f.state, f.imp).infect);
-    expect({ ...res.state.game!, clock: null }).toEqual({ ...f.state.game!, clock: null });
+    // Only the event log differs: the disguise is logged for the results screen.
+    expect({ ...res.state.game!, clock: null, log: null }).toEqual({
+      ...f.state.game!,
+      clock: null,
+      log: null,
+    });
+    expect(res.state.game!.log.at(-1)?.type).toBe('camouflage');
   });
 
   it('a meeting ends it (ADR-084)', () => {

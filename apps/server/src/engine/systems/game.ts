@@ -21,7 +21,7 @@ import { updateZone } from './zone';
 export function beginReveal(state: RoomState, now: number, effects: Effect[]): void {
   if (activePlayers(state).length < state.config.minPlayers) {
     // So many players left during the spawn phase that a game is no longer possible.
-    endGame(state, null, 'abort', effects);
+    endGame(state, null, 'abort', now, effects);
     return;
   }
   assignRoles(state, now);

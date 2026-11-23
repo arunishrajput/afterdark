@@ -21,6 +21,7 @@ import type { PlayerState, RoomState, SetupRegion } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
 import { isOutOfBounds } from '../engine/systems/zone';
 import { projectGame, projectOwnGame } from './projectGame';
+import { projectResults } from './projectResults';
 
 /** The view without the per-send envelope (`v`, `serverNow`), so it can be diffed. */
 export type PlayerViewBody = Omit<PlayerView, 'v' | 'serverNow'>;
@@ -109,6 +110,7 @@ export function projectView(state: RoomState, playerId: string, now: number): Pl
   const me = state.players.find((p) => p.id === playerId);
   if (!me) throw new Error('projectView: player is not in this room');
   const location = projectOwnLocation(state, me, now);
+  const results = projectResults(state);
   return {
     lobby: {
       code: state.code,
@@ -130,5 +132,6 @@ export function projectView(state: RoomState, playerId: string, now: number): Pl
       ...projectOwnGame(state, me, now),
     },
     ...(state.setup.regions.length > 0 ? { game: projectGame(state, playerId, now) } : {}),
+    ...(results ? { results } : {}),
   };
 }

@@ -11,6 +11,7 @@ import { gameNow } from '../clock';
 import type { PlayerState, RoomState } from '../state';
 import type { Effect } from '../types';
 import { fixQuality } from './location';
+import { logEvent } from './log';
 import { activePlayers } from './players';
 
 const MS_PER_S = 1000;
@@ -57,6 +58,7 @@ export function updateZone(state: RoomState, now: number, effects: Effect[]): vo
       const points = owed * state.config.zonePenaltyPoints;
       p.zone.penalties = due;
       p.personalScore = (p.personalScore ?? 0) - points;
+      logEvent(state, now, 'zonePenalty', [p.id], { points });
       effects.push({ kind: 'event', to: [p.id], event: { type: 'zone.penalty', points } });
     }
   }

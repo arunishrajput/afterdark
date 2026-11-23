@@ -192,6 +192,10 @@ export const gameConfigSchema = z.strictObject({
 
   // Connectivity and end
   forfeitAfterS: positiveInt(),
+  walkStepM: positive(),
+  eventLogMax: positiveInt(),
+  scoreSampleS: positiveInt(),
+  rematchDropAfterS: positiveInt(),
   viewThrottleMs: positiveInt(),
   radarIntervalMs: positiveInt(),
   clockSyncSamples: positiveInt(),

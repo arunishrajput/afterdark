@@ -103,6 +103,104 @@ export interface ResultView {
   reason: EndReason;
 }
 
+/** One player's line on the results screen (the reveal: roles, classes and tags are public once the game has ended). */
+export interface ResultsPlayer {
+  id: string;
+  username: string;
+  role: Role;
+  /** Imposters only. */
+  classes?: ImposterClass[];
+  tag: string;
+  personalScore: number;
+  /** Solo tasks finished, plus co-ops a crew member finished. */
+  tasksDone: number;
+  /** Fake tasks finished (nothing was paid). */
+  fooled: number;
+  /** Rounded metres walked during play (`walkStepM` steps of accepted, accurate fixes). */
+  distanceM: number;
+  /** Imposters only: infection channels finished. */
+  infections: number;
+  meetingsCalled: number;
+  /** Crew only: game seconds at which they became infected, if they did. */
+  infectedAtS?: number;
+  /** Voted out in a meeting. */
+  ejected: boolean;
+  /** Left the game (a permanent disconnect). */
+  left: boolean;
+}
+
+/** What a timeline line is about. */
+export type ResultsTimelineKind =
+  | 'exposed'
+  | 'infected'
+  | 'ejected'
+  | 'taskStop'
+  | 'fakePlanted'
+  | 'camouflage'
+  | 'paused'
+  | 'resumed';
+
+/** A line of the timeline: game seconds since play began. `actorId` is the imposter (for `exposed`: the one who exposed `targetId`). */
+export interface ResultsTimelineEntry {
+  atS: number;
+  kind: ResultsTimelineKind;
+  actorId?: string;
+  targetId?: string;
+}
+
+/** One meeting: who called it, the counts (never who voted for whom) and what it decided. */
+export interface ResultsMeeting {
+  atS: number;
+  calledById: string;
+  tallies: MeetingTally[];
+  ejectedId?: string;
+  wasImposter?: boolean;
+}
+
+/** The team score at a moment: sampled every `scoreSampleS` of game time, plus the final value. */
+export interface ResultsScorePoint {
+  atS: number;
+  team: number;
+}
+
+export interface ResultsAward {
+  playerId: string;
+  /** The score, count or tally behind the award. */
+  value: number;
+}
+
+export interface ResultsAwards {
+  /** Highest personal score among crew. */
+  crewMvp?: ResultsAward;
+  /** The imposter with the most finished infections. */
+  topInfector?: ResultsAward;
+  /** The player who finished the most fake tasks. */
+  mostFooled?: ResultsAward;
+}
+
+/**
+ * The end-of-game reveal. Sent only when `phase === 'ended'` (a leak test pins it): every field
+ * here is secret while the game runs. The same for every viewer.
+ */
+export interface ResultsView {
+  winner: Winner;
+  reason: EndReason;
+  /** The host ended it: the screen says "Aborted by host" and the stats are partial. */
+  aborted: boolean;
+  teamScore: number;
+  targetScore: number;
+  compromised: number;
+  threshold: number;
+  crewCount: number;
+  /** Game seconds played (pauses and meetings excluded). */
+  durationS: number;
+  players: ResultsPlayer[];
+  timeline: ResultsTimelineEntry[];
+  meetings: ResultsMeeting[];
+  scoreSeries: ResultsScorePoint[];
+  awards: ResultsAwards;
+}
+
 /** The stages of a meeting, in order (MEETINGS §3). The `Called` instant is the start of `gather`. */
 export type MeetingStage = 'gather' | 'discuss' | 'vote' | 'result';
 
@@ -424,6 +522,8 @@ export interface PlayerView {
   me: MeView;
   /** Present once the lobby has a region layout (counts are shown in the lobby for testing). */
   game?: GameView;
+  /** Only when the game has ended (Phase 12). */
+  results?: ResultsView;
 }
 
 export type DotFlag = 'oob' | 'stale' | 'ally' | 'exposed' | 'infected';

@@ -91,7 +91,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         control.resume(draft, cmd.playerId, now, effects);
         break;
       case 'abort':
-        control.abort(draft, cmd.playerId, effects);
+        control.abort(draft, cmd.playerId, now, effects);
         break;
       case 'taskOpen':
         play.openTask(draft, cmd.playerId, cmd.taskId, now, effects);

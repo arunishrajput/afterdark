@@ -23,6 +23,7 @@ import { applyRecovery } from './abilities';
 import { isCamouflaged } from './camouflage';
 import { heldTasks, makeCoop, pairedAlready } from './coopPairing';
 import { fixQuality, requireGoodFix } from './location';
+import { logEvent } from './log';
 import { findPlayer } from './players';
 import { refillSlots, taskRng } from './tasks';
 import { requireTasksUnlocked } from './taskStop';
@@ -206,6 +207,10 @@ function completeCoop(
   if (!game) return credited;
   const gameMs = gameNow(game.clock, now);
   game.teamScore += state.config.points.coop_pin;
+  logEvent(state, now, 'coop', participantsOf(s), {
+    team: state.config.points.coop_pin,
+    personal: state.config.coopPersonalPoints,
+  });
   const participants = participantsOf(s)
     .map((id) => state.players.find((p) => p.id === id))
     .filter((p): p is PlayerState => p !== undefined);

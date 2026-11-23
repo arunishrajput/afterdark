@@ -16,6 +16,7 @@ import {
 import { createClock } from '../clock';
 import type { RoomState } from '../state';
 import { initialAbilities } from './abilities';
+import { logEvent } from './log';
 import { activePlayers } from './players';
 
 const MS_PER_S = 1000;
@@ -74,5 +75,7 @@ export function assignRoles(state: RoomState, now: number): void {
     fakeQueue: [],
     matchEndsAtGameMs: config.playTimeMin * MS_PER_MIN,
     lastInfectGameMs: 0,
+    log: [],
   };
+  logEvent(state, now, 'roles', [], { imposters: imposterIds.size, crew });
 }

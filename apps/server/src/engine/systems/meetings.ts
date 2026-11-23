@@ -17,6 +17,7 @@ import { resetCoops } from './coop';
 import { countVotes, eject, SKIP } from './ejection';
 import { cancelAllChannels } from './infection';
 import { fixQuality } from './location';
+import { logEvent } from './log';
 import { activePlayers, findPlayer } from './players';
 import { resetAllOpen } from './tasks';
 
@@ -86,6 +87,7 @@ export function callMeeting(
   }
 
   p.meetingsCalled = (p.meetingsCalled ?? 0) + 1;
+  logEvent(state, now, 'meetingCalled', [playerId], {});
   const meeting: MeetingState = {
     stage: 'gather',
     calledById: playerId,
@@ -168,7 +170,7 @@ function updateGathered(state: RoomState, m: MeetingState, now: number): void {
 }
 
 /** Vote over: count, eject, reveal (MEETINGS §4–§5). The win checks wait for the meeting to end, so the reveal gets its moment. */
-function resolveVotes(state: RoomState, m: MeetingState, effects: Effect[]): void {
+function resolveVotes(state: RoomState, m: MeetingState, now: number, effects: Effect[]): void {
   const { tallies, ejectedId } = countVotes(state, m.votes);
   m.tallies = tallies;
   const ejected =
@@ -176,12 +178,14 @@ function resolveVotes(state: RoomState, m: MeetingState, effects: Effect[]): voi
   if (ejected) {
     m.ejectedId = ejected.id;
     const { wasImposter } = eject(state, ejected);
+    logEvent(state, now, 'meetingResult', [], { tallies, ejectedId: ejected.id, wasImposter });
     effects.push({
       kind: 'event',
       to: 'all',
       event: { type: 'meeting.result', ejected: { username: ejected.username, wasImposter } },
     });
   } else {
+    logEvent(state, now, 'meetingResult', [], { tallies });
     effects.push({ kind: 'event', to: 'all', event: { type: 'meeting.result' } });
   }
 }
@@ -226,7 +230,7 @@ export function updateMeeting(state: RoomState, now: number, effects: Effect[]):
       if (timeUp || waiting.every((p) => m.skips.includes(p.id))) enter(state, m, 'vote', now);
     } else if (m.stage === 'vote') {
       if (timeUp || waiting.every((p) => m.votes[p.id] !== undefined)) {
-        resolveVotes(state, m, effects);
+        resolveVotes(state, m, now, effects);
         enter(state, m, 'result', now);
       }
     } else if (timeUp) {

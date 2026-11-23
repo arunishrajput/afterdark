@@ -38,7 +38,7 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
 
   // V1 team score ≥ targetScore → crew (checked first, RULES §12).
   if (state.phase === 'playing' && game.teamScore >= state.config.targetScore) {
-    endGame(state, 'crew', 'score', effects);
+    endGame(state, 'crew', 'score', now, effects);
     return;
   }
   const meetingOpen = game.meeting !== undefined;
@@ -50,12 +50,12 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
     imposters.length > 0 &&
     imposters.every((p) => p.spectator)
   ) {
-    endGame(state, 'crew', 'ejection', effects);
+    endGame(state, 'crew', 'ejection', now, effects);
     return;
   }
   // V3 compromised (infected or wrongly ejected) ≥ threshold → imposters.
   if (state.phase === 'playing' && !meetingOpen && compromisedCount(state) >= game.threshold) {
-    endGame(state, 'imposters', 'infection', effects);
+    endGame(state, 'imposters', 'infection', now, effects);
     return;
   }
 
@@ -67,7 +67,7 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
       compromised: compromisedCount(state),
       threshold: game.threshold,
     });
-    endGame(state, winner, 'time', effects);
+    endGame(state, winner, 'time', now, effects);
     return;
   }
 
@@ -79,7 +79,7 @@ export function checkVictory(state: RoomState, now: number, effects: Effect[]): 
   const since = game.rolesAssignedAt;
   const impGone = sideGone(state, activeImposters, now, since);
   const crewGone = sideGone(state, crew, now, since);
-  if (impGone && crewGone) endGame(state, 'draw', 'forfeit', effects);
-  else if (impGone) endGame(state, 'crew', 'forfeit', effects);
-  else if (crewGone) endGame(state, 'imposters', 'forfeit', effects);
+  if (impGone && crewGone) endGame(state, 'draw', 'forfeit', now, effects);
+  else if (impGone) endGame(state, 'crew', 'forfeit', now, effects);
+  else if (crewGone) endGame(state, 'imposters', 'forfeit', now, effects);
 }

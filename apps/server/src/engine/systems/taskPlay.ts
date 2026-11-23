@@ -28,6 +28,7 @@ import { type Effect, RuleError } from '../types';
 import { expireCoopById, expireCoopsAtPoint } from './coop';
 import { heldTasks } from './coopPairing';
 import { requireGoodFix } from './location';
+import { logEvent } from './log';
 import { findPlayer } from './players';
 import { isTasker, moveToKeyPoint, refillSlots, resetOpen, taskRng } from './tasks';
 import { requireTasksUnlocked } from './taskStop';
@@ -198,12 +199,14 @@ function finishTask(
   let outcome: { result: 'success' | 'fooled'; points: number };
   if (task.fake) {
     // A fake pays nothing, to the team or to the player (SCORING: Fake tasks).
+    logEvent(state, now, 'fooled', [p.id], task.fakeOwnerId ? { by: task.fakeOwnerId } : {});
     outcome = { result: 'fooled', points: 0 };
   } else {
     const points = state.config.points[soloTypeOf(task)];
     game.teamScore += points;
     p.personalScore = (p.personalScore ?? 0) + points;
     effects.push({ kind: 'event', to: [p.id], event: { type: 'task.completed', points } });
+    logEvent(state, now, 'task', [p.id], { task: soloTypeOf(task), points });
     outcome = { result: 'success', points };
   }
   refillSlots(state, p, now);

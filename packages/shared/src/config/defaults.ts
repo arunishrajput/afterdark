@@ -166,6 +166,10 @@ export const DEFAULT_CONFIG = {
 
   // Connectivity and end
   forfeitAfterS: 180,
+  walkStepM: 6,
+  eventLogMax: 4000,
+  scoreSampleS: 30,
+  rematchDropAfterS: 300,
   viewThrottleMs: 200,
   radarIntervalMs: 1000,
   clockSyncSamples: 5,

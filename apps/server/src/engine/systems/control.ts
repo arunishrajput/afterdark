@@ -6,6 +6,7 @@ import type { RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { endGame } from './end';
 import { beginReveal } from './game';
+import { logEvent } from './log';
 import { holdMeetingTimer, releaseMeetingTimer } from './meetings';
 
 function requireHost(state: RoomState, playerId: string): void {
@@ -38,6 +39,7 @@ export function pause(state: RoomState, playerId: string, now: number, effects: 
   const { clock } = requirePlaying(state);
   if (clock.reasons.includes('host')) return;
   pauseClock(clock, 'host', now);
+  logEvent(state, now, 'pause', [playerId], {});
   holdMeetingTimer(state, now);
   effects.push({ kind: 'event', to: 'all', event: { type: 'game.paused' } });
 }
@@ -47,17 +49,18 @@ export function resume(state: RoomState, playerId: string, now: number, effects:
   const { clock } = requirePlaying(state);
   if (!clock.reasons.includes('host')) return;
   resumeClock(clock, 'host', now);
+  logEvent(state, now, 'resume', [playerId], {});
   releaseMeetingTimer(state, now);
   effects.push({ kind: 'event', to: 'all', event: { type: 'game.resumed' } });
 }
 
 /** Ends the game with no winner (V6), from any game phase before it has ended. */
-export function abort(state: RoomState, playerId: string, effects: Effect[]): void {
+export function abort(state: RoomState, playerId: string, now: number, effects: Effect[]): void {
   requireHost(state, playerId);
   if (state.phase === 'lobby' || state.phase === 'ended') {
     throw new RuleError('WRONG_PHASE', 'There is no game to abort');
   }
-  endGame(state, null, 'abort', effects);
+  endGame(state, null, 'abort', now, effects);
 }
 
 /** `dev:setMinigames` (test mode, host, lobby): which types new tasks may roll (at least one, unlike the host setting). */

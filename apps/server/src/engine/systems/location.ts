@@ -55,6 +55,25 @@ function store(p: PlayerState, fix: LocUpdatePayload, now: number): void {
   delete p.locPending;
 }
 
+/**
+ * Distance walked (results screen, ADR-095): counted from the last counted spot, and only once a
+ * good fix is `walkStepM` away from it, so jitter while standing still adds nothing. Only while
+ * `playing`, for players with a role. Weak fixes change nothing.
+ */
+function addWalk(state: RoomState, p: PlayerState, fix: LocUpdatePayload): void {
+  if (state.phase !== 'playing' || !p.role || fix.accuracy > state.config.maxAccuracyM) {
+    return;
+  }
+  if (!p.walkFrom) {
+    p.walkFrom = { lat: fix.lat, lng: fix.lng };
+    return;
+  }
+  const d = distanceM(p.walkFrom, fix);
+  if (d < state.config.walkStepM) return;
+  p.walkedM = (p.walkedM ?? 0) + d;
+  p.walkFrom = { lat: fix.lat, lng: fix.lng };
+}
+
 export function locUpdate(
   state: RoomState,
   playerId: string,
@@ -67,6 +86,7 @@ export function locUpdate(
     throw new RuleError('INVALID_PAYLOAD', 'Fix timestamp is in the future');
   }
   if (!p.loc || impliedSpeed(p.loc, fix, config.speedCheckMinDtS) <= config.maxSpeedMps) {
+    addWalk(state, p, fix);
     store(p, fix, now);
     return;
   }
@@ -76,8 +96,11 @@ export function locUpdate(
   const consistent = last && impliedSpeed(last, fix, config.speedCheckMinDtS) <= config.maxSpeedMps;
   const run = consistent ? [...(p.locPending ?? [])] : [];
   run.push({ lat: fix.lat, lng: fix.lng, ts: fix.ts });
-  if (run.length >= config.reanchorFixes) store(p, fix, now);
-  else p.locPending = run;
+  if (run.length >= config.reanchorFixes) {
+    // A jump the speed check refused is not walking: the count starts again from the new spot.
+    delete p.walkFrom;
+    store(p, fix, now);
+  } else p.locPending = run;
 }
 
 /** `dev:teleport` (test mode only): place the player exactly, bypassing the speed check. */
@@ -89,9 +112,7 @@ export function teleport(
   now: number,
 ): void {
   if (!state.config.testMode) throw new RuleError('NOT_ALLOWED', 'Test mode is off');
-  store(
-    findPlayer(state, playerId),
-    { lat, lng, accuracy: state.config.teleportAccuracyM, ts: now },
-    now,
-  );
+  const p = findPlayer(state, playerId);
+  delete p.walkFrom;
+  store(p, { lat, lng, accuracy: state.config.teleportAccuracyM, ts: now }, now);
 }
