@@ -53,7 +53,9 @@
   - Neutral theme. Make it mobile-first.
 - [x] **01.11 Integration test.** 8 `socket.io-client` clients against the in-process server: create, join ×7, all ready, countdown fires; one disconnects and resumes and keeps its identity; the host leaves and host status moves; a duplicate name is rejected; a 13th join gets `LOBBY_FULL`.
 - [x] **01.12 E2E.** Playwright with 3 browser contexts: create, join by code, ready all, see the countdown. Then reload one context and confirm it is still in the lobby.
-- [ ] **01.13 Wrap up.** Update the docs (PROTOCOL if events changed, PROGRESS). Commit, tag, push.
+- [x] **01.13 Wrap up.** Update the docs (PROTOCOL if events changed, PROGRESS). Commit, tag, push.
+
+**Deviations (recorded in PROGRESS.md):** 01.9 keeps the lowest-RTT clock estimator, not the median (ADR-038). 01.12 uses 4 contexts, not 3, because the countdown needs `minPlayers` (4).
 
 ## Acceptance criteria
 - Joining, ready and roster changes reach every client within 500 ms locally.

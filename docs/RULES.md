@@ -4,7 +4,7 @@
 
 Numbers appear as `configKey` (default). All values live in [CONFIG.md](CONFIG.md). Roles and visibility are in [ROLES.md](ROLES.md), points in [SCORING.md](SCORING.md), meetings in [MEETINGS.md](MEETINGS.md), and the map system in [MAP_AND_REGIONS.md](MAP_AND_REGIONS.md).
 
-Rules version: **1.0** (2026-11-23)
+Rules version: **1.1** (2026-11-23: §3.8 host hand-over on disconnect, §3.10 lobby disconnects un-ready, ADR-036)
 
 ---
 
@@ -41,8 +41,9 @@ Rules version: **1.0** (2026-11-23)
 5. **Ready** requires location permission and a fresh fix (accuracy ≤ `maxAccuracyM` (30 m)). Players do not need to be inside the boundary yet.
 6. **Any config or map change un-readies everyone**, so nobody is committed to rules they did not see.
 7. When **every** player is ready, there are at least 4 players, and the config is valid (boundary set, Base set, enough usable task points), a `startCountdownS` (5 s) countdown begins. Anyone un-readying cancels it.
-8. **If the host leaves the lobby,** host status passes to the earliest-joined connected player. The host can kick a player; a kicked player's session cannot rejoin that lobby.
+8. **If the host leaves the lobby,** host status passes to the earliest-joined connected player. The same happens when the host has been disconnected for `hostDisconnectGraceS` (30 s); coming back does not reclaim it. The host can kick a player; a kicked player's session cannot rejoin that lobby.
 9. A lobby with nobody connected is deleted after `lobbyIdleTimeoutMin` (30 min).
+10. A player who disconnects in the lobby stays in the roster (shown offline) but is **un-readied**, which cancels any countdown. Reconnecting restores the same player.
 
 ## 4. Spawn phase
 1. When the countdown ends, the server gives every player their own **spawn point** inside the boundary and outside no-go zones. Spawns are spread as far apart as possible, never closer than `spawnMinSeparationM` (40 m), and assigned so total walking is low.

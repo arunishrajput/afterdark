@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**◐ IN PROGRESS: Phase 01, Lobby system** (started 2026-11-23) → [docs/phases/PHASE-01-lobby.md](docs/phases/PHASE-01-lobby.md)
+**▶ NEXT: Phase 02, Map, location & boundary** → [docs/phases/PHASE-02-map-location-boundary.md](docs/phases/PHASE-02-map-location-boundary.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
@@ -12,8 +12,8 @@
 | # | Phase | Status | Date | Tag / notes |
 |---|---|---|---|---|
 | 00 | [Setup & scaffolding](docs/phases/PHASE-00-setup.md) | ✅ DONE | 2026-11-23 | `phase-00-done` |
-| 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ◐ IN PROGRESS | 2026-11-23 | |
-| 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ☐ NOT STARTED | | |
+| 01 | [Lobby system](docs/phases/PHASE-01-lobby.md) | ✅ DONE | 2026-11-23 | `phase-01-done` |
+| 02 | [Map, location & boundary](docs/phases/PHASE-02-map-location-boundary.md) | ▶ NEXT | | |
 | 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ☐ NOT STARTED | | |
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ☐ NOT STARTED | | |
 | 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ☐ NOT STARTED | | |
@@ -28,7 +28,17 @@
 | 14 | [Hardening & demo](docs/phases/PHASE-14-hardening-demo.md) | ☐ NOT STARTED | | |
 
 ## Handoff notes for the next session
-_From Phase 00 (2026-11-23):_
+_From Phase 01 (2026-11-23):_
+- **Request path:** socket → `socket.use` rate limit (`socket/rateLimit.ts`) → `validated(event, schema, …)` → handler in `socket/handlers/{session,lobby}.ts` → `run(room, cmd)` → `Room.dispatch` → pure `engine/reduce.ts` → `systems/lobby.ts`. Rule rejections throw `RuleError(code)` inside systems; `run()` turns them into ack errors.
+- **Engine shape:** `reduce(state, cmd, now)` deep-copies state (`structuredClone`) and systems mutate the draft, pushing `Effect`s (`{kind:'event', to, event}` or `{kind:'removed', playerId, reason}`). `tick(state, now)` is the same. `evaluateCountdown()` runs after every command. **Phase 2 adds `loc:update` as a command and more `StartBlocker`s** in `packages/shared/src/rules/start.ts` (shared with the client checklist): fresh fix for ready, boundary set.
+- **Effects → sockets** happen in `socket/wiring.ts` (per-player emits only; no room broadcasts). Views go through `rooms/ViewEmitter.ts` (change-only by JSON fingerprint, throttled to `viewThrottleMs`). New view fields: add them in `views/projectView.ts` **and** in `ALLOWED_VIEW_KEYS` in `views/leak.test.ts` with an assertion.
+- **Phase 2 radar:** `radar` is a separate event at `radarIntervalMs`, so hook it on the Room ticker (`Room.start(tickIntervalMs)`) or a second interval in `wiring.ts`; don't put dots into `PlayerView`.
+- **Sessions:** tokens live only in `rooms/sessions.ts` (ADR-037). `socket.data = {playerId, code}` marks a bound socket. `bindSocket()` in `socket/context.ts` kicks an older socket with `replaced`.
+- **Tests:** `apps/server/test/helpers.ts` has `startTestServer()` (mutable `clock.now`, seeded lobby codes), `TestClient` (`ok()`, `call()`, `waitForView()`, raw `frames`). Advance time with `ts.clock.now += …` then `ts.server.rooms.get(code)?.tick()`.
+- **Client:** `useGame` store (view, notice, toasts, resuming) in `apps/client/src/store/index.ts`. Intents in `net/actions.ts`; `request(event, payload)` in `net/socket.ts` gives typed acks with a `TIMEOUT` code. Screens are routed in `App.tsx` from `view.lobby.phase` (`lobby` → Lobby, `starting` → placeholder). The Lobby's "Ready" button needs a location gate in Phase 2 (UI_UX §2 permission gate).
+- **Formatting gotcha:** `pnpm format` runs prettier then `eslint --fix`, which can leave prettier diffs. Run `npx prettier --write <paths>` last, then `pnpm lint`.
+
+_From Phase 00 (2026-11-23):__From Phase 00 (2026-11-23):_
 - **Repo:** https://github.com/arunishrajput/afterdark (public, `main`, CI green). Every phase pushes to `main` and tags `phase-NN-done`.
 - **Protocol pattern:** add each event to `packages/shared/src/protocol/schemas.ts` (zod) and `events.ts` (the typed `ClientToServerEvents`/`ServerToClientEvents` maps), then register it in `apps/server/src/socket/gateway.ts` wrapped in `validated(event, schema, logger, fn)`. To reject with a protocol error code, throw `new HandlerError('NOT_HOST', '…')`. `validated()` turns anything else into `INTERNAL`.
 - **socket.io-client typing quirk:** `socket.timeout(ms).emitWithAck(...)` is typed `any`. Cast the awaited result to `Ack<T>`, and **never** assign `emitWithAck` to a variable, because it loses `this` and throws at runtime (lint catches this with `unbound-method`). See `apps/client/src/net/socket.ts` and the `ping()` helper in `apps/server/test/socket.test.ts`.
@@ -51,6 +61,9 @@ _None right now._
 
 ## Known issues / tech debt
 Format: `- 🔴/🟠/🟢 <issue> (found in phase NN): <notes>`
+- 🟢 Kick is per session, not per person (found in phase 01): `lobby:join` carries no token, so a kicked player can rejoin under a new name from a fresh session. The host can kick again. Fixing it properly needs accounts (out of scope, ADR-029/037).
+- 🟢 Countdown resolution (found in phase 01): the countdown expires on the 1 Hz tick, so `starting` can arrive up to `tickIntervalMs` late. Fine for a placeholder; Phase 4 could schedule an exact timer.
+- 🟢 Initial JS is 117 KB gzipped before Leaflet (budget 300 KB, ARCHITECTURE §11). zod is in the client bundle through shared schemas. Watch it in Phase 2.
 - 🟢 Local port clash (found in phase 00): another project's Vite server listens on `[::1]:5173`, so `http://localhost:5173` can open that app instead. Use `http://127.0.0.1:5173`. Playwright already does.
 - 🟢 Status-dot colours (found in phase 00): the connected/connecting dot uses Tailwind `emerald`/`amber` rather than theme tokens, because UI_UX §1 has no success or warning token. Revisit when the design system grows (Phase 13).
 
@@ -65,5 +78,6 @@ _The human pastes results here using the checklist in docs/TESTING.md §6. Mark 
 ## Session log
 | Date | Phase | Summary |
 |---|---|---|
+| 2026-11-23 | 01 | Lobby system end to end. Shared: Phase 1 events/schemas (NFC usernames with combining marks), view types, `startBlockers()`, `editableNumberRange()`, 4 new config keys. Server: pure lobby engine (join/leave/ready/config/kick/connect/disconnect, countdown → `starting`, host hand-over), Room + RoomManager (seeded/crypto codes, idle sweep), SessionRegistry (tokens outside engine state, kick bans), allow-list `projectView`, throttled change-only `ViewEmitter`, gateway with resume/replace and a 10/s rate limit. Leak harness with an exact key allow-list. Client: store, localStorage session, auto-resume, Home / Join-Create (safety notice) / Lobby (code, share, QR, roster, checklist, host settings, kick, countdown overlay) / notices / toasts. 146 unit+integration tests (incl. an 8-client socket scenario with a raw token scan) and 5 e2e. Deviations: lowest-RTT clock (ADR-038), 4 e2e contexts (min players). ADR-034–038. |
 | 2026-11-23 | 00 | Set up the git repo and public GitHub repo; pnpm monorepo (shared/server/client); strict TS 6.0 + type-aware ESLint + Prettier; shared config (full CONFIG table as a zod schema), mulberry32 RNG, IDs, protocol `Ack`/`time:ping`; Express + Socket.IO server with `/health`, `/version` and validated `time:ping`; React + Tailwind client showing Connected ✓ + ping; Playwright smoke; CI green. 37 unit/integration + 2 e2e tests. 00.14 (permission allowlist): the human reviewed and added `.claude/settings.json`, because auto mode blocked Claude from writing its own permissions. ADR-030–033. |
 | 2026-11-23 | (pre-project) | Wrote the specs (PRD, rules, roles, scoring, config, map/regions, tasks, meetings, protocol, architecture, UI/UX, testing, manual setup, decisions, INFILTR8 notes), the build plan with 15 phase files, CLAUDE.md and this tracker. Merged the creator's concept with the INFILTR8 GDD and added meetings and voting. |

@@ -28,7 +28,7 @@ Claude can't walk around outside. So most of the game must be provable with **un
 **TDD rule for logic:** write the failing engine or shared test first, then the code. UI may be built first, then verified with Playwright.
 
 ## 3. Leak tests (mandatory from Phase 1)
-Put these in `apps/server/src/views/leak.test.ts`. Extend them in every phase that adds view fields.
+Put these in `apps/server/src/views/leak.test.ts`. Extend them in every phase that adds view fields. Helpers (`keysDeep`, `buildLobbyFixture`, `FORBIDDEN_KEY_NAMES`) are in `views/leakHarness.ts`. Since Phase 1 the test also holds `ALLOWED_VIEW_KEYS`, an exact allow-list of view key paths: a new field fails the test until you add it there and assert who may see it. Integration tests record every raw frame (`TestClient.frames` in `apps/server/test/helpers.ts`) for item 7.
 1. **No role leak:** a crew view contains no other player's role, class, tag (except the co-op partner tag inside a task card), or imposter-only flag. It contains no `imposter` key at all.
 2. **Infection invisibility:** build two crew views that differ only in infected status. `keysDeep(viewA)` must equal `keysDeep(viewB)`, and neither may contain `infected`, `exposed`, `compromisedIds` or `incubation` anywhere.
 3. **Fake indistinguishable:** for a real task card and a fake one at the same stage, the key sets are identical, and so is the shape of the `task:open` ack.

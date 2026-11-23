@@ -14,7 +14,7 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
   ```
 - **Server → client events** never include data the recipient isn't entitled to (see [ROLES.md](ROLES.md#visibility-matrix)). There is **no** `io.to(room).emit(...)` carrying private data. Broadcasts are allowed only for payloads that are identical for every player and contain only public information.
 - **Times** are server epoch milliseconds. Clients estimate `offset` with `time:ping` and display countdowns from absolute deadlines (`endsAt`), never by counting ticks themselves.
-- **Rate limits** (Phase 14; basic versions earlier): `loc:update` ≤ 2/s, other events ≤ 10/s per socket. Payloads are capped at 16 KB.
+- **Rate limits** (Phase 14; basic versions earlier): `loc:update` ≤ 2/s, other events ≤ 10/s per socket. Payloads are capped at 16 KB. Since Phase 1, every socket is limited to `socketEventsPerSecond` (10) events in any rolling second; extra events are dropped and acked with `RATE_LIMITED`.
 - **IDs** are random, URL-safe, 12+ characters, and never sequential.
 
 ## Error codes
@@ -24,13 +24,13 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | Event | Payload | Ack data | Who / when | Phase |
 |---|---|---|---|---|
 | `time:ping` | `{clientTs}` | `{serverTs}` | anyone | 1 |
-| `session:resume` | `{token}` | `{playerId, code}` | on (re)connect | 1 |
-| `lobby:create` | `{username, acceptedSafety: true}` | `{code, token, playerId}` | — | 1 |
-| `lobby:join` | `{code, username, acceptedSafety: true}` | `{token, playerId}` | lobby phase only | 1 |
+| `session:resume` | `{token}` | `{playerId, code}` | on (re)connect. Errors: `NOT_FOUND` (session or lobby gone), `KICKED` (token banned), `NOT_ALLOWED` (socket already bound to another player) | 1 |
+| `lobby:create` | `{username, acceptedSafety: true}` | `{code, token, playerId}` | a socket not already in a lobby (`NOT_ALLOWED`) | 1 |
+| `lobby:join` | `{code, username, acceptedSafety: true}` | `{token, playerId}` | lobby phase only. Errors: `NOT_FOUND`, `GAME_IN_PROGRESS`, `LOBBY_FULL`, `NAME_TAKEN` | 1 |
 | `lobby:leave` | `{}` | — | any time; mid-game the player becomes a permanent disconnect | 1 |
 | `lobby:setReady` | `{ready}` | — | lobby; ready needs a good fix (Phase 2 or later) | 1 |
-| `lobby:updateConfig` | `{patch: Partial<GameConfigEditable>}` | — | host, lobby; un-readies everyone | 1 |
-| `lobby:kick` | `{playerId}` | — | host, lobby | 1 |
+| `lobby:updateConfig` | `{patch: Partial<GameConfigEditable>}` | — | host, lobby; un-readies everyone if any value changed. `testMode: true` → `NOT_ALLOWED` when the server forbids test mode | 1 |
+| `lobby:kick` | `{playerId}` | — | host, lobby; not yourself (`NOT_ALLOWED`) | 1 |
 | `loc:update` | `{lat, lng, accuracy, ts, heading?, speed?}` | none (volatile emit, no ack) | in a lobby | 2 |
 | `lobby:setBoundary` | `{boundary: {type:'polygon', coords: [lng,lat][]} \| {type:'circle', center:{lat,lng}, radiusM}}` | `{areaM2}` | host | 2 |
 | `lobby:regenerateRegions` | `{regionCount?: 'auto' \| 2..6, seed?}` | — | host | 3 |
@@ -71,9 +71,13 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `view` | `PlayerView` (full snapshot for that player) | on change, throttled to `viewThrottleMs` (200 ms) | 1 |
 | `radar` | `{dots: AnonDot[], at}` | every `radarIntervalMs` (1 s) during lobby and play | 2 |
 | `event` | `GameEvent` (toast or overlay trigger) | as they happen | 1 |
-| `kicked` | `{reason}` | once | 1 |
+| `kicked` | `{reason: 'replaced' \| 'kicked'}`; the server then disconnects the socket | once | 1 |
+
+**Field formats (Phase 1, `schemas.ts`):** `username` is NFC-normalised, trimmed, runs of spaces collapsed, `[\p{L}\p{M}\p{N} _.-]`, 2–16 code points (ADR-034). `code` is trimmed and upper-cased, then 6 symbols from `lobbyCodeAlphabet`. `token` is 16–64 symbols and `playerId` 12–64 symbols of the URL-safe ID alphabet. All payload objects are strict (unknown keys → `INVALID_PAYLOAD`).
 
 ### `PlayerView` (outline; the full type is in `shared/src/types/view.ts`)
+**Built so far (Phase 1):** `v`, `serverNow`, `lobby.{code, phase, hostId, testMode, config, players, countdownEndsAt?}` and `me.{id, username, isHost, ready, status}`. `phase` is `'lobby' | 'starting'` (`starting` is a placeholder until Phase 4). `GameConfigPublic` = the host-editable keys (ADR-035). `countdownEndsAt` is present only while the start countdown runs. `PublicPlayer` has no `revealedRole` yet (Phase 8). `me.personalScore` and the other `me`/`game` fields arrive with their phases.
+
 ```ts
 interface PlayerView {
   v: number;                    // monotonically increasing per player
@@ -130,6 +134,8 @@ The type and points arrive only in the `task:open` ack.
 `{alias: string, lat, lng, flags: ('oob'|'stale'|'ally'|'exposed'|'infected')[]}`. The `ally`, `exposed` and `infected` flags are only ever sent to active imposters.
 
 ### `GameEvent` (examples)
+Phase 1 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}` and `{type:'lobby.configChanged'}` (everyone was un-readied). All three go to every connected player.
+
 `lobby.countdown`, `game.spawnStarted`, `game.rolesRevealed`, `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.fooled`, `task.expired`, `task.rerolled`, `sabotage.started {until}`, `meeting.called {by}`, `meeting.result {...}`, `player.ejected {username, wasImposter}`, `zone.warning`, `zone.penalty`, `game.paused`, `game.resumed`, `game.ended`.
 
 Only public events go to everyone. Private events (`task.*`, own penalties) go only to their owner.

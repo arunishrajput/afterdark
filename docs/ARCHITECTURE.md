@@ -35,11 +35,12 @@
 │   ├─ types/    domain.ts  view.ts
 │   ├─ geo/      distance.ts  boundary.ts  regions.ts  sections.ts  sampling.ts  index.ts
 │   ├─ minigames/ index.ts  wires.ts  lock.ts  …  data/crosswords.ts
+│   ├─ rules/    start.ts                         # startBlockers(): shared by engine and lobby checklist
 │   ├─ rng.ts    tags.ts   ids.ts
 ├─ apps/server/src/
 │   ├─ index.ts  app.ts  env.ts  logger.ts  version.ts
-│   ├─ socket/   gateway.ts  handler.ts (validated())  types.ts  handlers/*.ts  rateLimit.ts
-│   ├─ rooms/    RoomManager.ts  Room.ts
+│   ├─ socket/   gateway.ts  handler.ts (validated())  context.ts  wiring.ts  types.ts  handlers/*.ts  rateLimit.ts
+│   ├─ rooms/    RoomManager.ts  Room.ts  sessions.ts  ViewEmitter.ts  lobbyCode.ts
 │   ├─ engine/   state.ts  reduce.ts  tick.ts  clock.ts
 │   │            systems/ lobby.ts location.ts spawn.ts roles.ts tasks.ts infection.ts abilities.ts
 │   │                     meetings.ts zone.ts victory.ts
@@ -61,7 +62,7 @@
 - **Commands** are validated socket messages turned into `{type, playerId, payload}`. `reduce(state, cmd, now) → {state, events}` checks every precondition: phase, role, range, cooldown, lock, meeting, pause.
 - **Tick:** `tick(state, now)` runs every 1 s. It advances the spawn timeout, section-entry holds, AT_PIN detection, infection channels and incubation, cooldown expiry, the Task Stop lock, meeting stages, zone penalties, region counts (every 30 s), co-op expiry, forfeit timers and win checks.
 - **Location updates** are commands. Range-sensitive checks (AT_PIN, channels) also run immediately on each accepted fix, so the game responds in under a second.
-- **Serialisation:** each Room processes commands and ticks one at a time on its own queue. The order is strict, which makes win precedence deterministic.
+- **Serialisation:** each Room processes commands and ticks one at a time. `dispatch` and `tick` are synchronous (no awaits), so Node's single thread is the queue (ADR-037). The order is strict, which makes win precedence deterministic.
 - **Clock:** `GameClock` tracks *game time*: real time minus paused time (meetings and host pauses). Match end, cooldowns, incubation, co-op expiry and lock time are stored as game-time deadlines. Meeting stages and the spawn timeout use real time. Views convert game-time deadlines into absolute server times for display, and send `pausedAt` while paused.
 - **RNG:** each Room has a seeded `Rng` (mulberry32) created from `crypto.randomUUID()`. The seed is logged, so tests can inject it.
 - **Purity:** engine and view code does **not** use `Date.now()`, `Math.random()` or I/O. Tests drive it with a fake clock.
@@ -84,9 +85,10 @@
 4. **Privacy:** raw positions stay in memory for the length of the match and are deleted when the lobby is deleted. They are never written to disk or logged; logs record only region-level events.
 
 ## 6. Reconnect and sessions
-- Joining returns a `token` (128-bit random). The client stores `{token, code}` in `localStorage`.
+- Joining returns a `token` (22 URL-safe symbols, ≈132 bits). Tokens live only in the server's `SessionRegistry` and the client's `localStorage`, never in `RoomState` or views (ADR-037). The client stores `{token, code}` in `localStorage`.
 - On connect, the client sends `session:resume`. The server re-binds the socket to the player and sends a fresh view.
-- A player's socket may change; their `playerId` and the game state stay the same. Duplicate tabs: the newest socket wins and the older one gets `kicked {reason:'replaced'}`.
+- A player's socket may change; their `playerId` and the game state stay the same. Duplicate tabs: the newest socket wins and the older one gets `kicked {reason:'replaced'}` and is disconnected; the client offers "Use here instead".
+- `session:resume` errors: `NOT_FOUND` (session or lobby gone; the client clears it) and `KICKED` (token banned for that lobby).
 
 ## 7. Client architecture
 - **State:** one Zustand store holding `view`, `radar`, the server clock offset, connection status and local UI state. Server data is never mutated optimistically, except for minigame UI state.
@@ -118,7 +120,7 @@ Manifest: name "AfterDark", standalone, portrait, dark theme colour, maskable ic
   - zod on every input
   - rate and size limits
   - the host has no hidden-information powers
-  - React escaping, plus usernames limited to `[\p{L}\p{N} _.-]`
+  - React escaping, plus usernames NFC-normalised and limited to `[\p{L}\p{M}\p{N} _.-]` (ADR-034)
   - helmet headers
   - CORS limited to the app's own origin
 - The anti-cheat table is in [RULES.md](RULES.md) and the INFILTR8 notes.

@@ -155,3 +155,31 @@ Accounts, profiles, XP and cosmetics; public rooms and matchmaking; chat; AR/cam
 - pnpm 11's `allowBuilds` allows only `esbuild`'s postinstall.
 - Socket handlers go through `validated()` (zod before logic, a uniform `Ack`, and safe when the client sends no ack callback).
 **Why:** a rule the machine checks can't be forgotten in a later session.
+
+### ADR-034 · Usernames: NFC, trimmed, combining marks allowed · Accepted (Phase 1)
+**Decision:** `usernameSchema` normalises to NFC, trims, collapses runs of spaces, and allows `[\p{L}\p{M}\p{N} _.-]`, 2–16 **code points**. Uniqueness compares `toLocaleLowerCase('en-US')`.
+**Why:** the documented charset `[\p{L}\p{N} _.-]` rejects most Indic names (Devanagari vowel signs are `\p{M}`), which matters for a hackathon in India. NFC stops `é` written two ways from being two "different" names. Format characters (`\p{Cf}`, e.g. right-to-left overrides), emoji and markup are still rejected, and 16 code points limits combining-mark abuse.
+**Rejected:** the original charset; counting UTF-16 units.
+
+### ADR-035 · `GameConfigPublic` is the host-editable config · Accepted (Phase 1)
+**Decision:** `PlayerView.lobby.config` holds exactly the editable keys (`EDITABLE_CONFIG_KEYS`, copied one by one). Fixed 🔒 keys are constants, so the client reads them from `DEFAULT_CONFIG` in shared.
+**Why:** everyone must see the rules they are committing to (RULES §3.6), and fixed keys never differ between lobbies, so sending them would only add bytes. The UI also reads ranges from the schema (`editableNumberRange`), so limits are never hard-coded.
+
+### ADR-036 · Lobby disconnects un-ready the player; the host hands over after 30 s offline · Accepted (Phase 1)
+**Decision:**
+- In the lobby, a disconnect sets the player to not ready, which cancels any running countdown.
+- A host who has been disconnected for `hostDisconnectGraceS` (30 s) passes host status to the earliest-joined connected player. Reconnecting does not take it back. Leaving hands over immediately (RULES §3.8).
+**Why:** a disconnected player can't confirm they're ready, and Phase 2 makes "ready" depend on a fresh GPS fix anyway. Without a hand-over, a host whose phone dies would freeze the lobby (nobody could change settings or kick). The grace period stops a brief signal drop from moving host.
+**Rejected:** handing over on any disconnect (too jumpy on mobile); never handing over on disconnect (lobby can get stuck).
+
+### ADR-037 · Sessions live outside the engine; the Room queue is synchronous dispatch · Accepted (Phase 1)
+**Decision:**
+- Session tokens (22 symbols ≈ 132 bits) live only in `SessionRegistry` and the device's localStorage. `RoomState` has no tokens, so `projectView()` can't leak one. A kick bans the token for that lobby (`session:resume` → `KICKED`).
+- Player IDs and tokens come from Web Crypto in the gateway and are passed into engine commands, so the engine stays pure.
+- `Room.dispatch()` and `Room.tick()` are synchronous and never await. On Node's single thread this already serialises every command and tick, so there is no explicit queue object.
+- The rate limiter uses a monotonic wall clock (`performance.now()`), not the injected game clock: it is transport-level, and a frozen test clock would otherwise block every socket.
+**Note:** `lobby:join` carries no token, so a kicked person could rejoin under a new name from a fresh session. That's the most RULES §3.8 can mean without accounts (ADR-029); the host can kick again.
+
+### ADR-038 · Clock offset from the lowest-RTT sample, not the median · Accepted (Phase 1)
+**Decision:** the client keeps Phase 0's estimator: of `clockSyncSamples` (5) pings, the lowest-RTT sample sets the offset. Task 01.9 said "median of 5".
+**Why:** the lowest round trip has the least room for path asymmetry, which is the main source of error (NTP-style). The median mixes in samples delayed by queueing. CONFIG.md already documented this.
