@@ -178,6 +178,8 @@ export const gameConfigSchema = z.strictObject({
   botJitterM: positive(),
   botStepS: positive(),
   botWanderLegM: positive(),
+  botTaskMinS: positive(),
+  botTaskMaxS: positive(),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;

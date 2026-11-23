@@ -10,6 +10,7 @@ import { areaContains, sampleUniform } from './sampling';
 import {
   compassSectionOf,
   frameRegion,
+  pointInSection,
   type Region,
   SECTION_IDS,
   sectionInFrame,
@@ -262,5 +263,33 @@ describe('odd shapes (a no-go zone can punch holes or split a region)', () => {
     // Along the strip the compass says E / W, far from the centre disc.
     expect(sectionInFrame(offsetByMeters(strip.origin, 200, 0), strip, RATIO)).toBe('E');
     expect(sectionInFrame(offsetByMeters(strip.origin, -200, 0), strip, RATIO)).toBe('W');
+  });
+});
+
+describe('pointInSection', () => {
+  it('finds a spot that sectionOf puts in the section, for every roomy section of a region', () => {
+    const regions = [squareRegion('r1', 200, 0, 0)];
+    const shapes = sectionShapes(regions[0] as Region, RATIO);
+    const roomy = shapes.filter((s) => s.areaM2 > DEFAULT_CONFIG.minSectionAreaM2);
+    expect(roomy.length).toBeGreaterThan(4);
+    for (const shape of roomy) {
+      const spot = pointInSection(
+        regions,
+        { regionId: 'r1', section: shape.id },
+        RATIO,
+        createRng(5),
+      );
+      expect(spot).toBeDefined();
+      expect(sectionOf(spot as LatLng, regions, RATIO)).toEqual({
+        regionId: 'r1',
+        section: shape.id,
+      });
+    }
+  });
+
+  it('is undefined for an unknown region', () => {
+    expect(
+      pointInSection([], { regionId: 'x', section: 'N' }, RATIO, createRng(1)),
+    ).toBeUndefined();
   });
 });

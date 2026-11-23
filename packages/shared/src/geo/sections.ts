@@ -3,7 +3,7 @@
  * origin (its pole of inaccessibility) and radius ρ, so "North-East of Region A"
  * is measured from Region A, never from the whole map.
  */
-import { createRng } from '../rng';
+import { createRng, type Rng } from '../rng';
 import { bearingDeg, distanceM } from './distance';
 import {
   differenceAreas,
@@ -24,6 +24,8 @@ export type CompassSection = (typeof COMPASS_SECTIONS)[number];
 export const SECTION_IDS = [...COMPASS_SECTIONS, 'C'] as const;
 export type SectionId = (typeof SECTION_IDS)[number];
 
+/** Candidates drawn when looking for a spot inside a section. */
+const SPOT_SAMPLES = 40;
 const FULL_TURN = 360;
 const SECTION_ARC_DEG = FULL_TURN / COMPASS_SECTIONS.length;
 const HALF_ARC_DEG = SECTION_ARC_DEG / 2;
@@ -171,4 +173,25 @@ export function sectionShapes(region: Region, centreRatio: number): SectionShape
     };
   });
   return shapes;
+}
+
+/**
+ * A spot inside one section of a region, as a player would find it by following the
+ * map highlight (the polygons are public). The spot is checked with `sectionOf`, the
+ * rule the server uses, so it never sits on the sliver where the two disagree.
+ * Used by the bots, the tests and the end-to-end specs. `undefined` if the section is empty.
+ */
+export function pointInSection(
+  regions: readonly Region[],
+  target: SectionPlace,
+  centreRatio: number,
+  rng: Rng,
+): LatLng | undefined {
+  const region = regions.find((r) => r.id === target.regionId);
+  const shape = region && sectionShapes(region, centreRatio).find((s) => s.id === target.section);
+  if (!shape) return undefined;
+  return sampleUniform(shape.area, rng, SPOT_SAMPLES).find((p) => {
+    const place = sectionOf(p, regions, centreRatio);
+    return place?.regionId === target.regionId && place.section === target.section;
+  });
 }

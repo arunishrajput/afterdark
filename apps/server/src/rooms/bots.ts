@@ -3,7 +3,10 @@
  * ordinary player in the room state, driven by the same commands a socket
  * client would cause (`join`, `locUpdate`, `setReady`), so it goes through the
  * real engine. It has no socket, hence no views. Movement is the shared
- * `BotWalker`, the same code the bot CLI uses.
+ * `BotWalker`, the same code the bot CLI uses. A crew bot also does tasks (Phase 5):
+ * it walks to its first task's pin (it reads the pin from the room state, as test
+ * tooling may), opens the task there, waits `botTaskMinS`–`botTaskMaxS` seconds and
+ * finishes it with the test-mode shortcut.
  */
 import {
   BotWalker,
@@ -22,10 +25,13 @@ import type { Room } from './Room';
 const BOT_ACCURACY_M = 5;
 /** Bots start scattered this far around the Base. */
 const START_SCATTER_M = 10;
+const MS_PER_S = 1000;
 
 interface Bot {
   walker: BotWalker;
   rng: Rng;
+  /** Real ms when this bot finishes the task it has open. */
+  doneAt?: number;
 }
 
 export class BotDriver {
@@ -96,7 +102,11 @@ export class BotDriver {
       const bot = this.walkerFor(state, p);
       if (!bot) continue;
       const spawn = state.phase === 'spawning' && p.spawn && !p.spawn.reached ? p.spawn : undefined;
-      bot.walker.step(spawn);
+      const task = state.phase === 'playing' ? p.tasks?.[0] : undefined;
+      // At a revealed pin the bot stays put to work; before that it heads for the task.
+      const working = task?.stage === 'pin' && task.atPin;
+      if (working) bot.walker.stay();
+      else bot.walker.step(spawn ?? (task ? { lat: task.lat, lng: task.lng } : undefined));
       const at = bot.walker.fix();
       this.room.dispatch({
         type: 'locUpdate',
@@ -107,6 +117,26 @@ export class BotDriver {
       if (state.phase === 'lobby' && fresh && !fresh.ready) {
         this.room.dispatch({ type: 'setReady', playerId: p.id, ready: true });
       }
+      if (fresh) this.work(bot, fresh, now);
+    }
+  }
+
+  /** Open the task at the pin, then finish it after a random wait. */
+  private work(bot: Bot, p: PlayerState, now: number): void {
+    const task = p.tasks?.[0];
+    if (!task || this.room.state.phase !== 'playing') return;
+    if (!task.open) {
+      if (task.stage !== 'pin' || !task.atPin) return;
+      const res = this.room.dispatch({ type: 'taskOpen', playerId: p.id, taskId: task.id });
+      if (!res.ok) return;
+      const { botTaskMinS, botTaskMaxS } = this.room.state.config;
+      const waitS = botTaskMinS + bot.rng.next() * (botTaskMaxS - botTaskMinS);
+      bot.doneAt = now + waitS * MS_PER_S;
+      return;
+    }
+    if (bot.doneAt !== undefined && now >= bot.doneAt) {
+      const res = this.room.dispatch({ type: 'devAutoComplete', playerId: p.id, taskId: task.id });
+      if (res.ok) delete bot.doneAt;
     }
   }
 }

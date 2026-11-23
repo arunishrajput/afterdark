@@ -57,12 +57,17 @@ export class BotWalker {
     return this.o.home;
   }
 
-  /** Advance one `botStepS`. `spawn` is where the bot has been told to go (while it has not reached it); otherwise it wanders. */
-  step(spawn: LatLng | undefined): LatLng {
-    if (spawn) this.goal = spawn;
+  /** Advance one `botStepS`. `target` is where the bot has been told to go (a spawn, a task spot); without one it wanders. */
+  step(target: LatLng | undefined): LatLng {
+    if (target) this.goal = target;
     else if (!this.goal || distanceM(this.pos, this.goal) < 1) this.goal = this.wanderTarget();
     const stepM = this.o.config.botSpeedMps * this.o.config.botStepS * (this.o.speedFactor ?? 1);
     this.pos = stepToward(this.pos, this.goal, stepM);
+    return this.pos;
+  }
+
+  /** Stand still for one step (a bot working on a task at its pin). */
+  stay(): LatLng {
     return this.pos;
   }
 

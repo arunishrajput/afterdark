@@ -283,3 +283,69 @@ describe('tasks over sockets', () => {
     expect(final?.game?.teamScore).toBeGreaterThanOrEqual(40);
   });
 });
+
+describe('bots drive a whole game to a crew win (acceptance)', () => {
+  let ts: TestServer;
+  let human: TestClient;
+  beforeEach(async () => {
+    ts = await startTestServer();
+    human = await openClient(ts.url);
+  });
+  afterEach(async () => {
+    human.close();
+    await ts.close();
+  });
+
+  it('1 human + 7 bots: the crew bots walk to their pins, open and finish tasks until the target is met', async () => {
+    const created = await human.ok('lobby:create', { username: 'Human', ...SAFE });
+    const room = ts.server.rooms.get(created.code);
+    if (!room) throw new Error('no room');
+    const tick = (s = 1) => {
+      ts.clock.now += s * S;
+      room.tick();
+    };
+    await human.ok('lobby:updateConfig', { patch: { testMode: true, targetScore: 40 } });
+    await human.ok('lobby:setBoundary', {
+      boundary: { type: 'circle', center: HOME, radiusM: 250 },
+    });
+    // A faster walk keeps the test short; the server still accepts it (below maxSpeedMps).
+    room.state.config.botSpeedMps = 6;
+    await human.ok('dev:addBots', { count: 7 });
+    await human.waitForView((v) => v.lobby.players.length === 8, '8 players');
+    await human.locate(ts.clock.now);
+    tick();
+    tick();
+    await human.waitForView(
+      (v) => v.lobby.players.filter((p) => p.id !== v.me.id).every((p) => p.ready),
+      'bots ready',
+    );
+    await human.ok('lobby:setReady', { ready: true });
+    tick(DEFAULT_CONFIG.startCountdownS);
+    await human.waitForView((v) => v.lobby.phase === 'spawning', 'spawning');
+    for (let i = 0; i < 3; i++) tick();
+    await human.ok('game:forceStart', {});
+    tick(DEFAULT_CONFIG.roleRevealS);
+    await human.waitForView((v) => v.lobby.phase === 'playing', 'playing');
+
+    const maxTicks = 900;
+    let ticks = 0;
+    while (room.state.phase === 'playing' && ticks < maxTicks) {
+      tick();
+      ticks++;
+    }
+    const final = room.state;
+    expect(final.phase).toBe('ended');
+    expect(final.result).toEqual({ winner: 'crew', reason: 'score' });
+    expect(final.game?.teamScore).toBeGreaterThanOrEqual(40);
+    // Only crew bots earned anything, and imposters never held a task.
+    const bots = final.players.filter((p) => p.bot);
+    expect(bots.filter((p) => p.role === 'imposter').every((p) => p.tasks === undefined)).toBe(
+      true,
+    );
+    expect(bots.filter((p) => p.role === 'crew').some((p) => (p.personalScore ?? 0) > 0)).toBe(
+      true,
+    );
+    const view = await human.waitForView((v) => v.lobby.phase === 'ended', 'ended view');
+    expect(view.game?.result).toEqual({ winner: 'crew', reason: 'score' });
+  }, 60_000);
+});

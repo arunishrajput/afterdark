@@ -171,4 +171,6 @@ export const DEFAULT_CONFIG = {
   botJitterM: 3,
   botStepS: 1,
   botWanderLegM: 60,
+  botTaskMinS: 10,
+  botTaskMaxS: 30,
 } as const satisfies GameConfig;

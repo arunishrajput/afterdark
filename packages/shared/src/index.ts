@@ -43,6 +43,7 @@ export {
   COMPASS_SECTIONS,
   compassSectionOf,
   frameRegion,
+  pointInSection,
   SECTION_IDS,
   sectionInFrame,
   sectionOf,

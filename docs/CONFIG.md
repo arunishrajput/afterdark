@@ -181,3 +181,5 @@ Used by the bot CLI and the in-process bots from `dev:addBots` (TESTING §5, ADR
 | `botJitterM` | 3 | — | 🔒 | GPS noise added to each bot fix (± this many metres). |
 | `botStepS` | 1 | — | 🔒 | Seconds between bot position updates. |
 | `botWanderLegM` | 60 | — | 🔒 | Longest random leg a bot walks while wandering. |
+| `botTaskMinS` | 10 | — | 🔒 | A crew bot at its pin waits at least this long (game-free real seconds) before finishing the task. |
+| `botTaskMaxS` | 30 | — | 🔒 | …and at most this long. |

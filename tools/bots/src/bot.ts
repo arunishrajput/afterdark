@@ -1,7 +1,11 @@
 /**
  * One bot player over a real socket. It uses only the public protocol: join,
- * ready, `loc:update`. In the spawn phase it walks to its own spawn pin, after
- * that it wanders inside the boundary (v1: no tasks, no infecting; Phase 5+).
+ * ready, `loc:update`, tasks. In the spawn phase it walks to its own spawn pin.
+ * In play a crew bot works through its first task card the way a player does: it
+ * finds a spot inside the card's section from the region polygons, holds there until
+ * the pin appears, walks to the pin, opens the task, waits `botTaskMinS`–`botTaskMaxS`
+ * and finishes it with the test-mode shortcut (`dev:autoComplete`). Imposters wander
+ * (no infecting yet: Phase 7+).
  */
 import {
   BotWalker,
@@ -13,8 +17,10 @@ import {
   offsetByMeters,
   type PlayerView,
   pointInRing,
+  pointInSection,
   type Rng,
   type ServerToClientEvents,
+  type TaskCard,
 } from '@afterdark/shared';
 import { io, type Socket } from 'socket.io-client';
 
@@ -44,6 +50,9 @@ export class Bot {
   /** serverTime ≈ Date.now() + offsetMs */
   private offsetMs = 0;
   private lastPhase: string | undefined;
+  /** The card being worked and where its section spot is (found once per card). */
+  private job:
+    { taskId: string; spot: LatLng | undefined; opened?: boolean; doneAt?: number } | undefined;
 
   constructor(private readonly o: BotOptions) {
     this.rng = createRng(hashSeed(`${o.seed}|${o.name}`));
@@ -133,7 +142,43 @@ export class Bot {
     return this.walker;
   }
 
-  /** One tick: move, report the position, and ready up in the lobby. */
+  /** The card to work on and the place to walk to for it, or nothing when the bot is just wandering. */
+  private target(view: PlayerView): { card: TaskCard; goal: LatLng | undefined } | undefined {
+    const card = view.game?.tasks?.[0];
+    if (!card || view.lobby.phase !== 'playing') return undefined;
+    if (this.job?.taskId !== card.id) this.job = { taskId: card.id, spot: undefined };
+    if (card.stage === 'pin') return { card, goal: { lat: card.lat, lng: card.lng } };
+    this.job.spot ??= pointInSection(
+      view.lobby.map.regions,
+      { regionId: card.regionId, section: card.section },
+      DEFAULT_CONFIG.sectionCentreRatio,
+      this.rng,
+    );
+    return { card, goal: this.job.spot };
+  }
+
+  /** At the pin: open the task once, then finish it after a random wait. */
+  private async work(card: TaskCard): Promise<void> {
+    const job = this.job;
+    if (!job || card.stage !== 'pin' || !card.atPin) return;
+    if (!job.opened) {
+      const res = await this.call('task:open', { taskId: card.id });
+      if (!res.ok) return;
+      job.opened = true;
+      const { botTaskMinS, botTaskMaxS } = DEFAULT_CONFIG;
+      const waitS = botTaskMinS + this.rng.next() * (botTaskMaxS - botTaskMinS);
+      job.doneAt = Date.now() + (waitS * MS_PER_S) / this.o.speed;
+      return;
+    }
+    if (job.doneAt !== undefined && Date.now() >= job.doneAt) {
+      const res = await this.call('dev:autoComplete', { taskId: card.id });
+      if (res.ok) this.o.log(`${this.o.name}: finished a task`);
+      else job.opened = false; // reset (for example the bot drifted away): open it again
+      delete job.doneAt;
+    }
+  }
+
+  /** One tick: move, report the position, ready up in the lobby, and work on a task. */
   private async step(): Promise<void> {
     const view = this.view;
     if (!view || view.lobby.phase === 'ended') {
@@ -143,7 +188,12 @@ export class Bot {
     const walker = this.walkerFor(view);
     if (!walker) return;
     const { spawn } = view.me;
-    walker.step(view.lobby.phase === 'spawning' && spawn && !spawn.reached ? spawn : undefined);
+    const work = this.target(view);
+    const working = work?.card.stage === 'pin' && work.card.atPin;
+    if (working) walker.stay();
+    else {
+      walker.step(view.lobby.phase === 'spawning' && spawn && !spawn.reached ? spawn : work?.goal);
+    }
     const at = walker.fix();
     this.socket.emit('loc:update', {
       lat: at.lat,
@@ -154,5 +204,6 @@ export class Bot {
     if (view.lobby.phase === 'lobby' && !view.me.ready && view.me.location?.quality === 'good') {
       await this.call('lobby:setReady', { ready: true });
     }
+    if (work) await this.work(work.card);
   }
 }
