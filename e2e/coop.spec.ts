@@ -31,14 +31,15 @@ const isImposter = async (p: Page) =>
   /IMPOSTER/.test((await p.getByTestId('role-chip').textContent()) ?? '');
 
 /** Stage 1 → 2 → at the pin for `card` (the section highlights are drawn in card order, all cards still at Stage 1). */
+const positionOf = (card: ReturnType<Page['locator']>) =>
+  card.evaluate((el) => Array.from(el.parentElement?.children ?? []).indexOf(el));
+
 async function reachPin(page: Page, card: ReturnType<Page['locator']>) {
   await expect(card).toHaveAttribute('data-stage', 'assigned');
-  const highlight = await card.evaluate((el) =>
-    Array.from(el.parentElement?.children ?? []).indexOf(el),
-  );
+  const highlight = await positionOf(card);
   await simTeleport(page, await spotInHighlight(page, highlight));
   await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 25_000 });
-  await simTeleport(page, await pinPosition(page, 0));
+  await simTeleport(page, await pinPosition(page, highlight));
   await expect(card).toHaveAttribute('data-stage', 'atPin', { timeout: 15_000 });
 }
 
@@ -129,7 +130,7 @@ test('two crew complete a co-op; a camouflaged imposter stands in for a real par
   await reachPin(c, cardC);
   await c.getByTestId('coop-start').click();
   await expect(c.getByTestId('coop-waiting')).toBeVisible();
-  const pin = await pinPosition(c, 0);
+  const pin = await pinPosition(c, await positionOf(cardC));
 
   // The imposter disguises itself: its phone must read as crew.
   await advanceClock(host, ABILITY_WAIT_S);

@@ -214,12 +214,22 @@ interface Actions {
 
 /** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
 export async function setMinigames(page: Page, types: string[]) {
-  const res = await page.evaluate(
-    (t) =>
-      (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devSetMinigames(t),
-    types,
-  );
-  expect(res.ok).toBe(true);
+  // The socket allows a few events a second: a spec that has just saved settings may be told to wait.
+  const TRIES = 4;
+  const BACKOFF_MS = 700;
+  let res: { ok: boolean; code?: string } = { ok: false };
+  for (let i = 0; i < TRIES; i++) {
+    res = await page.evaluate(
+      (t) =>
+        (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devSetMinigames(
+          t,
+        ),
+      types,
+    );
+    if (res.ok || res.code !== 'RATE_LIMITED') break;
+    await page.waitForTimeout(BACKOFF_MS);
+  }
+  expect(res.ok, JSON.stringify(res)).toBe(true);
 }
 
 /** Test hook: jump game time forward (host, test mode, playing): cooldowns and incubation end sooner. */
