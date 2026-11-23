@@ -5,16 +5,22 @@
  */
 import {
   DEFAULT_CONFIG,
+  type EndReason,
   type GameConfig,
   hashSeed,
+  type ImposterClass,
   type LatLng,
   type Phase,
   type Position,
   type Region,
   type Ring,
+  type Role,
   type SectionId,
   type TaskPoint,
+  type Winner,
 } from '@afterdark/shared';
+
+import type { GameClock } from './clock';
 
 /** The latest accepted GPS fix. Positions live in memory only (Invariant 8). */
 export interface StoredFix {
@@ -34,6 +40,21 @@ export interface PendingFix {
   ts: number;
 }
 
+/** A player's own spawn point (RULES §4). `reached` is sticky once a good fix was within `reachRadiusM`. */
+export interface SpawnState {
+  lat: number;
+  lng: number;
+  reached: boolean;
+}
+
+/** Out-of-bounds bookkeeping (RULES §9), on the game clock so a pause freezes it. */
+export interface ZoneState {
+  /** Game ms when the player went out of bounds. */
+  outSince: number;
+  /** Penalty ticks already charged for this stay. */
+  penalties: number;
+}
+
 export interface PlayerState {
   id: string;
   username: string;
@@ -45,6 +66,20 @@ export interface PlayerState {
   left?: true;
   loc?: StoredFix;
   locPending?: PendingFix[];
+  /** Spawn phase onwards. */
+  spawn?: SpawnState;
+  /** Roles are assigned at the reveal (RULES §5). Server-only; views project them per viewer. */
+  role?: Role;
+  tag?: string;
+  /** Imposters only. */
+  classes?: ImposterClass[];
+  personalScore?: number;
+  /**
+   * Infection status (Phase 7 fills it in). It lives in the state from Phase 4 so
+   * the leak tests can prove a crew view looks the same for any status.
+   */
+  infection?: 'exposed' | 'infected';
+  zone?: ZoneState;
 }
 
 /** A region with its compass frame and the area of each of its 9 sections (computed once per layout). */
@@ -76,6 +111,26 @@ export interface MapSetupState {
   nextPointNo: number;
 }
 
+/** The running game (from the role reveal). */
+export interface GameState {
+  clock: GameClock;
+  /** Server ms when the role reveal ends and play begins. */
+  revealEndsAt: number;
+  /** Server ms when roles were assigned: forfeit timers count from here (RULES §10.6). */
+  rolesAssignedAt: number;
+  /** Fixed when roles are assigned; never changes (RULES §12). */
+  originalCrewCount: number;
+  threshold: number;
+  teamScore: number;
+  /** Game-time deadline of the match (`playTimeMin`). */
+  matchEndsAtGameMs: number;
+}
+
+export interface GameResult {
+  winner: Winner;
+  reason: EndReason;
+}
+
 export interface RoomState {
   code: string;
   phase: Phase;
@@ -85,6 +140,12 @@ export interface RoomState {
   players: PlayerState[];
   /** Server ms when the start countdown ends. */
   countdownEndsAt?: number;
+  /** Server ms when the spawn timeout ends (`spawning` only). */
+  spawnEndsAt?: number;
+  /** Roles, tags and classes: from the reveal on. */
+  game?: GameState;
+  /** Set when the room is `ended`. */
+  result?: GameResult;
   /** Server ms since when nobody has been connected (idle cleanup, RULES §3.9). */
   emptySince?: number;
   /** Server-level `ALLOW_TEST_MODE`: may the host enable `testMode`? */
@@ -96,6 +157,11 @@ export interface RoomState {
   regionCounts?: RegionCountSnapshot;
   /** Secret input to the rotating radar aliases. Never put it in a view. */
   radarSalt: string;
+  /**
+   * Secret seed of the spawns and roles. The lobby code is public, so it must not
+   * seed anything secret: this derives from the random room salt (ADR-050).
+   */
+  secretSeed: number;
 }
 
 export interface CreateRoomInput {
@@ -125,5 +191,6 @@ export function createRoomState(input: CreateRoomInput): RoomState {
       nextPointNo: 1,
     },
     radarSalt: input.radarSalt,
+    secretSeed: hashSeed(`game|${input.radarSalt}`),
   };
 }

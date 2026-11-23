@@ -81,7 +81,7 @@ describe('lobby:setBoundary (RULES §3.4, MAP_AND_REGIONS §1)', () => {
 
   it('only in the lobby', () => {
     const s = lobby();
-    s.phase = 'starting';
+    s.phase = 'spawning';
     const res = reduce(s, { type: 'setBoundary', playerId: 'host', boundary: circle(100) }, T0);
     expect(res).toMatchObject({ ok: false, code: 'WRONG_PHASE' });
   });

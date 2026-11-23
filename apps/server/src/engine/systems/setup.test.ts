@@ -163,7 +163,7 @@ describe('lobby:regenerateRegions', () => {
     );
     const regen: Command = { type: 'regenerateRegions', playerId: 'host', input: {} };
     expect(fail(reduce(lobby(), regen, T0)).code).toBe('INVALID_PAYLOAD'); // no boundary yet
-    expect(fail(reduce({ ...s, phase: 'starting' }, regen, T0)).code).toBe('WRONG_PHASE');
+    expect(fail(reduce({ ...s, phase: 'spawning' }, regen, T0)).code).toBe('WRONG_PHASE');
   });
 });
 

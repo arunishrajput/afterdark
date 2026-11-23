@@ -209,7 +209,7 @@ describe('leak: setup, region counts and the task pool (Phase 3)', () => {
 
   it('the task pool is hidden once the lobby is over (the pin points are secret during play)', () => {
     const started = structuredClone(state);
-    started.phase = 'starting';
+    started.phase = 'spawning';
     for (const p of started.players) {
       expect(projectView(started, p.id, NOW).lobby.map.taskPoints).toEqual([]);
     }

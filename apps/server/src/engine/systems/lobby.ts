@@ -14,6 +14,7 @@ import { type Effect, RuleError } from '../types';
 import { requireGoodFix } from './location';
 import { findPlayer } from './players';
 import { relayoutAfterConfig, setupSummaryOf } from './setup';
+import { beginSpawning } from './spawn';
 
 const MS_PER_S = 1000;
 
@@ -153,15 +154,15 @@ export function disconnect(state: RoomState, playerId: string, now: number): voi
   updateEmptySince(state, now);
 }
 
-/** Tick: countdown expiry and host hand-over after `hostDisconnectGraceS`. */
-export function tickLobby(state: RoomState, now: number): void {
+/** Tick: countdown expiry (→ spawning) and host hand-over after `hostDisconnectGraceS`, in the lobby and in a game (E31). */
+export function tickLobby(state: RoomState, now: number, effects: Effect[]): void {
   if (
     state.phase === 'lobby' &&
     state.countdownEndsAt !== undefined &&
     now >= state.countdownEndsAt
   ) {
     delete state.countdownEndsAt;
-    state.phase = 'starting';
+    beginSpawning(state, now, effects);
   }
   const host = state.players.find((p) => p.id === state.hostId);
   const graceMs = state.config.hostDisconnectGraceS * MS_PER_S;

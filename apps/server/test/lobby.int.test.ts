@@ -75,7 +75,7 @@ describe('lobby: 8 players over sockets', () => {
     what: string,
   ) => Promise.all(members.map((m) => m.client.waitForView(pred, `${m.name}: ${what}`)));
 
-  it('create → join ×7 → all ready → countdown → starting; reconnect keeps identity; host hands over', async () => {
+  it('create → join ×7 → all ready → countdown → spawning; reconnect keeps identity; host hands over', async () => {
     const { code, members } = await lobbyOf(8);
     const [host, ...guests] = members as [Member, ...Member[]];
 
@@ -123,11 +123,11 @@ describe('lobby: 8 players over sockets', () => {
     dropper.client = back;
     await back.ok('lobby:setReady', { ready: true });
 
-    // Countdown restarts and expires on the next tick → placeholder `starting` phase.
+    // Countdown restarts and expires on the next tick → the spawn phase.
     await everyoneSees(members, (v) => v.lobby.countdownEndsAt !== undefined, 'countdown again');
     ts.clock.now += COUNTDOWN_MS;
     ts.server.rooms.get(code)?.tick();
-    await everyoneSees(members, (v) => v.lobby.phase === 'starting', 'starting');
+    await everyoneSees(members, (v) => v.lobby.phase === 'spawning', 'spawning');
     const late = await open();
     expect(errorCode(await late.call('lobby:join', { code, username: 'Late', ...SAFE }))).toBe(
       'GAME_IN_PROGRESS',

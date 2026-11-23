@@ -1,5 +1,7 @@
 /** `reduce(state, cmd, now)`: the single entry point for player commands. Pure. */
 import type { RoomState } from './state';
+import * as control from './systems/control';
+import { advance } from './systems/game';
 import * as lobby from './systems/lobby';
 import * as location from './systems/location';
 import * as map from './systems/map';
@@ -8,7 +10,22 @@ import { type Command, type Effect, type ReduceResult, RuleError } from './types
 
 export type { ReduceResult } from './types';
 
+/** While the host has paused the game only these work (RULES §11): location, connection, leaving, and the host's own controls. */
+const ALLOWED_WHILE_PAUSED: ReadonlySet<Command['type']> = new Set([
+  'locUpdate',
+  'teleport',
+  'connect',
+  'disconnect',
+  'leave',
+  'pause',
+  'resume',
+  'abort',
+]);
+
 export function reduce(state: RoomState, cmd: Command, now: number): ReduceResult {
+  if (state.game?.clock.reasons.includes('host') && !ALLOWED_WHILE_PAUSED.has(cmd.type)) {
+    return { ok: false, code: 'PAUSED', message: 'The host has paused the game' };
+  }
   const draft = structuredClone(state);
   const effects: Effect[] = [];
   try {
@@ -58,11 +75,24 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
       case 'setBase':
         setup.setBase(draft, cmd.playerId, cmd.base, effects);
         break;
+      case 'forceStart':
+        control.forceStart(draft, cmd.playerId, now, effects);
+        break;
+      case 'pause':
+        control.pause(draft, cmd.playerId, now, effects);
+        break;
+      case 'resume':
+        control.resume(draft, cmd.playerId, now, effects);
+        break;
+      case 'abort':
+        control.abort(draft, cmd.playerId, effects);
+        break;
     }
   } catch (err) {
     if (err instanceof RuleError) return { ok: false, code: err.code, message: err.message };
     throw err;
   }
+  advance(draft, now, effects);
   lobby.evaluateCountdown(draft, now, effects);
   return { ok: true, state: draft, effects };
 }

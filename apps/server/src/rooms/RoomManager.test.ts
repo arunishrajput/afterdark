@@ -106,7 +106,7 @@ describe('Room', () => {
     expect(room.state.countdownEndsAt).toBe(T0 + COUNTDOWN_MS);
     advance(COUNTDOWN_MS);
     vi.advanceTimersByTime(DEFAULT_CONFIG.tickIntervalMs);
-    expect(room.state.phase).toBe('starting');
+    expect(room.state.phase).toBe('spawning');
     mgr.closeAll();
   });
 });

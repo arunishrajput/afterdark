@@ -102,7 +102,7 @@ describe('join (RULES §3.2–3.3)', () => {
   });
 
   it('is closed once the game is starting', () => {
-    const s: RoomState = { ...lobbyWith(3), phase: 'starting' };
+    const s: RoomState = { ...lobbyWith(3), phase: 'spawning' };
     expect(errCode(reduce(s, { type: 'join', playerId: 'x', username: 'Late' }, T0))).toBe(
       'GAME_IN_PROGRESS',
     );
@@ -157,11 +157,11 @@ describe('ready and the start countdown (RULES §3.7)', () => {
     expect(res.state.countdownEndsAt).toBeUndefined();
   });
 
-  it('moves to the placeholder `starting` phase when it expires', () => {
+  it('moves to the spawn phase when it expires', () => {
     const started = readyAll(lobbyWith(3)).state;
     expect(tick(started, T0 + COUNTDOWN_MS - 1).state.phase).toBe('lobby');
     const done = tick(started, T0 + COUNTDOWN_MS);
-    expect(done.state.phase).toBe('starting');
+    expect(done.state.phase).toBe('spawning');
     expect(done.state.countdownEndsAt).toBeUndefined();
   });
 
@@ -169,7 +169,7 @@ describe('ready and the start countdown (RULES §3.7)', () => {
     const s = lobbyWith(1);
     const res = ok(reduce(s, { type: 'setReady', playerId: 'p1', ready: false }, T0));
     expect(res.effects).toEqual([]);
-    const starting: RoomState = { ...s, phase: 'starting' };
+    const starting: RoomState = { ...s, phase: 'spawning' };
     expect(errCode(reduce(starting, { type: 'setReady', playerId: 'p1', ready: true }, T0))).toBe(
       'WRONG_PHASE',
     );
@@ -236,7 +236,7 @@ describe('updateConfig (RULES §3.6)', () => {
   });
 
   it('is only possible in the lobby', () => {
-    const s: RoomState = { ...lobbyWith(1), phase: 'starting' };
+    const s: RoomState = { ...lobbyWith(1), phase: 'spawning' };
     const res = reduce(
       s,
       { type: 'updateConfig', playerId: 'host', patch: { targetScore: 50 } },
@@ -283,7 +283,7 @@ describe('leave and host hand-over (RULES §3.8)', () => {
   });
 
   it('outside the lobby, leaving marks a permanent disconnect instead of removing', () => {
-    const s: RoomState = { ...lobbyWith(3), phase: 'starting' };
+    const s: RoomState = { ...lobbyWith(3), phase: 'spawning' };
     const res = ok(reduce(s, { type: 'leave', playerId: 'p1' }, T0));
     expect(player(res.state, 'p1')).toMatchObject({ connected: false, left: true });
     expect(res.effects).toContainEqual({ kind: 'removed', playerId: 'p1', reason: 'left' });
@@ -295,7 +295,7 @@ describe('kick (RULES §3.8)', () => {
     expect(
       errCode(reduce(lobbyWith(2), { type: 'kick', playerId: 'p1', targetId: 'p2' }, T0)),
     ).toBe('NOT_HOST');
-    const starting: RoomState = { ...lobbyWith(2), phase: 'starting' };
+    const starting: RoomState = { ...lobbyWith(2), phase: 'spawning' };
     expect(errCode(reduce(starting, { type: 'kick', playerId: 'host', targetId: 'p2' }, T0))).toBe(
       'WRONG_PHASE',
     );

@@ -7,3 +7,7 @@ export function findPlayer(state: RoomState, playerId: string): PlayerState {
   if (!p) throw new RuleError('NOT_FOUND', 'Player not in this lobby');
   return p;
 }
+
+/** Players still in the game: not left. (Spectators join this filter in Phase 8.) */
+export const activePlayers = (state: RoomState): PlayerState[] =>
+  state.players.filter((p) => !p.left);

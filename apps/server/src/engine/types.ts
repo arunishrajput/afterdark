@@ -29,7 +29,11 @@ export type Command =
   | { type: 'renameRegion'; playerId: string; regionId: string; name: string }
   | { type: 'editTaskPoints'; playerId: string; input: LobbyEditTaskPointsPayload }
   | { type: 'setNoGoZones'; playerId: string; zones: Position[][] }
-  | { type: 'setBase'; playerId: string; base: LatLng };
+  | { type: 'setBase'; playerId: string; base: LatLng }
+  | { type: 'forceStart'; playerId: string }
+  | { type: 'pause'; playerId: string }
+  | { type: 'resume'; playerId: string }
+  | { type: 'abort'; playerId: string };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =
