@@ -51,7 +51,7 @@ You should see **AfterDark · Connected ✓** with a ping in milliseconds.
 ## Deploying
 AfterDark is one Node process: it serves the built client and the Socket.IO server on the same port, so there is no CORS and HTTPS/WSS comes from the host. It deploys to [Render](https://render.com) from [`render.yaml`](render.yaml) (free plan, region `singapore`, auto-deploy on every push to `main`).
 
-**Live URL:** _not deployed yet: see PROGRESS.md › Manual actions_
+**Live URL:** <https://afterdark-24gx.onrender.com>
 
 | | |
 |---|---|

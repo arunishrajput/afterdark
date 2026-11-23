@@ -10,7 +10,9 @@ import { lobbyWithBots, newPlayer, startAndReveal } from './helpers';
  */
 const BASE_URL = process.env.BASE_URL;
 test.skip(!BASE_URL, 'set BASE_URL to run the production smoke test');
-test.describe.configure({ timeout: 240_000 });
+// Retries: a free-tier instance behind Render's edge and a home network occasionally reset a connection
+// or answer a beat late (seen: ECONNRESET on /health, the map taking over 5 s to centre).
+test.describe.configure({ timeout: 240_000, retries: 2 });
 
 const COLD_START_MS = 120_000;
 const BOTS = 3;

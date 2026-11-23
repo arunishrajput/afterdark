@@ -109,6 +109,7 @@ Manifest: name "AfterDark", standalone, portrait, dark theme colour, maskable ic
 - **Render web service:** `pnpm install --frozen-lockfile && pnpm build`, then `node apps/server/dist/index.js`. The server serves `apps/client/dist` and Socket.IO on the same port.
 - **Health check:** `/health`. `/version` returns the git SHA.
 - **Env:** `PORT`, `NODE_ENV`, `LOG_LEVEL`, `ALLOW_TEST_MODE`, `PUBLIC_URL`.
+- **Blueprint:** `render.yaml` (free plan, region `singapore`, `autoDeployTrigger: commit`, Node from `.nvmrc`, pnpm via `corepack enable`). The server serves `apps/client/dist` only when `NODE_ENV=production`. Helmet CSP, compression and cache rules live in `apps/server/src/web.ts`; the WebSocket accepts only a same-origin `Origin`. On SIGTERM the server sends `server:shutdown`, waits `shutdownNoticeMs`, then closes (ADR-065, ADR-066).
 - **Single instance**, because state is in memory. Scaling out would need sticky sessions plus shared state, which is out of scope.
 
 ## 10. Security model (summary)

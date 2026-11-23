@@ -34,8 +34,8 @@
   - env: `NODE_ENV=production`, `LOG_LEVEL=info`, `ALLOW_TEST_MODE=true` (needed for demos)
   - auto-deploy on
 - [x] **06.4 Observability, minimal:** pino JSON logs including room code, event type and duration (never coordinates or tokens); request logging for HTTP; an error boundary per room so an exception in one room's tick is logged and contained without crashing the process. Add a test.
-- [ ] **06.5 Hand-off to the human:** commit and push, then **stop and ask** the human to do the MANUAL_SETUP Phase 6 steps 1–4 and paste back the service URL. Use AskUserQuestion, or write the steps to PROGRESS.md and wait.
-- [ ] **06.6 Production smoke test:** create `e2e/prod-smoke.spec.ts`, parameterised by `BASE_URL`. It checks:
+- [x] **06.5 Hand-off to the human:** commit and push, then **stop and ask** the human to do the MANUAL_SETUP Phase 6 steps 1–4 and paste back the service URL. Use AskUserQuestion, or write the steps to PROGRESS.md and wait.
+- [x] **06.6 Production smoke test:** create `e2e/prod-smoke.spec.ts`, parameterised by `BASE_URL`. It checks:
   - `/health` and `/version`
   - the page loads and shows "Connected ✓"
   - creating a lobby in testMode, then `dev:addBots` (3 bots), reaches the playing HUD
@@ -43,7 +43,7 @@
   Run it against the Render URL and record the result.
 - [x] **06.7 README:** deployment section, the live URL, and the cold-start note.
 - [x] **06.8 Field test kit:** make sure the Lobby shows the app version (short SHA) so field notes can be matched to a build. Pre-fill a PROGRESS.md "Field-test notes" template from TESTING §6.
-- [ ] **06.9 Wrap up.** PROGRESS (URL, smoke result, field-test request). Commit, tag, push. Remind the human to run the field test before the next session if they can; it is not blocking.
+- [x] **06.9 Wrap up.** PROGRESS (URL, smoke result, field-test request). Commit, tag, push. Remind the human to run the field test before the next session if they can; it is not blocking.
 
 ## Acceptance criteria
 - A public HTTPS URL serves the app. WebSockets connect over WSS.
