@@ -7,19 +7,23 @@ import type { GameEvent } from '@afterdark/shared';
 
 const BUZZ_REVEAL_MS = [120, 60, 120];
 const BUZZ_ARRIVE_MS = [200, 80, 200, 80, 300];
-const CHIME_HZ = { revealed: 660, atPin: 880, done: 1040 } as const;
+const BUZZ_COMPROMISED_MS = [60, 40, 60, 40, 220];
+const BUZZ_EXPOSED_MS = [250];
+const BUZZ_FAILED_MS = [100, 50, 100];
+const CHIME_HZ = { revealed: 660, atPin: 880, done: 1040, glitch: 180, exposed: 520 } as const;
 const CHIME_S = 0.18;
 const CHIME_GAIN = 0.08;
 
 let audio: AudioContext | undefined;
 
-function chime(hz: number): void {
+function chime(hz: number, wave: OscillatorType = 'sine'): void {
   try {
     audio ??= new AudioContext();
     const ctx = audio;
     if (ctx.state === 'suspended') void ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    osc.type = wave;
     osc.frequency.value = hz;
     gain.gain.setValueAtTime(CHIME_GAIN, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + CHIME_S);
@@ -31,7 +35,7 @@ function chime(hz: number): void {
   }
 }
 
-function buzz(pattern: number[]): void {
+export function buzz(pattern: number[]): void {
   try {
     navigator.vibrate?.(pattern);
   } catch {
@@ -52,6 +56,18 @@ export function playCue(event: GameEvent): void {
       break;
     case 'task.completed':
       chime(CHIME_HZ.done);
+      break;
+    case 'game.compromised':
+      // Everyone hears it (the boxes are public), and nothing says who.
+      buzz(BUZZ_COMPROMISED_MS);
+      chime(CHIME_HZ.glitch, 'sawtooth');
+      break;
+    case 'infect.completed':
+      buzz(BUZZ_EXPOSED_MS);
+      chime(CHIME_HZ.exposed, 'triangle');
+      break;
+    case 'infect.failed':
+      buzz(BUZZ_FAILED_MS);
       break;
     default:
       break;

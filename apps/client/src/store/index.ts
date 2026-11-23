@@ -94,6 +94,12 @@ const TASK_RESET_COPY = {
   connection: 'Connection lost. The task was reset.',
 } as const;
 
+const INFECT_FAILED_COPY = {
+  range: 'Infect failed: you moved apart. No cooldown.',
+  target: 'Infect failed: that player is no longer a target. No cooldown.',
+  meeting: 'Infect cancelled by the meeting. No cooldown.',
+} as const;
+
 /** Toast copy for server events (UI_UX §4: short and imperative). */
 export function toastFor(event: GameEvent): string | undefined {
   switch (event.type) {
@@ -123,6 +129,12 @@ export function toastFor(event: GameEvent): string | undefined {
       return 'You are at the pin';
     case 'task.completed':
       return undefined; // the +N float shows it
+    case 'game.compromised':
+      return 'Someone has been compromised';
+    case 'infect.completed':
+      return 'Exposed. Walk away to start the incubation.';
+    case 'infect.failed':
+      return INFECT_FAILED_COPY[event.reason];
     case 'lobby.countdown':
     case 'game.spawnStarted':
     case 'game.rolesRevealed':

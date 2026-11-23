@@ -99,3 +99,10 @@ export const devAutoComplete = (taskId: string) => request('dev:autoComplete', {
 /** Test mode, host, lobby only: limit which minigames new tasks can be (to test one game at a time). */
 export const devSetMinigames = (types: SoloMinigameType[]) =>
   request('dev:setMinigames', { types });
+
+// ── Phase 7: infection (imposters) ──────────────────────────────────────────
+
+/** Starts a channel on the nearest healthy crew member within range; the server picks the target. */
+export const startInfect = () => request('ability:infect', {});
+/** Stops a channel. Free: no cooldown. */
+export const cancelInfect = () => request('ability:cancelInfect', {});

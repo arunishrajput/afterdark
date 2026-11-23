@@ -136,6 +136,17 @@ textarea {
   background: var(--accent);
   box-shadow: 0 0 10px var(--accent);
 }
+/* Imposter-only marks: hollow dashed ring = exposed (incubating), solid green with a dark core = infected. Shape differs, not just colour. */
+.radar-dot--exposed {
+  background: transparent;
+  border: 2px dashed var(--infected);
+  box-shadow: 0 0 8px var(--infected);
+}
+.radar-dot--infected {
+  background: var(--infected);
+  border: 3px solid rgb(0 0 0 / 0.75);
+  box-shadow: 0 0 12px var(--infected);
+}
 .radar-dot--stale {
   opacity: 0.4;
   box-shadow: none;
@@ -339,5 +350,42 @@ textarea {
   }
   75% {
     transform: translateX(6px);
+  }
+}
+
+/* The infection box that just filled: a short glitch (UI_UX §3). */
+.box-glitch {
+  animation: box-glitch 0.9s steps(2, end);
+}
+@keyframes box-glitch {
+  0% {
+    transform: translate(0, 0) scale(1.6);
+    filter: hue-rotate(90deg) brightness(2);
+  }
+  20% {
+    transform: translate(-3px, 1px) scale(1.3);
+  }
+  40% {
+    transform: translate(3px, -1px) scale(1.5);
+    filter: hue-rotate(-60deg) brightness(1.6);
+  }
+  60% {
+    transform: translate(-2px, 0) scale(1.2);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    filter: none;
+  }
+}
+
+/* Infect is ready and someone is in range. */
+.infect-pulse {
+  animation: infect-pulse 1.1s ease-in-out infinite;
+}
+@keyframes infect-pulse {
+  50% {
+    box-shadow:
+      0 0 0 10px transparent,
+      0 0 28px var(--accent-glow);
   }
 }

@@ -8,6 +8,7 @@ import { formatClock } from './format';
 const TIMER_REFRESH_MS = 250;
 const PERCENT = 100;
 const SCORE_FLOAT_MS = 1300;
+const GLITCH_MS = 900;
 
 /** Remaining game time from the server's clock pair; frozen while `pausedAt` is set. */
 export function MatchTimer({
@@ -45,6 +46,17 @@ export function InfectionBoxes({
   compromised: number;
   threshold: number;
 }) {
+  // Boxes that filled since the last render glitch for a moment.
+  const prev = useRef(compromised);
+  const [glitch, setGlitch] = useState<{ from: number; to: number } | undefined>();
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = compromised;
+    if (compromised <= from) return;
+    setGlitch({ from, to: compromised });
+    const t = setTimeout(() => setGlitch(undefined), GLITCH_MS);
+    return () => clearTimeout(t);
+  }, [compromised]);
   return (
     <div
       role="img"
@@ -56,13 +68,15 @@ export function InfectionBoxes({
         <span key={i} className="flex items-center">
           <span
             data-filled={i < compromised}
-            className="size-3.5 rounded-[3px] border border-white/30 bg-transparent transition-colors duration-150 data-[filled=true]:border-danger data-[filled=true]:bg-danger"
+            className={`size-3.5 rounded-[3px] border border-white/30 bg-transparent transition-colors duration-150 data-[filled=true]:border-danger data-[filled=true]:bg-danger ${
+              glitch !== undefined && i >= glitch.from && i < glitch.to ? 'box-glitch' : ''
+            }`}
           />
           {i + 1 === threshold && (
             <span
               data-testid="infection-notch"
               aria-hidden="true"
-              className="mx-1 h-5 w-0.5 rounded-full bg-text/70"
+              className="mx-1.5 h-6 w-[3px] rounded-full bg-text shadow-[0_0_8px_var(--accent-glow)]"
             />
           )}
           {i + 1 !== threshold && i + 1 < crewCount && <span className="w-1" />}

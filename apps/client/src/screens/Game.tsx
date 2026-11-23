@@ -10,6 +10,7 @@ import {
   TeamScoreBar,
   ZoneGlow,
 } from '../components/game/Hud';
+import { ImposterPanel } from '../components/game/ImposterPanel';
 import { TaskPanel } from '../components/game/TaskPanel';
 import { TaskPlayer } from '../components/game/TaskPlayer';
 import { useSelfPosition } from '../hooks/useSelfPosition';
@@ -20,7 +21,7 @@ const CLASS_NAMES = { saboteur: 'Saboteur', phantom: 'Phantom', camouflage: 'Cam
 
 /**
  * The game HUD (UI_UX §2–§3): timer, infection boxes, team score, the map, the
- * zone banner and edge glow, and the menu. Tasks and abilities arrive in later phases.
+ * zone banner and edge glow, and the menu. Crew get task cards; imposters get the Infect bar.
  */
 export function Game({ view }: { view: PlayerView }) {
   const { me, game, lobby } = view;
@@ -84,6 +85,7 @@ export function Game({ view }: { view: PlayerView }) {
           onStart={(card: TaskCard) => setPlaying(card)}
         />
       )}
+      {me.role === 'imposter' && imposter && <ImposterPanel view={view} />}
       {playing && <TaskPlayer card={playing} onClose={() => setPlaying(undefined)} />}
 
       <section

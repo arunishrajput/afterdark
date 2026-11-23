@@ -12,6 +12,7 @@ import { SessionRegistry } from '../rooms/sessions';
 import type { ViewEmitter } from '../rooms/ViewEmitter';
 import type { GatewayContext } from './context';
 import { validated } from './handler';
+import { registerAbilityHandlers } from './handlers/abilities';
 import { registerGameHandlers } from './handlers/game';
 import { registerLobbyHandlers } from './handlers/lobby';
 import { registerLocationHandlers } from './handlers/location';
@@ -96,6 +97,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     registerSetupHandlers(ctx, socket);
     registerGameHandlers(ctx, socket);
     registerTaskHandlers(ctx, socket);
+    registerAbilityHandlers(ctx, socket);
 
     socket.on('disconnect', (reason) => {
       logger.debug({ socketId: socket.id, reason }, 'socket disconnected');
