@@ -9,6 +9,7 @@ import type {
 } from '@afterdark/shared';
 
 import { useGame } from '../store';
+import { useLocation } from '../store/location';
 import { clearSession, saveSession } from './persist';
 import { request } from './socket';
 
@@ -56,3 +57,22 @@ export const editTaskPoints = (input: LobbyEditTaskPointsPayload) =>
 export const setNoGoZones = (zones: Position[][]) => request('lobby:setNoGoZones', { zones });
 
 export const setBase = (base: LatLng) => request('lobby:setBase', base);
+
+// ── Phase 4: game flow ──────────────────────────────────────────────────────
+
+/** Host, spawn phase only: start the reveal even if someone has not reached their spawn. */
+export const forceStart = () => request('game:forceStart', {});
+export const pauseGame = () => request('game:pause', {});
+export const resumeGame = () => request('game:resume', {});
+/** Ends the game with no winner. */
+export const abortGame = () => request('game:abort', {});
+
+/** Test mode, host, lobby only: add in-process bots (they walk, ready up and play like players). */
+export const addBots = (count: number) => request('dev:addBots', { count });
+
+/** Simulator jump (long-press or marker drag): moves the simulated GPS, then hops there with the test-mode event. */
+export async function simTeleport(to: LatLng) {
+  useLocation.getState().patchSim({ ...to, placed: true });
+  // Walking sends normal fixes; a teleport is a jump the speed check would reject.
+  return devTeleport(to);
+}

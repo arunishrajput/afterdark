@@ -132,6 +132,10 @@ textarea {
   background: var(--danger);
   box-shadow: 0 0 8px var(--danger);
 }
+.radar-dot--ally {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
 .radar-dot--stale {
   opacity: 0.4;
   box-shadow: none;
@@ -228,4 +232,36 @@ textarea {
 }
 .nogo-zone {
   fill: url(#nogo-hatch);
+}
+
+/* Spawn pin and the game's edge glow */
+.spawn-marker {
+  background: none;
+  border: none;
+}
+.spawn-pin {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: #ffd166;
+  color: #0a0c12;
+  border: 3px solid #fff;
+  font-size: 16px;
+  box-shadow: 0 0 0 6px rgb(255 209 102 / 0.28);
+}
+.zone-glow {
+  box-shadow: inset 0 0 70px 14px rgb(255 90 90 / 0.55);
+  animation: zone-pulse 1.6s ease-in-out infinite;
+}
+@keyframes zone-pulse {
+  50% {
+    box-shadow: inset 0 0 90px 22px rgb(255 90 90 / 0.8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone-glow {
+    animation: none;
+  }
 }

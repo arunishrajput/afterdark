@@ -1,6 +1,7 @@
 import type { PlayerView } from '@afterdark/shared';
 import { useCallback, useState } from 'react';
 
+import { AddBots } from '../components/lobby/AddBots';
 import { Checklist } from '../components/lobby/Checklist';
 import { CodeCard } from '../components/lobby/CodeCard';
 import { CountdownOverlay } from '../components/lobby/CountdownOverlay';
@@ -69,6 +70,7 @@ export function Lobby({ view }: { view: PlayerView }) {
         )}
       </section>
 
+      {lobby.testMode && me.isHost && <AddBots playerCount={lobby.players.length} />}
       {lobby.testMode && <SimPanel />}
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-bg/90 backdrop-blur">

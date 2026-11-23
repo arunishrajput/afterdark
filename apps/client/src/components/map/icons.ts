@@ -61,3 +61,13 @@ export function baseIcon(): L.DivIcon {
     iconAnchor: [15, 15],
   });
 }
+
+/** Your own spawn point: a pin with a ring, so it reads as a destination. */
+export function spawnIcon(): L.DivIcon {
+  return L.divIcon({
+    className: 'spawn-marker',
+    html: '<div class="spawn-pin" aria-label="Your spawn point"><span>⚑</span></div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  });
+}

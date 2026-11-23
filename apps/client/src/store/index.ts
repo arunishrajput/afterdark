@@ -78,7 +78,21 @@ export function toastFor(event: GameEvent): string | undefined {
       return 'Settings changed. Everyone is un-readied.';
     case 'lobby.mapChanged':
       return 'Map changed. Everyone is un-readied.';
+    case 'lobby.startFailed':
+      return 'The area is too small to spread everyone out. The host needs to enlarge it.';
+    case 'game.paused':
+      return 'The host paused the game';
+    case 'game.resumed':
+      return 'Game on';
+    case 'zone.warning':
+      return 'Return to the zone';
+    case 'zone.penalty':
+      return `Out of bounds: −${event.points} ${event.points === 1 ? 'point' : 'points'}`;
     case 'lobby.countdown':
-      return undefined; // the countdown overlay shows it
+    case 'game.spawnStarted':
+    case 'game.rolesRevealed':
+    case 'game.playStarted':
+    case 'game.ended':
+      return undefined; // the screens change instead
   }
 }

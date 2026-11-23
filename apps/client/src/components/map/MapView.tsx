@@ -20,7 +20,7 @@ import {
 
 import { BoundaryEditor } from './BoundaryEditor';
 import { ringToLatLngs, toLeaflet, WORLD_RING } from './geo';
-import { dotIcon, selfIcon } from './icons';
+import { dotIcon, selfIcon, spawnIcon } from './icons';
 import { NoGoEditor } from './NoGoEditor';
 import { type MapTool, SetupLayers, type SetupOverlay } from './SetupLayers';
 import { BOUNDARY_STYLE, OUTSIDE_STYLE, TILE_ATTRIBUTION, TILE_URL } from './style';
@@ -58,6 +58,8 @@ export interface MapViewProps {
   onPointTap?: ((id: string) => void) | undefined;
   /** Host: a finished no-go polygon. */
   onNoGoZone?: ((coords: Position[]) => void) | undefined;
+  /** The player's own spawn point (spawn phase). */
+  spawn?: LatLng | undefined;
 }
 
 /** Forwards taps on the bare map to the parent. */
@@ -65,6 +67,8 @@ function MapTaps({ onTap }: { onTap: (at: LatLng) => void }) {
   useMapEvents({ click: (e) => onTap({ lat: e.latlng.lat, lng: e.latlng.lng }) });
   return null;
 }
+
+const spawnPin = spawnIcon();
 
 function boundsOf(ring: Position[]): L.LatLngBounds {
   return L.latLngBounds(ring.map(([lng, lat]) => [lat, lng] as [number, number]));
@@ -221,6 +225,7 @@ export default function MapView({
   onMapTap,
   onPointTap,
   onNoGoZone,
+  spawn,
 }: MapViewProps) {
   const [fitSignal, setFitSignal] = useState(0);
   return (
@@ -282,6 +287,15 @@ export default function MapView({
             keyboard={false}
           />
         ))}
+        {spawn && (
+          <Marker
+            position={toLeaflet(spawn)}
+            icon={spawnPin}
+            zIndexOffset={900}
+            interactive={false}
+            keyboard={false}
+          />
+        )}
         {self && <SelfLayer self={self} onSimMove={onSimMove} />}
         <MapEffects
           ring={ring}
