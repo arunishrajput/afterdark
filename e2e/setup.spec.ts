@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { createLobby, drawCircle, enableTestMode, joinLobby, newPlayer } from './helpers';
+import { createLobby, drawCircle, enableTestMode, joinLobby, mapPoint, newPlayer } from './helpers';
 
 // Four browser contexts and a drawn map: allow more than the 30 s default.
 test.describe.configure({ timeout: 90_000 });
@@ -191,4 +191,42 @@ test('too few task points block the countdown and say exactly what is missing', 
   for (const page of pages) await expect(page.getByTestId('countdown')).toBeVisible();
 
   for (const page of pages) await page.context().close();
+});
+
+test('a no-go zone drawn with the real tool removes the points inside it and can be removed again', async ({
+  browser,
+}) => {
+  const host = await newPlayer(browser);
+  const guest = await newPlayer(browser);
+  const code = await createLobby(host, 'Ann');
+  await enableTestMode(host);
+  await joinLobby(guest, code, 'Bea');
+  await drawCircle(host);
+  await expect(label(host)).toHaveCount(2);
+  const before = await points(host).count();
+  await expect(points(guest)).toHaveCount(before);
+
+  // ④ Draw a rectangle over the middle of the map with Geoman's rectangle tool (two corner clicks).
+  await host.getByTestId('step-nogo').click();
+  await host.getByTestId('map-frame').scrollIntoViewIfNeeded();
+  await host.locator('.leaflet-pm-icon-rectangle').click();
+  const a = await mapPoint(host, -0.0003, 0.0003);
+  const b = await mapPoint(host, 0.0003, -0.0003);
+  await host.mouse.move(a.x, a.y, { steps: 3 });
+  await host.mouse.click(a.x, a.y);
+  await host.mouse.move(b.x, b.y, { steps: 5 });
+  await host.mouse.click(b.x, b.y);
+
+  await expect(host.locator('path.nogo-zone')).toHaveCount(1);
+  await expect(guest.locator('path.nogo-zone')).toHaveCount(1);
+  await expect(host.getByText('No-go zone 1')).toBeVisible();
+  await expect.poll(() => points(host).count()).toBeLessThan(before);
+  await expect(points(guest)).toHaveCount(await points(host).count());
+
+  await host.getByRole('button', { name: 'Remove no-go zone 1' }).click();
+  await expect(host.locator('path.nogo-zone')).toHaveCount(0);
+  await expect(guest.locator('path.nogo-zone')).toHaveCount(0);
+
+  await host.context().close();
+  await guest.context().close();
 });
