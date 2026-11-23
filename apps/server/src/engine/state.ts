@@ -10,6 +10,8 @@ import {
   hashSeed,
   type ImposterClass,
   type LatLng,
+  type MeetingStage,
+  type MeetingTally,
   type Phase,
   type Position,
   type Region,
@@ -166,6 +168,14 @@ export interface PlayerState {
   /** Imposters only, from the role reveal. */
   infect?: InfectState;
   zone?: ZoneState;
+  /** Ejected by a vote (MEETINGS §5): sees public information only, and is nobody's target. */
+  spectator?: true;
+  /** Set with `spectator`: what the ejection revealed. Public from then on (ADR-019). */
+  revealedRole?: Role;
+  /** Crew only: ejected while healthy or exposed, so counted as compromised toward V3 (RULES §8). An infected crew member who is ejected is already counted. */
+  wronglyEjected?: true;
+  /** Meetings this player has called (allowance `meetingsPerPlayer`). */
+  meetingsCalled?: number;
 }
 
 /** A region with its compass frame and the area of each of its 9 sections (computed once per layout). */
@@ -197,6 +207,27 @@ export interface MapSetupState {
   nextPointNo: number;
 }
 
+/** A running meeting (MEETINGS §3). Stage timers are server ms: the meeting is the one thing that runs while game time is stopped. */
+export interface MeetingState {
+  stage: MeetingStage;
+  calledById: string;
+  /** Server ms when the meeting was called (forfeit timers are credited this long). */
+  startedAt: number;
+  /** Server ms when this stage ends if nothing finishes it early. */
+  stageEndsAt: number;
+  /** Server ms when the host paused; present only while paused, so the stage timer can be pushed back on resume. */
+  pausedAt?: number;
+  /** Who has arrived within `baseRadiusM` on a good fix (sticky). */
+  gathered: string[];
+  /** Who tapped "Skip to vote" during Discuss. */
+  skips: string[];
+  /** Cast votes: voter id → candidate id or `'skip'`. Never projected (ROLES.md). */
+  votes: Record<string, string>;
+  /** Set when the vote ends (`result` stage). */
+  tallies?: MeetingTally[];
+  ejectedId?: string;
+}
+
 /** The running game (from the role reveal). */
 export interface GameState {
   clock: GameClock;
@@ -218,6 +249,10 @@ export interface GameState {
   matchEndsAtGameMs: number;
   /** Game ms of the last infection update, to freeze cooldowns while an imposter is out of bounds. */
   lastInfectGameMs: number;
+  /** The meeting in progress, if any. Game time is stopped while it exists. */
+  meeting?: MeetingState;
+  /** Game ms when the last meeting ended (the next one waits `meetingCooldownS`). */
+  lastMeetingEndedGameMs?: number;
 }
 
 export interface GameResult {

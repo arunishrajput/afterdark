@@ -6,6 +6,7 @@ import * as infection from './systems/infection';
 import * as lobby from './systems/lobby';
 import * as location from './systems/location';
 import * as map from './systems/map';
+import * as meetings from './systems/meetings';
 import * as setup from './systems/setup';
 import * as play from './systems/taskPlay';
 import { type Command, type Effect, type ReduceResult, RuleError } from './types';
@@ -113,6 +114,15 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'infectCancel':
         infection.cancelInfect(draft, cmd.playerId);
+        break;
+      case 'meetingCall':
+        meetings.callMeeting(draft, cmd.playerId, now, effects);
+        break;
+      case 'meetingSkipDiscussion':
+        meetings.skipDiscussion(draft, cmd.playerId);
+        break;
+      case 'meetingVote':
+        meetings.castVote(draft, cmd.playerId, cmd.target);
         break;
       case 'devAdvanceClock':
         control.advanceClock(draft, cmd.playerId, cmd.seconds);

@@ -6,6 +6,7 @@ import type { RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { endGame } from './end';
 import { beginReveal } from './game';
+import { holdMeetingTimer, releaseMeetingTimer } from './meetings';
 
 function requireHost(state: RoomState, playerId: string): void {
   if (state.hostId !== playerId) throw new RuleError('NOT_HOST', 'Only the host can do that');
@@ -37,6 +38,7 @@ export function pause(state: RoomState, playerId: string, now: number, effects: 
   const { clock } = requirePlaying(state);
   if (clock.reasons.includes('host')) return;
   pauseClock(clock, 'host', now);
+  holdMeetingTimer(state, now);
   effects.push({ kind: 'event', to: 'all', event: { type: 'game.paused' } });
 }
 
@@ -45,6 +47,7 @@ export function resume(state: RoomState, playerId: string, now: number, effects:
   const { clock } = requirePlaying(state);
   if (!clock.reasons.includes('host')) return;
   resumeClock(clock, 'host', now);
+  releaseMeetingTimer(state, now);
   effects.push({ kind: 'event', to: 'all', event: { type: 'game.resumed' } });
 }
 

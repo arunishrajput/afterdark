@@ -8,6 +8,8 @@ export function findPlayer(state: RoomState, playerId: string): PlayerState {
   return p;
 }
 
-/** Players still in the game: not left. (Spectators join this filter in Phase 8.) */
-export const activePlayers = (state: RoomState): PlayerState[] =>
-  state.players.filter((p) => !p.left);
+/** In the game and able to act: not left and not ejected. */
+export const isActive = (p: PlayerState): boolean => !p.left && !p.spectator;
+
+/** Players still in the game: not left and not ejected (spectators, MEETINGS §5). */
+export const activePlayers = (state: RoomState): PlayerState[] => state.players.filter(isActive);

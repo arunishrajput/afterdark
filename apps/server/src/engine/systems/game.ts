@@ -8,6 +8,7 @@ import type { RoomState } from '../state';
 import type { Effect } from '../types';
 import { endGame } from './end';
 import { updateInfection } from './infection';
+import { updateMeeting } from './meetings';
 import { activePlayers } from './players';
 import { assignRoles } from './roles';
 import { spawnPhaseDone, updateSpawnReach } from './spawn';
@@ -46,6 +47,7 @@ export function advance(state: RoomState, now: number, effects: Effect[]): void 
     beginPlay(state, now, effects);
   }
   if (state.phase === 'playing') {
+    updateMeeting(state, now, effects);
     updateZone(state, now, effects);
     updateInfection(state, now, effects);
     updateTasks(state, now, effects);

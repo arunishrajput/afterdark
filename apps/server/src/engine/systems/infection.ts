@@ -25,7 +25,7 @@ const goodLoc = (state: RoomState, p: PlayerState, now: number): LatLng | undefi
 
 /** Healthy, active crew: the only players who can be exposed (RULES §7.1.5, E7). */
 const isHealthyCrew = (p: PlayerState): boolean =>
-  p.role === 'crew' && !p.left && p.infection === undefined;
+  p.role === 'crew' && !p.left && !p.spectator && p.infection === undefined;
 
 /** Both have a good fix and are within `infectionRadiusM`. */
 function inReach(state: RoomState, imp: PlayerState, target: PlayerState, now: number): boolean {
@@ -34,8 +34,8 @@ function inReach(state: RoomState, imp: PlayerState, target: PlayerState, now: n
   return a !== undefined && b !== undefined && distanceM(a, b) <= state.config.infectionRadiusM;
 }
 
-/** Meetings and the post-meeting grace block Infect (RULES §7.1.7). TODO(phase 08): wire the meeting state in here. */
-const blockedByMeeting = (_state: RoomState): boolean => false;
+/** A running meeting blocks Infect; the post-meeting grace is a cooldown pushed on every imposter when the meeting ends (RULES §7.1.7, `endMeeting`). */
+const blockedByMeeting = (state: RoomState): boolean => state.game?.meeting !== undefined;
 
 /** The closest eligible target: nearest first, join order breaks a tie. */
 function nearestTarget(state: RoomState, imp: PlayerState, now: number): PlayerState | undefined {
@@ -180,7 +180,7 @@ function updateIncubation(state: RoomState, now: number, gameMs: number, effects
     if (target.infection !== 'exposed' || !ex) continue;
     if (ex.incubationEndsAtGameMs === undefined) {
       const by = state.players.find((p) => p.id === ex.byId);
-      const byAt = by && !by.left ? goodLoc(state, by, now) : undefined;
+      const byAt = by && !by.left && !by.spectator ? goodLoc(state, by, now) : undefined;
       const near =
         byAt !== undefined &&
         target.loc !== undefined &&

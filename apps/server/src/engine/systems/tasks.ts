@@ -229,7 +229,7 @@ export function nearTarget(
   return false;
 }
 
-export type ResetReason = 'range' | 'gps' | 'zone' | 'connection';
+export type ResetReason = 'range' | 'gps' | 'zone' | 'connection' | 'meeting';
 
 /** Throws away a minigame in progress (progress resets; reveals and held keys are kept, TASKS §6). */
 export function resetOpen(

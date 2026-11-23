@@ -30,6 +30,7 @@ function resolve(state: RoomState, playerId: string, taskId: string) {
   if (state.phase !== 'playing' || !state.game) {
     throw new RuleError('WRONG_PHASE', 'Tasks are only played while the game is running');
   }
+  if (state.game.meeting) throw new RuleError('MEETING_ACTIVE', 'Not during a meeting');
   const p = findPlayer(state, playerId);
   if (!isTasker(p)) throw new RuleError('NOT_ALLOWED', 'Only crew hold tasks');
   const task = p.tasks?.find((t) => t.id === taskId);
