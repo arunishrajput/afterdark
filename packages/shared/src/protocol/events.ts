@@ -1,14 +1,17 @@
 /** Event names and typed Socket.IO maps (mirrors docs/PROTOCOL.md). */
 import type { KickReason } from '../types/domain';
-import type { GameEvent, PlayerView } from '../types/view';
+import type { GameEvent, PlayerView, RadarPayload } from '../types/view';
 import type {
+  DevTeleportPayload,
   ErrorCode,
   LobbyCreatePayload,
   LobbyJoinPayload,
   LobbyKickPayload,
   LobbyLeavePayload,
+  LobbySetBoundaryPayload,
   LobbySetReadyPayload,
   LobbyUpdateConfigPayload,
+  LocUpdatePayload,
   SessionResumePayload,
   TimePingPayload,
 } from './schemas';
@@ -39,6 +42,10 @@ export interface LobbyJoinAck {
   playerId: string;
 }
 
+export interface LobbySetBoundaryAck {
+  areaM2: number;
+}
+
 export interface ClientToServerEvents {
   'time:ping': (payload: TimePingPayload, ack: AckCallback<TimePingAck>) => void;
   'session:resume': (payload: SessionResumePayload, ack: AckCallback<SessionResumeAck>) => void;
@@ -48,6 +55,13 @@ export interface ClientToServerEvents {
   'lobby:setReady': (payload: LobbySetReadyPayload, ack: AckCallback) => void;
   'lobby:updateConfig': (payload: LobbyUpdateConfigPayload, ack: AckCallback) => void;
   'lobby:kick': (payload: LobbyKickPayload, ack: AckCallback) => void;
+  /** Volatile and fire-and-forget: the client sends it without an ack callback. */
+  'loc:update': (payload: LocUpdatePayload) => void;
+  'lobby:setBoundary': (
+    payload: LobbySetBoundaryPayload,
+    ack: AckCallback<LobbySetBoundaryAck>,
+  ) => void;
+  'dev:teleport': (payload: DevTeleportPayload, ack: AckCallback) => void;
 }
 
 export interface KickedPayload {
@@ -56,6 +70,7 @@ export interface KickedPayload {
 
 export interface ServerToClientEvents {
   view: (view: PlayerView) => void;
+  radar: (payload: RadarPayload) => void;
   event: (event: GameEvent) => void;
   kicked: (payload: KickedPayload) => void;
 }

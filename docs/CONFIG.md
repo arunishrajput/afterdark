@@ -62,6 +62,9 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `staleAfterS` | 10 | — | 🔒 | A fix older than this makes the player *stale*. |
 | `maxSpeedMps` | 12 | — | 🔒 | A faster jump is rejected. The player re-anchors after 3 consistent fixes. |
 | `reanchorFixes` | 3 | — | 🔒 | Consistent fixes needed to re-anchor after a rejected jump. |
+| `futureFixToleranceS` | 5 | — | 🔒 | A fix timestamped further ahead of the server clock than this is rejected. |
+| `speedCheckMinDtS` | 1 | — | 🔒 | The speed check divides by at least this many seconds, so two fixes a few ms apart can't fake a huge speed. |
+| `teleportAccuracyM` | 5 | — | 🔒 | Accuracy given to a `dev:teleport` fix (test mode only). |
 | `locationSendIntervalMs` | 1000 | — | 🔒 | Most frequent rate the client sends updates. |
 | `locationMinMoveM` | 3 | — | 🔒 | The client also sends an update when it has moved this far. |
 | `stationarySendIntervalMs` | 5000 | — | 🔒 | Battery saver used while the player is not moving (Phase 13). |

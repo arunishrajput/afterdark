@@ -1,11 +1,12 @@
 /**
  * When may a lobby start its countdown (RULES §3.7)? Shared so the server
  * engine decides and the client's setup checklist shows the same reasons.
- * Phases 2–3 add location, boundary, Base and task-point blockers.
+ * Phase 2 added the boundary; Phase 3 adds Base and task-point blockers.
  */
 import type { GameConfig } from '../config/schema';
 
-export type StartBlocker = 'notEnoughPlayers' | 'tooManyImposters' | 'notAllReady';
+export type StartBlocker =
+  'notEnoughPlayers' | 'tooManyImposters' | 'boundaryMissing' | 'notAllReady';
 
 type ImposterConfig = Pick<GameConfig, 'imposterCount' | 'imposterCountAuto'>;
 
@@ -21,7 +22,7 @@ export function resolveImposterCount(config: ImposterConfig, playerCount: number
 
 export function startBlockers(
   config: ImposterConfig & Pick<GameConfig, 'minPlayers' | 'minCrewRemaining'>,
-  roster: { playerCount: number; readyCount: number },
+  roster: { playerCount: number; readyCount: number; boundarySet: boolean },
 ): StartBlocker[] {
   const out: StartBlocker[] = [];
   if (roster.playerCount < config.minPlayers) out.push('notEnoughPlayers');
@@ -29,6 +30,7 @@ export function startBlockers(
   if (roster.playerCount >= config.minPlayers && crew < config.minCrewRemaining) {
     out.push('tooManyImposters');
   }
+  if (!roster.boundarySet) out.push('boundaryMissing');
   if (roster.readyCount < roster.playerCount) out.push('notAllReady');
   return out;
 }

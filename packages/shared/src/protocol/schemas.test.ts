@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  devTeleportSchema,
   lobbyCodeSchema,
   lobbyCreateSchema,
   lobbyJoinSchema,
   lobbyKickSchema,
   lobbyLeaveSchema,
+  lobbySetBoundarySchema,
   lobbySetReadySchema,
   lobbyUpdateConfigSchema,
+  locUpdateSchema,
   sessionResumeSchema,
   timePingSchema,
   usernameSchema,
@@ -132,5 +135,70 @@ describe('lobby event payloads', () => {
   it('lobby:kick needs a player id', () => {
     expect(lobbyKickSchema.safeParse({ playerId: 'p'.repeat(16) }).success).toBe(true);
     expect(lobbyKickSchema.safeParse({ playerId: '' }).success).toBe(false);
+  });
+});
+
+describe('Phase 2 schemas', () => {
+  const fix = { lat: 28.6, lng: 77.2, accuracy: 12, ts: 1_700_000_000_000 };
+
+  it('locUpdate accepts a fix and optional heading/speed', () => {
+    expect(locUpdateSchema.safeParse(fix).success).toBe(true);
+    expect(locUpdateSchema.safeParse({ ...fix, heading: 90, speed: 1.4 }).success).toBe(true);
+  });
+
+  it('locUpdate rejects bad coordinates, negative accuracy and unknown keys', () => {
+    for (const bad of [
+      { ...fix, lat: 91 },
+      { ...fix, lng: -181 },
+      { ...fix, accuracy: -1 },
+      { ...fix, ts: Number.NaN },
+      { ...fix, extra: 1 },
+      { ...fix, heading: 400 },
+    ]) {
+      expect(locUpdateSchema.safeParse(bad).success).toBe(false);
+    }
+  });
+
+  it('lobbySetBoundary accepts a polygon or a circle', () => {
+    const poly = {
+      boundary: {
+        type: 'polygon',
+        coords: [
+          [77.2, 28.6],
+          [77.21, 28.6],
+          [77.21, 28.61],
+        ],
+      },
+    };
+    const circle = { boundary: { type: 'circle', center: { lat: 28.6, lng: 77.2 }, radiusM: 100 } };
+    expect(lobbySetBoundarySchema.safeParse(poly).success).toBe(true);
+    expect(lobbySetBoundarySchema.safeParse(circle).success).toBe(true);
+  });
+
+  it('lobbySetBoundary rejects too few / too many points and silly circles', () => {
+    const coords = (n: number) => Array.from({ length: n }, (_, i) => [77 + i * 1e-5, 28]);
+    expect(
+      lobbySetBoundarySchema.safeParse({ boundary: { type: 'polygon', coords: coords(2) } })
+        .success,
+    ).toBe(false);
+    expect(
+      lobbySetBoundarySchema.safeParse({ boundary: { type: 'polygon', coords: coords(501) } })
+        .success,
+    ).toBe(false);
+    expect(
+      lobbySetBoundarySchema.safeParse({
+        boundary: { type: 'circle', center: { lat: 0, lng: 0 }, radiusM: 0 },
+      }).success,
+    ).toBe(false);
+    expect(
+      lobbySetBoundarySchema.safeParse({
+        boundary: { type: 'circle', center: { lat: 0, lng: 0 }, radiusM: 50_000 },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('devTeleport takes a lat/lng only', () => {
+    expect(devTeleportSchema.safeParse({ lat: 1, lng: 2 }).success).toBe(true);
+    expect(devTeleportSchema.safeParse({ lat: 1, lng: 2, x: 1 }).success).toBe(false);
   });
 });

@@ -19,11 +19,11 @@ describe('resolveImposterCount', () => {
 
 describe('startBlockers', () => {
   it('is empty when ≥ minPlayers are all ready and the imposter count is valid', () => {
-    expect(startBlockers(cfg, { playerCount: 4, readyCount: 4 })).toEqual([]);
+    expect(startBlockers(cfg, { playerCount: 4, readyCount: 4, boundarySet: true })).toEqual([]);
   });
 
   it('lists every reason the lobby cannot start yet', () => {
-    expect(startBlockers(cfg, { playerCount: 3, readyCount: 1 })).toEqual([
+    expect(startBlockers(cfg, { playerCount: 3, readyCount: 1, boundarySet: true })).toEqual([
       'notEnoughPlayers',
       'notAllReady',
     ]);
@@ -31,7 +31,15 @@ describe('startBlockers', () => {
 
   it(`flags a manual imposter count that leaves < minCrewRemaining crew`, () => {
     const manual = { ...cfg, imposterCount: 2 as const };
-    expect(startBlockers(manual, { playerCount: 4, readyCount: 4 })).toEqual(['tooManyImposters']);
-    expect(startBlockers(manual, { playerCount: 5, readyCount: 5 })).toEqual([]);
+    expect(startBlockers(manual, { playerCount: 4, readyCount: 4, boundarySet: true })).toEqual([
+      'tooManyImposters',
+    ]);
+    expect(startBlockers(manual, { playerCount: 5, readyCount: 5, boundarySet: true })).toEqual([]);
+  });
+
+  it('requires a boundary', () => {
+    expect(startBlockers(cfg, { playerCount: 4, readyCount: 4, boundarySet: false })).toEqual([
+      'boundaryMissing',
+    ]);
   });
 });
