@@ -12,7 +12,14 @@ import type {
   RadarPayload,
   ServerToClientEvents,
 } from '@afterdark/shared';
-import { createRng } from '@afterdark/shared';
+import {
+  createRng,
+  DEFAULT_CONFIG,
+  sampleUniform,
+  type SectionId,
+  sectionOf,
+  sectionShapes,
+} from '@afterdark/shared';
 import { io as connect, type Socket } from 'socket.io-client';
 
 import { createServer, type GameServer } from '../src/app';
@@ -145,3 +152,25 @@ export async function openClient(url: string): Promise<TestClient> {
 }
 
 export const errorCode = (res: Ack<unknown>) => (res.ok ? 'OK' : res.error.code);
+
+/**
+ * A spot inside a task card's section, derived from the public view alone (the
+ * regions are public; the task pool is not). The way a player finds it: from the highlight.
+ */
+export function spotInSection(
+  view: PlayerView,
+  card: { regionId: string; section: SectionId },
+): LatLng {
+  const region = view.lobby.map.regions.find((r) => r.id === card.regionId);
+  if (!region) throw new Error('unknown region');
+  const shape = sectionShapes(region, DEFAULT_CONFIG.sectionCentreRatio).find(
+    (s) => s.id === card.section,
+  );
+  if (!shape) throw new Error('unknown section');
+  const rng = createRng(1);
+  for (const p of sampleUniform(shape.area, rng, 40)) {
+    const place = sectionOf(p, view.lobby.map.regions, DEFAULT_CONFIG.sectionCentreRatio);
+    if (place?.regionId === card.regionId && place.section === card.section) return p;
+  }
+  throw new Error('no spot found in the section');
+}

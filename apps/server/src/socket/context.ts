@@ -1,5 +1,5 @@
 /** Shared plumbing for socket handlers: rooms, sessions, emitters and binding. */
-import type { Command } from '../engine/types';
+import type { Command, CommandReply } from '../engine/types';
 import type { Logger } from '../logger';
 import type { BotDriver } from '../rooms/bots';
 import type { Room } from '../rooms/Room';
@@ -54,6 +54,16 @@ export function requireUnbound(socket: GameSocket): void {
 export function run(room: Room, cmd: Command): void {
   const res = room.dispatch(cmd);
   if (!res.ok) throw new HandlerError(res.code, res.message);
+}
+
+/** Like `run`, and returns what the command answers its caller with (never sent to anyone else). */
+export function runForReply(room: Room, cmd: Command & { playerId: string }): CommandReply {
+  const res = room.dispatch(cmd);
+  if (!res.ok) throw new HandlerError(res.code, res.message);
+  for (const e of res.effects) {
+    if (e.kind === 'reply' && e.playerId === cmd.playerId) return e.reply;
+  }
+  throw new HandlerError('INTERNAL', 'The command gave no reply');
 }
 
 /**

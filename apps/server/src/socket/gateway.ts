@@ -17,6 +17,7 @@ import { registerLobbyHandlers } from './handlers/lobby';
 import { registerLocationHandlers } from './handlers/location';
 import { registerSessionHandlers } from './handlers/session';
 import { registerSetupHandlers } from './handlers/setup';
+import { registerTaskHandlers } from './handlers/tasks';
 import { createRateLimiter } from './rateLimit';
 import type { GameIo } from './types';
 import { attachRoom } from './wiring';
@@ -93,6 +94,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     registerLocationHandlers(ctx, socket);
     registerSetupHandlers(ctx, socket);
     registerGameHandlers(ctx, socket);
+    registerTaskHandlers(ctx, socket);
 
     socket.on('disconnect', (reason) => {
       logger.debug({ socketId: socket.id, reason }, 'socket disconnected');
