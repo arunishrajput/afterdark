@@ -1,6 +1,7 @@
 /** zod schemas for every client → server payload (mirrors docs/PROTOCOL.md). */
 import { z } from 'zod';
 
+import { BOT_MEETING_MODES } from '../bots';
 import { DEFAULT_CONFIG } from '../config/defaults';
 import { editableConfigPatchSchema } from '../config/schema';
 import { ID_ALPHABET } from '../ids';
@@ -227,7 +228,7 @@ export const devAddBotsSchema = z.strictObject({
   /** How imposter bots play (default `wander`: they walk and never infect). Applies to the whole room. */
   imposterBehaviour: z.enum(['wander', 'chase']).optional(),
   /** `random`: each bot calls one meeting at a random time (default `off`: bots only join meetings others call). Applies to the whole room. */
-  meetings: z.enum(['off', 'random']).optional(),
+  meetings: z.enum(BOT_MEETING_MODES).optional(),
 });
 export type DevAddBotsPayload = z.infer<typeof devAddBotsSchema>;
 

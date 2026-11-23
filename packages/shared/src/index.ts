@@ -1,5 +1,18 @@
-export type { BotImposterBehaviour, BotWalkerOptions, ChaseAction, ChaseInput } from './bots';
-export { BOT_IMPOSTER_BEHAVIOURS, BotWalker, ChaseBrain, jittered, stepToward } from './bots';
+export type {
+  BotImposterBehaviour,
+  BotMeetingMode,
+  BotWalkerOptions,
+  ChaseAction,
+  ChaseInput,
+} from './bots';
+export {
+  BOT_IMPOSTER_BEHAVIOURS,
+  BOT_MEETING_MODES,
+  BotWalker,
+  ChaseBrain,
+  jittered,
+  stepToward,
+} from './bots';
 export { DEFAULT_CONFIG } from './config/defaults';
 export type {
   EditableConfigKey,
@@ -167,12 +180,12 @@ export {
 export type { Rng } from './rng';
 export { createRng, hashSeed, mulberry32 } from './rng';
 export { bucketLabel } from './rules/buckets';
+export type { VoteCounts } from './rules/meeting';
+export { resolveVote } from './rules/meeting';
 export type { SetupIssue, SetupSummary } from './rules/setup';
 export { pointsNeeded, summarizeSetup, validateSetup } from './rules/setup';
 export type { StartBlocker } from './rules/start';
 export { resolveImposterCount, startBlockers } from './rules/start';
-export type { VoteCounts } from './rules/meeting';
-export { resolveVote } from './rules/meeting';
 export type { Progress } from './rules/victory';
 export { infectionThreshold, winnerOnTimeUp } from './rules/victory';
 export { drawTags, formatTag, TAG_PATTERN, TAG_WORDS } from './tags';

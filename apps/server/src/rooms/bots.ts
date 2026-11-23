@@ -10,10 +10,14 @@
  * bots were added with `imposterBehaviour: 'chase'` (Phase 7): then it hunts the nearest
  * healthy crew member (it reads positions from the room state, as test tooling may),
  * infects through the real `infectStart` command, follows during the channel and walks
- * away afterwards so the incubation can begin.
+ * away afterwards so the incubation can begin. In a meeting (Phase 8) every bot walks to the Base, skips the
+ * discussion and votes (a random active player, or Skip with `botVoteSkipPercent`; an imposter bot never
+ * votes for another imposter). Only with `meetings: 'random'` does a bot also call a meeting, once, at a
+ * random game time between `botMeetingMinS` and `botMeetingMaxS`.
  */
 import {
   type BotImposterBehaviour,
+  type BotMeetingMode,
   BotWalker,
   ChaseBrain,
   createRng,
@@ -26,6 +30,8 @@ import {
 import { gameNow } from '../engine/clock';
 import type { PlayerState, RoomState } from '../engine/state';
 import { fixQuality } from '../engine/systems/location';
+import { meetingsLeft } from '../engine/systems/meetings';
+import { isActive } from '../engine/systems/players';
 import { isOutOfBounds } from '../engine/systems/zone';
 import type { Room } from './Room';
 
@@ -42,12 +48,15 @@ interface Bot {
   brain: ChaseBrain;
   /** Real ms when this bot finishes the task it has open. */
   doneAt?: number;
+  /** Game ms when this bot calls its meeting (`meetings: 'random'`). */
+  callAtGameMs?: number;
 }
 
 export class BotDriver {
   private readonly bots = new Map<string, Bot>();
   private nextNo = 1;
   private imposterBehaviour: BotImposterBehaviour = 'wander';
+  private meetingMode: BotMeetingMode = 'off';
 
   constructor(
     private readonly room: Room,
@@ -55,8 +64,9 @@ export class BotDriver {
   ) {}
 
   /** Adds up to `count` bots; returns how many joined (the lobby may fill up). `behaviour` applies to every imposter bot in the room. */
-  add(count: number, behaviour?: BotImposterBehaviour): number {
+  add(count: number, behaviour?: BotImposterBehaviour, meetings?: BotMeetingMode): number {
     if (behaviour) this.imposterBehaviour = behaviour;
+    if (meetings) this.meetingMode = meetings;
     let added = 0;
     for (let i = 0; i < count; i++) {
       const playerId = this.newId();
@@ -117,10 +127,15 @@ export class BotDriver {
       if (!bot) continue;
       const spawn = state.phase === 'spawning' && p.spawn && !p.spawn.reached ? p.spawn : undefined;
       const task = state.phase === 'playing' ? p.tasks?.[0] : undefined;
-      const hunt = this.hunt(bot, state, p, now);
+      const meeting = state.phase === 'playing' ? state.game?.meeting : undefined;
+      const hunt = meeting ? undefined : this.hunt(bot, state, p, now);
       // At a revealed pin the bot stays put to work; before that it heads for the task.
       const working = task?.stage === 'pin' && task.atPin;
-      if (working) bot.walker.stay();
+      if (meeting) {
+        // Everyone goes to the Base and stays there; an ejected bot has nowhere to be.
+        if (p.spectator || meeting.gathered.includes(p.id) || !state.setup.base) bot.walker.stay();
+        else bot.walker.step(state.setup.base);
+      } else if (working) bot.walker.stay();
       else if (hunt) bot.walker.step(hunt.to);
       else bot.walker.step(spawn ?? (task ? { lat: task.lat, lng: task.lng } : undefined));
       const at = bot.walker.fix();
@@ -134,6 +149,7 @@ export class BotDriver {
         this.room.dispatch({ type: 'setReady', playerId: p.id, ready: true });
       }
       if (fresh) this.work(bot, fresh, now);
+      if (fresh) this.meet(bot, fresh, now);
     }
   }
 
@@ -174,10 +190,42 @@ export class BotDriver {
     return { to: action.to };
   }
 
+  /** Take part in the meeting in progress, or (in `random` mode) call one when this bot's time has come. */
+  private meet(bot: Bot, p: PlayerState, now: number): void {
+    const state = this.room.state;
+    const game = state.game;
+    if (state.phase !== 'playing' || !game || !isActive(p)) return;
+    const meeting = game.meeting;
+    if (!meeting) {
+      if (this.meetingMode !== 'random' || meetingsLeft(state, p) === 0) return;
+      const { botMeetingMinS: min, botMeetingMaxS: max } = state.config;
+      bot.callAtGameMs ??= (min + bot.rng.next() * (max - min)) * MS_PER_S;
+      if (gameNow(game.clock, now) >= bot.callAtGameMs) {
+        this.room.dispatch({ type: 'meetingCall', playerId: p.id });
+      }
+      return;
+    }
+    if (meeting.stage === 'discuss') {
+      this.room.dispatch({ type: 'meetingSkipDiscussion', playerId: p.id });
+    } else if (meeting.stage === 'vote' && meeting.votes[p.id] === undefined) {
+      this.room.dispatch({ type: 'meetingVote', playerId: p.id, target: this.voteOf(bot, p) });
+    }
+  }
+
+  /** A random active player (never itself, never a fellow imposter for an imposter bot), or Skip. */
+  private voteOf(bot: Bot, p: PlayerState): string {
+    const state = this.room.state;
+    if (bot.rng.next() * 100 < state.config.botVoteSkipPercent) return 'skip';
+    const candidates = state.players.filter(
+      (x) => x.id !== p.id && isActive(x) && !(p.role === 'imposter' && x.role === 'imposter'),
+    );
+    return candidates[bot.rng.int(0, candidates.length - 1)]?.id ?? 'skip';
+  }
+
   /** Open the task at the pin, then finish it after a random wait. */
   private work(bot: Bot, p: PlayerState, now: number): void {
     const task = p.tasks?.[0];
-    if (!task || this.room.state.phase !== 'playing') return;
+    if (!task || this.room.state.phase !== 'playing' || this.room.state.game?.meeting) return;
     if (!task.open) {
       if (task.stage !== 'pin' || !task.atPin) return;
       const res = this.room.dispatch({ type: 'taskOpen', playerId: p.id, taskId: task.id });

@@ -83,6 +83,10 @@ export class BotWalker {
 export const BOT_IMPOSTER_BEHAVIOURS = ['wander', 'chase'] as const;
 export type BotImposterBehaviour = (typeof BOT_IMPOSTER_BEHAVIOURS)[number];
 
+/** Whether bots call meetings (`random`, once each at a random time) or only join the ones others call (`off`, the default). */
+export const BOT_MEETING_MODES = ['off', 'random'] as const;
+export type BotMeetingMode = (typeof BOT_MEETING_MODES)[number];
+
 /** Bots stop this much inside the infection radius, so GPS jitter does not flip them out of range. */
 const CHASE_MARGIN_M = 3;
 /** After an infection the bot walks this far past the radius before it hunts again. */

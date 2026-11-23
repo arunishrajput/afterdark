@@ -30,7 +30,7 @@ export function registerGameHandlers(ctx: GatewayContext, socket: GameSocket): v
 
   socket.on(
     'dev:addBots',
-    validated('dev:addBots', devAddBotsSchema, logger, ({ count, imposterBehaviour }) => {
+    validated('dev:addBots', devAddBotsSchema, logger, ({ count, imposterBehaviour, meetings }) => {
       const { room, playerId } = requireBinding(ctx, socket);
       const { state } = room;
       if (!state.config.testMode) throw new HandlerError('NOT_ALLOWED', 'Test mode is off');
@@ -40,7 +40,7 @@ export function registerGameHandlers(ctx: GatewayContext, socket: GameSocket): v
       if (state.players.length + count > state.config.maxPlayers) {
         throw new HandlerError('LOBBY_FULL', 'That would overfill the lobby');
       }
-      ctx.bots.get(room.code)?.add(count, imposterBehaviour);
+      ctx.bots.get(room.code)?.add(count, imposterBehaviour, meetings);
     }),
   );
 
