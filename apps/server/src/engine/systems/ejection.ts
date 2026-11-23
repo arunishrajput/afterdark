@@ -39,7 +39,7 @@ export function eject(state: RoomState, p: PlayerState): { wasImposter: boolean 
   const wasImposter = p.role === 'imposter';
   p.spectator = true;
   if (p.role) p.revealedRole = p.role;
-  // Their tasks go (co-op partners get a new one in Phase 10), points already earned stay in the team score.
+  // Their tasks go, points already earned stay in the team score. A co-op partner's copy expires on the next `advance()` (`updateCoops`, E20).
   delete p.tasks;
   if (wasImposter) {
     // Abilities are gone, and so are the fakes still waiting in the queue (a fake a crew slot already holds stays, RULES §7.3).

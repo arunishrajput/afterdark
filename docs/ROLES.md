@@ -31,7 +31,7 @@ Game rules are in [RULES.md](RULES.md). Numbers are in [CONFIG.md](CONFIG.md). T
 |---|---|---|---|
 | **Saboteur** | Task Stop | Resets every minigame in progress and locks all tasks for `taskStopLockS` (30 s) | `taskStopCooldownS` (120 s) |
 | **Phantom** | Fake Task | Pins a fake task, which goes to the next crew slot that refills. Completing it awards 0 points and shows "You got fooled by a fake task!" | `fakeTaskCooldownS` (120 s), max 2 active |
-| **Camouflage** | Camouflage | Own screen only: crew look for 45 s, and can join any waiting co-op task as the partner | `camouflageCooldownS` (120 s) |
+| **Camouflage** | Camouflage | Own screen only: crew look for 45 s (decoy cards, crew theme), and can stand in for the partner of a co-op whose owner is waiting at the pin | `camouflageCooldownS` (120 s) |
 
 Class assignment is secret. In `classes` mode, classes are drawn without repeats, so with 2 imposters exactly 2 of the 3 classes are in play. Crew never know which ones.
 

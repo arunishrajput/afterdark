@@ -122,6 +122,7 @@ Cooldown `camouflageCooldownS` (120 s). Lasts `camouflageDurationS` (45 s).
 3. If the imposter completes a co-op task this way, Person A gets credit exactly as normal (see [SCORING.md](SCORING.md)). The real partner's copy closes as "Co-op task expired", which is the same message as an ordinary expiry.
 4. If Camouflage would end while the imposter is in a co-op task, it extends until the task finishes, by at most `camouflageCoopExtensionMaxS` (120 s).
 5. Infect can be used while camouflaged.
+6. **Clarifications (Phase 10, ADR-084, ADR-086).** The disguise is a game-time deadline on the imposter and ends when a meeting is called. "Joining as the partner" is possible only while the *owner* is the one waiting at the pin (a partner who started the wait is already in). The extension counts while the imposter is in a waiting or active session, by at most `camouflageCoopExtensionMaxS` past the original end. The real partner's card closes when the stand-in *completes* the task, not when they join.
 
 ### 7.5 Cooldown recovery through apparent cooperation
 When an imposter completes a co-op task with a **crew** partner, whether assigned or joined through Camouflage, the remaining cooldown on their class ability(ies) drops:
@@ -129,7 +130,7 @@ When an imposter completes a co-op task with a **crew** partner, whether assigne
 - by `coopRecoverySecond` (25%) the second time
 - by nothing after that
 
-Two imposters can never be paired, because every co-op task belongs to a crew member's slot. Infect's cooldown is not affected.
+Recovery is counted per (imposter, crew owner) pair, for an assigned imposter partner and a stand-in alike (ADR-087). Two imposters can never be paired, because every co-op task belongs to a crew member's slot. Infect's cooldown is not affected.
 
 ## 8. Meetings and voting
 Full rules are in [MEETINGS.md](MEETINGS.md). In summary:

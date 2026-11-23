@@ -390,4 +390,73 @@ describe('co-op over sockets', () => {
     // At least one session that went active ended (completed or expired) without breaking the room.
     expect(finished.size).toBeGreaterThanOrEqual(1);
   }, 180_000);
+
+  it('sabotaging imposter bots disguise themselves and stand in for a waiting crew member', async () => {
+    const human = await openClient(ts.url);
+    all.push(human);
+    const created = await human.ok('lobby:create', { username: 'Human', ...SAFE });
+    const room = ts.server.rooms.get(created.code);
+    if (!room) throw new Error('no room');
+    const tickOne = (s = 1) => {
+      ts.clock.now += s * S;
+      room.tick();
+    };
+    await human.ok('lobby:updateConfig', {
+      patch: {
+        testMode: true,
+        coopChance: 0.5,
+        imposterAbilityMode: 'all',
+        playerVisibility: 'all',
+      },
+    });
+    await human.ok('lobby:setBoundary', {
+      boundary: { type: 'circle', center: HOME, radiusM: 250 },
+    });
+    room.state.config.botSpeedMps = 6;
+    room.state.config.targetScore = 400;
+    room.state.config.infectionCooldownS = 100000;
+    room.state.config.coopChance = 0.5;
+    await human.ok('dev:addBots', { count: 7, imposterBehaviour: 'sabotage' });
+    await human.waitForView((v) => v.lobby.players.length === 8, '8 players');
+    await human.locate(ts.clock.now);
+    tickOne();
+    tickOne();
+    await human.waitForView(
+      (v) => v.lobby.players.filter((p) => p.id !== v.me.id).every((p) => p.ready),
+      'bots ready',
+    );
+    await human.ok('lobby:setReady', { ready: true });
+    tickOne(DEFAULT_CONFIG.startCountdownS);
+    await human.waitForView((v) => v.lobby.phase === 'spawning', 'spawning');
+    for (let i = 0; i < 3; i++) tickOne();
+    await human.ok('game:forceStart', {});
+    tickOne(DEFAULT_CONFIG.roleRevealS);
+    await human.waitForView((v) => v.lobby.phase === 'playing', 'playing');
+
+    const active = new Set<string>();
+    const finished = new Set<string>();
+    let ticks = 0;
+    let standIns = 0;
+    while (room.state.phase === 'playing' && ticks < 900) {
+      tickOne();
+      ticks++;
+      for (const c of room.state.game?.coops ?? []) {
+        if (c.phase === 'active') active.add(c.id);
+        if (
+          c.phase === 'active' &&
+          c.joinerId &&
+          c.joinerId !== c.assignedId &&
+          room.state.players.find((p) => p.id === c.joinerId)?.role === 'imposter'
+        )
+          standIns++;
+      }
+      for (const id of active) {
+        if (!room.state.game?.coops.some((c) => c.id === id)) finished.add(id);
+      }
+    }
+    expect(standIns).toBeGreaterThanOrEqual(1);
+    expect(room.state.game?.teamScore ?? 0).toBeGreaterThan(0);
+    // At least one session that went active ended (completed or expired) without breaking the room.
+    expect(finished.size).toBeGreaterThanOrEqual(1);
+  }, 180_000);
 });
