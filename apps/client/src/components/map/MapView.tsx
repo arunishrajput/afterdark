@@ -8,11 +8,21 @@ import 'leaflet/dist/leaflet.css';
 import type { AnonDot, BoundaryInput, LatLng, Position } from '@afterdark/shared';
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, MapContainer, Marker, Polygon, TileLayer, useMap } from 'react-leaflet';
+import {
+  Circle,
+  MapContainer,
+  Marker,
+  Polygon,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 
 import { BoundaryEditor } from './BoundaryEditor';
 import { ringToLatLngs, toLeaflet, WORLD_RING } from './geo';
 import { dotIcon, selfIcon } from './icons';
+import { NoGoEditor } from './NoGoEditor';
+import { type MapTool, SetupLayers, type SetupOverlay } from './SetupLayers';
 import { BOUNDARY_STYLE, OUTSIDE_STYLE, TILE_ATTRIBUTION, TILE_URL } from './style';
 
 const FIT_PADDING: [number, number] = [28, 28];
@@ -38,6 +48,22 @@ export interface MapViewProps {
   onSimMove?: ((to: LatLng) => void) | undefined;
   /** Bumped by the parent when the map's box changed size (e.g. expanded). */
   resizeKey?: string | undefined;
+  /** Regions, task points, no-go zones, Base and region counts (public setup data). */
+  overlay?: SetupOverlay | undefined;
+  /** What a tap does while the host edits the setup. */
+  tool?: MapTool | undefined;
+  /** Host: a tap on the bare map (add a task point, place the Base). */
+  onMapTap?: ((at: LatLng) => void) | undefined;
+  /** Host: a tap on a task point (delete it). */
+  onPointTap?: ((id: string) => void) | undefined;
+  /** Host: a finished no-go polygon. */
+  onNoGoZone?: ((coords: Position[]) => void) | undefined;
+}
+
+/** Forwards taps on the bare map to the parent. */
+function MapTaps({ onTap }: { onTap: (at: LatLng) => void }) {
+  useMapEvents({ click: (e) => onTap({ lat: e.latlng.lat, lng: e.latlng.lng }) });
+  return null;
 }
 
 function boundsOf(ring: Position[]): L.LatLngBounds {
@@ -190,10 +216,30 @@ export default function MapView({
   onBoundary,
   onSimMove,
   resizeKey,
+  overlay,
+  tool = 'none',
+  onMapTap,
+  onPointTap,
+  onNoGoZone,
 }: MapViewProps) {
   const [fitSignal, setFitSignal] = useState(0);
   return (
     <div className="relative size-full" data-testid="map">
+      {/* Hatching for no-go zones: Leaflet paths pick it up through the `nogo-zone` class. */}
+      <svg width="0" height="0" aria-hidden="true" className="absolute">
+        <defs>
+          <pattern
+            id="nogo-hatch"
+            width="8"
+            height="8"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(45)"
+          >
+            <rect width="8" height="8" fill="rgb(255 90 90 / 0.12)" />
+            <line x1="0" y1="0" x2="0" y2="8" stroke="rgb(255 90 90 / 0.7)" strokeWidth="3" />
+          </pattern>
+        </defs>
+      </svg>
       <MapContainer
         center={[0, 0]}
         zoom={WORLD_ZOOM}
@@ -215,11 +261,18 @@ export default function MapView({
           <>
             <Polygon positions={[WORLD_RING, ringToLatLngs(ring)]} pathOptions={OUTSIDE_STYLE} />
             {!onBoundary && (
-              <Polygon positions={ringToLatLngs(ring)} pathOptions={BOUNDARY_STYLE} />
+              <Polygon
+                positions={ringToLatLngs(ring)}
+                pathOptions={BOUNDARY_STYLE}
+                interactive={false}
+              />
             )}
           </>
         )}
         {onBoundary && <BoundaryEditor ring={ring} onBoundary={onBoundary} />}
+        {onNoGoZone && <NoGoEditor onZone={onNoGoZone} />}
+        {overlay && <SetupLayers overlay={overlay} tool={tool} onPointTap={onPointTap} />}
+        {onMapTap && <MapTaps onTap={onMapTap} />}
         {dots.map((d) => (
           <Marker
             key={d.alias}

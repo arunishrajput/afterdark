@@ -1,5 +1,5 @@
 /** Small conversions between Leaflet and the protocol's `[lng, lat]` rings. */
-import type { LatLng, Position } from '@afterdark/shared';
+import type { LatLng, MultiPolygonCoords, Position } from '@afterdark/shared';
 import type L from 'leaflet';
 
 /** Leaflet wants `[lat, lng]`. The ring's closing point is dropped (Leaflet closes polygons itself). */
@@ -43,3 +43,8 @@ export const WORLD_RING: [number, number][] = [
   [85, 180],
   [85, -180],
 ];
+
+/** A multi-polygon (`[lng, lat]`, closed rings) as Leaflet positions (`[lat, lng]`, open rings). */
+export function areaToLatLngs(area: MultiPolygonCoords): [number, number][][][] {
+  return area.map((poly) => poly.map((ring) => ringToLatLngs(ring)));
+}

@@ -1,5 +1,5 @@
 import type { PlayerView } from '@afterdark/shared';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Checklist } from '../components/lobby/Checklist';
 import { CodeCard } from '../components/lobby/CodeCard';
@@ -19,6 +19,7 @@ export function Lobby({ view }: { view: PlayerView }) {
   const { lobby, me } = view;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
   const pushToast = useGame((s) => s.pushToast);
   const simOn = useLocation((s) => s.sim.on);
   const simulated = lobby.testMode && simOn;
@@ -45,12 +46,8 @@ export function Lobby({ view }: { view: PlayerView }) {
       <CodeCard code={lobby.code} />
       <PermissionGate view={view} simulated={simulated} />
       <Roster players={lobby.players} meId={me.id} amHost={me.isHost} />
-      <MapPanel view={view} simulated={simulated} />
-      <Checklist
-        players={lobby.players}
-        config={lobby.config}
-        boundarySet={lobby.map.boundary !== undefined}
-      />
+      <MapPanel view={view} simulated={simulated} onOpenSettings={openSettings} />
+      <Checklist players={lobby.players} config={lobby.config} map={lobby.map} />
 
       <section
         aria-labelledby="settings-title"

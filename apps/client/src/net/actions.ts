@@ -1,5 +1,12 @@
 /** Player intents. The server decides; the UI waits for the next view. */
-import type { BoundaryInput, GameConfigEditablePatch, LatLng } from '@afterdark/shared';
+import type {
+  BoundaryInput,
+  GameConfigEditablePatch,
+  LatLng,
+  LobbyEditTaskPointsPayload,
+  LobbyRegenerateRegionsPayload,
+  Position,
+} from '@afterdark/shared';
 
 import { useGame } from '../store';
 import { clearSession, saveSession } from './persist';
@@ -36,3 +43,16 @@ export const setBoundary = (boundary: BoundaryInput) => request('lobby:setBounda
 
 /** Test mode only: place yourself exactly (the server refuses it otherwise). */
 export const devTeleport = (to: LatLng) => request('dev:teleport', to);
+
+export const regenerateRegions = (input: LobbyRegenerateRegionsPayload = {}) =>
+  request('lobby:regenerateRegions', input);
+
+export const renameRegion = (regionId: string, name: string) =>
+  request('lobby:renameRegion', { regionId, name });
+
+export const editTaskPoints = (input: LobbyEditTaskPointsPayload) =>
+  request('lobby:editTaskPoints', input);
+
+export const setNoGoZones = (zones: Position[][]) => request('lobby:setNoGoZones', { zones });
+
+export const setBase = (base: LatLng) => request('lobby:setBase', base);

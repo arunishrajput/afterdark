@@ -1,10 +1,20 @@
-import type { BoundaryInput, LatLng, PlayerView } from '@afterdark/shared';
-import { lazy, Suspense, useCallback, useState } from 'react';
+import type { BoundaryInput, LatLng, PlayerView, Position } from '@afterdark/shared';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 
-import { devTeleport, setBoundary } from '../net/actions';
+import {
+  devTeleport,
+  editTaskPoints,
+  regenerateRegions,
+  renameRegion,
+  setBase,
+  setBoundary,
+  setNoGoZones,
+} from '../net/actions';
 import { messageFor } from '../net/errors';
 import { useGame } from '../store';
 import { useLocation } from '../store/location';
+import type { MapTool, SetupOverlay } from './map/SetupLayers';
+import { SetupWizard, type StepId, type WizardActions } from './setup/SetupWizard';
 import { Button } from './ui/Button';
 
 // Leaflet and Geoman are heavy: only fetched once a lobby is open.
@@ -18,10 +28,30 @@ function MapFallback() {
   );
 }
 
-/** The lobby map: preview card that expands to full screen; the host also gets the boundary tools. */
-export function MapPanel({ view, simulated }: { view: PlayerView; simulated: boolean }) {
+const TOOL_OF_STEP: Partial<Record<StepId, MapTool>> = {
+  points: 'points',
+  base: 'base',
+  nogo: 'nogo',
+};
+
+/**
+ * The lobby map: a preview card that expands to full screen. Everyone sees the
+ * boundary, regions (with counts), task points and the Base; the host also gets
+ * the setup wizard and the editing tools for the current step.
+ */
+export function MapPanel({
+  view,
+  simulated,
+  onOpenSettings,
+}: {
+  view: PlayerView;
+  simulated: boolean;
+  onOpenSettings: () => void;
+}) {
   const { lobby, me } = view;
   const [expanded, setExpanded] = useState(false);
+  const [step, setStep] = useState<StepId>('boundary');
+  const [previewRegionId, setPreviewRegionId] = useState<string | undefined>();
   const radar = useGame((s) => s.radar);
   const fix = useLocation((s) => s.fix);
   const pushToast = useGame((s) => s.pushToast);
@@ -38,12 +68,19 @@ export function MapPanel({ view, simulated }: { view: PlayerView; simulated: boo
       }
     : undefined;
 
-  const onBoundary = useCallback(
-    async (boundary: BoundaryInput) => {
-      const res = await setBoundary(boundary);
+  /** Shows the server's reason when it refuses a setup change. */
+  const report = useCallback(
+    (
+      res: { ok: true } | { ok: false; code: Parameters<typeof messageFor>[0]; message: string },
+    ) => {
       if (!res.ok) pushToast(res.code === 'INVALID_PAYLOAD' ? res.message : messageFor(res.code));
     },
     [pushToast],
+  );
+
+  const onBoundary = useCallback(
+    async (boundary: BoundaryInput) => report(await setBoundary(boundary)),
+    [report],
   );
 
   const onSimMove = useCallback(async (to: LatLng) => {
@@ -52,8 +89,52 @@ export function MapPanel({ view, simulated }: { view: PlayerView; simulated: boo
     await devTeleport(to);
   }, []);
 
+  const { map } = lobby;
+  const actions: WizardActions = useMemo(
+    () => ({
+      setRegionCount: (count) => void regenerateRegions({ regionCount: count }).then(report),
+      regenerateRegions: () => void regenerateRegions({}).then(report),
+      renameRegion: (id, name) => void renameRegion(id, name).then(report),
+      regeneratePoints: () => void editTaskPoints({ regenerate: true }).then(report),
+      removeZone: (i) => void setNoGoZones(map.noGo.filter((_, j) => j !== i)).then(report),
+      clearZones: () => void setNoGoZones([]).then(report),
+      openSettings: onOpenSettings,
+    }),
+    [map.noGo, onOpenSettings, report],
+  );
+
+  const host = me.isHost;
+  const tool: MapTool = host ? (TOOL_OF_STEP[step] ?? 'none') : 'none';
+  const onMapTap = useCallback(
+    (at: LatLng) => {
+      if (step === 'points') void editTaskPoints({ add: [at] }).then(report);
+      else if (step === 'base') void setBase(at).then(report);
+    },
+    [step, report],
+  );
+  const onNoGoZone = useCallback(
+    (coords: Position[]) => void setNoGoZones([...map.noGo, coords]).then(report),
+    [map.noGo, report],
+  );
+
+  const overlay: SetupOverlay = {
+    regions: map.regions,
+    points: map.taskPoints,
+    noGo: map.noGo,
+    base: map.base,
+    counts: view.game?.regionCounts ?? [],
+    previewRegionId: host && step === 'regions' ? previewRegionId : undefined,
+  };
+
+  const status = map.boundary
+    ? `Area ${Math.round(map.boundary.areaM2).toLocaleString('en-US')} m² · ${map.regions.length} regions`
+    : host
+      ? 'Draw the playable area'
+      : 'Waiting for the host to draw the area';
+
+  const outer = expanded ? 'fixed inset-0 z-40 flex flex-col bg-bg' : 'flex flex-col gap-3';
   const frame = expanded
-    ? 'fixed inset-0 z-40 bg-bg'
+    ? 'relative isolate min-h-0 flex-1'
     : // `isolate`: Leaflet's panes use z-index up to 1000 and must not paint over the Ready bar.
       'relative isolate h-72 overflow-hidden rounded-2xl border border-white/10';
 
@@ -64,33 +145,58 @@ export function MapPanel({ view, simulated }: { view: PlayerView; simulated: boo
           Map
         </h2>
         <span className="text-sm text-muted" data-testid="boundary-status">
-          {lobby.map.boundary
-            ? `Area ${Math.round(lobby.map.boundary.areaM2).toLocaleString('en-US')} m²`
-            : me.isHost
-              ? 'Draw the playable area'
-              : 'Waiting for the host to draw the area'}
+          {status}
         </span>
       </div>
-      <div className={frame} data-testid="map-frame">
-        <Suspense fallback={<MapFallback />}>
-          <MapView
-            ring={lobby.map.boundary?.ring}
-            self={self}
-            dots={radar?.dots ?? []}
-            onBoundary={me.isHost ? (b) => void onBoundary(b) : undefined}
-            onSimMove={simulated ? (to) => void onSimMove(to) : undefined}
-            resizeKey={expanded ? 'full' : 'card'}
-          />
-        </Suspense>
-        <Button
-          variant="secondary"
-          data-testid="map-expand"
-          aria-label={expanded ? 'Close the full-screen map' : 'Open the map full screen'}
-          onClick={() => setExpanded((e) => !e)}
-          className={`absolute z-[1000] min-h-11 px-3 text-sm ${expanded ? 'top-[max(0.5rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2' : 'right-2 bottom-2'}`}
-        >
-          {expanded ? 'Close map' : 'Expand'}
-        </Button>
+      <div className={outer}>
+        <div className={frame} data-testid="map-frame">
+          <Suspense fallback={<MapFallback />}>
+            <MapView
+              ring={map.boundary?.ring}
+              self={self}
+              dots={radar?.dots ?? []}
+              overlay={overlay}
+              tool={tool}
+              onBoundary={host && step === 'boundary' ? (b) => void onBoundary(b) : undefined}
+              onNoGoZone={host && step === 'nogo' ? onNoGoZone : undefined}
+              onMapTap={host && (step === 'points' || step === 'base') ? onMapTap : undefined}
+              onPointTap={
+                host && step === 'points'
+                  ? (id) => void editTaskPoints({ remove: [id] }).then(report)
+                  : undefined
+              }
+              onSimMove={simulated ? (to) => void onSimMove(to) : undefined}
+              resizeKey={expanded ? 'full' : 'card'}
+            />
+          </Suspense>
+          <Button
+            variant="secondary"
+            data-testid="map-expand"
+            aria-label={expanded ? 'Close the full-screen map' : 'Open the map full screen'}
+            onClick={() => setExpanded((e) => !e)}
+            className={`absolute z-[1000] min-h-11 px-3 text-sm ${expanded ? 'top-[max(0.5rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2' : 'right-2 bottom-2'}`}
+          >
+            {expanded ? 'Close map' : 'Expand'}
+          </Button>
+        </div>
+        {host && (
+          <div
+            className={
+              expanded
+                ? 'max-h-[45dvh] shrink-0 overflow-y-auto bg-bg p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'
+                : ''
+            }
+          >
+            <SetupWizard
+              view={view}
+              step={step}
+              onStep={setStep}
+              previewRegionId={previewRegionId}
+              onPreview={setPreviewRegionId}
+              actions={actions}
+            />
+          </div>
+        )}
       </div>
       {me.location?.oob && (
         <p role="status" className="text-sm font-semibold text-danger">

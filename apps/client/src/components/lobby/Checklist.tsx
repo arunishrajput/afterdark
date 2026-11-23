@@ -1,28 +1,35 @@
-import type { GameConfigPublic } from '@afterdark/shared';
+import type { GameConfigPublic, MapSetupPublic } from '@afterdark/shared';
 import {
   DEFAULT_CONFIG,
+  pointsNeeded,
   type PublicPlayer,
   type StartBlocker,
   startBlockers,
+  summarizeSetup,
 } from '@afterdark/shared';
 
-/** Why the game can't start yet, from the same rules the server uses (RULES §3.7). */
+/** Why the game can't start yet, from the same rules the server uses (RULES §3.7, E39). */
 export function Checklist({
   players,
   config,
-  boundarySet,
+  map,
 }: {
   players: PublicPlayer[];
   config: GameConfigPublic;
-  boundarySet: boolean;
+  map: MapSetupPublic;
 }) {
   const readyCount = players.filter((p) => p.ready).length;
+  const setup = summarizeSetup(
+    { boundary: map.boundary, base: map.base, regions: map.regions, points: map.taskPoints },
+    DEFAULT_CONFIG,
+  );
   const blockers = new Set<StartBlocker>(
     startBlockers(
       { ...DEFAULT_CONFIG, ...config },
-      { playerCount: players.length, readyCount, boundarySet },
+      { playerCount: players.length, readyCount, setup },
     ),
   );
+  const needed = pointsNeeded(DEFAULT_CONFIG, players.length);
   const items: { key: StartBlocker; label: string }[] = [
     {
       key: 'notEnoughPlayers',
@@ -30,6 +37,15 @@ export function Checklist({
     },
     { key: 'tooManyImposters', label: 'Imposter count leaves enough crew' },
     { key: 'boundaryMissing', label: 'Playable area drawn on the map' },
+    { key: 'baseMissing', label: 'Base placed on the map' },
+    {
+      key: 'tooFewPoints',
+      label: `Enough task points (${setup.usablePoints}/${needed})`,
+    },
+    {
+      key: 'tooFewRegions',
+      label: `Task points in at least ${DEFAULT_CONFIG.minRegionsWithPoints} regions (${setup.regionsWithPoints}/${DEFAULT_CONFIG.minRegionsWithPoints})`,
+    },
     { key: 'notAllReady', label: `Everyone ready (${readyCount}/${players.length})` },
   ];
   return (

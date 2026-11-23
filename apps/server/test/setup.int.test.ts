@@ -75,7 +75,7 @@ describe('regions, task points, no-go zones and Base over sockets', () => {
       offsetByMeters(HOME, 10, -250),
       offsetByMeters(HOME, 10, 250),
       offsetByMeters(HOME, -20, 250),
-    ].map((p) => [p.lng, p.lat]);
+    ].map((p): [number, number] => [p.lng, p.lat]);
     await host.ok('lobby:setNoGoZones', { zones: [zone] });
     const spot = offsetByMeters(HOME, 90, 60);
     await host.ok('lobby:setBase', spot);
