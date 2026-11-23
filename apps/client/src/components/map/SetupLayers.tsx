@@ -103,7 +103,11 @@ export function SetupLayers({
         />
       ))}
       {preview && (
-        <SectionPreview region={preview} color={regionColor(indexOf.get(preview.id) ?? 0)} />
+        <SectionPreview
+          key={preview.id}
+          region={preview}
+          color={regionColor(indexOf.get(preview.id) ?? 0)}
+        />
       )}
       {noGo.map((ring, i) => (
         <Polygon

@@ -8,17 +8,22 @@ All geometry runs on the **server** (and in `packages/shared/src/geo/` for previ
 3. The **task-point pool** is generated automatically (§4). The host can delete points (unsafe or inaccessible ones), add points by tapping, and regenerate.
 4. **No-go zones** (optional): the host draws polygons for roads, water, private property and the like. Pool points inside them are removed, and spawns and fakes can't be placed there. A player inside one counts as out of bounds.
 5. **Base:** the host places one meeting point inside the boundary and outside no-go zones. The default is the centroid of the largest region, snapped to the nearest pool point. Meetings gather here.
-6. **Validation:** setup is valid when the boundary is valid, the Base is set, and there are at least `4 × playerCount` usable pool points spread over at least 2 regions. The lobby lists any problems.
+6. **Validation:** setup is valid when the boundary is valid, the Base is set, and there are at least `minTaskPointsPerPlayer (4) × playerCount` **usable** pool points (enabled, in a section of at least `minSectionAreaM2`) spread over at least `minRegionsWithPoints` (2) regions. The lobby checklist lists any problems, using the same function as the server (`validateSetup`).
+
+In the app the host works through these as a wizard (① Boundary → ⑥ Settings, each step ✓ when valid) with a "Preview sections" toggle that draws the 9 sections of a region. Everyone else sees the same map: boundary, regions with name and bucketed count, task points (for a safety review) and the Base. Task points are not sent once the lobby is over. Every setup change makes the server re-validate, and the countdown is cancelled if the setup stops being valid.
 
 Every setup change un-readies all players (RULES §3.6). Setup data is public, since every player sees the map.
 
 ## 2. Region partitioning
 Algorithm, deterministic for a given seed:
-1. Sample ~400 uniformly random points inside the boundary (with no-go zones removed), using seeded rejection sampling over the bounding box.
-2. Run **k-means** with k = `regionCount` (auto rule in CONFIG) for 20 iterations, seeded, with k-means++ initialisation.
-3. Build a **Voronoi** diagram of the k centroids with `@turf/voronoi`, using the boundary's bounding box.
-4. **Clip** each cell to the boundary with `@turf/intersect`. If a clipped cell is a MultiPolygon, keep its largest part and merge the slivers into the neighbour they share the longest edge with.
-5. Drop any region smaller than 10% of the average and re-run with k−1. Regions are named in reading order: west→east, then north→south by centroid.
+All of it runs on a flat plane in metres around the area's centre (ADR-044), then converts back to `[lng, lat]` (rounded to 1e-7°).
+1. Sample `regionSampleCount` (400) uniformly random points inside the playable area (boundary minus no-go zones), using seeded rejection sampling over the bounding box.
+2. Run **k-means** with k = `regionCount` (auto rule in CONFIG) for `regionKmeansIterations` (20) iterations, seeded, with k-means++ initialisation.
+3. Build a **Voronoi** diagram of the k centroids with `@turf/voronoi`, over the area's bounding box plus a margin. Each cell is paired with the centroid it encloses, not trusted by order.
+4. **Clip** each cell to the playable area with `@turf/intersect`. If a clipped cell is a MultiPolygon, keep its largest part; every other part joins the neighbouring region it shares the longest edge with (ADR-049). A part that borders no region stays with its own region as an island. Parts under 1 m² are dropped.
+5. Drop any region smaller than `minRegionAreaRatio` (10%) of the average and re-run with k−1 (never below 2). Regions are named in reading order, `Region A`, `Region B`…, and given ids `r1`, `r2`…: west→east by centroid, then north→south.
+
+The seed is stored in the room (`setup.seed`). "Regenerate" uses the host's seed or the next one in a hash chain, so a layout can always be reproduced. A region is one polygon, or several when a no-go zone splits it.
 
 Regions must not overlap and must cover the boundary, minus no-go zones. Tests check both.
 
@@ -26,7 +31,7 @@ Regions must not overlap and must cover the boundary, minus no-go zones. Tests c
 **Every region has its own compass.** "North-East of Region A" means the NE section *of Region A*, never NE of the whole map or the world.
 
 For a region R:
-- **Origin O:** the region's *pole of inaccessibility* (the interior point furthest from the edge). Use the `polylabel` algorithm; it is more robust than the centroid for concave shapes. If that isn't available, use `@turf/center-of-mass`, and if that falls outside R, use `@turf/point-on-feature`.
+- **Origin O:** the region's *pole of inaccessibility* (the interior point furthest from the edge), from the `polylabel` algorithm run on the region's flat-plane polygon (holes included); for a multi-part region the part with the largest clearance wins. Fallbacks: the centroid, and if that falls outside R, any point sampled inside R.
 - **Radius ρ:** the distance from O to the furthest vertex of R.
 - **Centre section:** the points of R within `sectionCentreRatio × ρ` (0.35ρ) of O.
 - **Compass sections:** every other point p in R is placed by its bearing θ from O, measured from **true north** (`@turf/bearing`, normalised to [0, 360)):
@@ -42,15 +47,16 @@ For a region R:
 | W | [247.5, 292.5) |
 | NW | [292.5, 337.5) |
 
-- **Section polygons**, used for map highlighting and area checks, are built by intersecting R with a wedge polygon from O (radius 2ρ), with the centre disc cut out.
-- A section with area below `minSectionAreaM2` (400 m²), or with no usable pool points, is **unusable**: tasks are never sent there. The host preview greys it out.
-- `sectionOf(point)` returns `{regionId, section}` or `null` if the point is outside every region. It must be a pure function with unit tests, including concave and L-shaped regions.
+- **Section polygons**, used for map highlighting and area checks, are built by intersecting R with a wedge polygon from O (radius 2ρ), with the centre disc cut out (`sectionShapes()`). They are computed on the flat plane, so they differ from `sectionOf` by under about 1.5° of bearing at a wedge border (ADR-044). The server stores only each section's area; the client rebuilds the polygons for the preview with the same function.
+- A section with area below `minSectionAreaM2` (400 m²), or with no usable pool points, is **unusable**: tasks are never sent there. The host preview greys it out (`usable` in the view).
+- `sectionOf(point, regions, centreRatio)` returns `{regionId, section}` (section is `N`…`NW` or `C` for the centre) or `null` if the point is outside every region. A point on a border shared by two regions belongs to the earlier region in the list. Bearings exactly on a 22.5° border belong to the clockwise section (`22.5° → NE`, `337.5° → N`). It is a pure function with unit tests, including concave, L-shaped, holed, split and thin regions, and the GDD's test: a point due NE of Region A's origin is NE of A even when it is in the global SW of the boundary.
 
 **Server entry check (Stage 2 reveal):** a player has entered their task's section after `sectionEntryHoldS` (3 s) of consecutive good fixes (accuracy ≤ 30 m, not stale) for which `sectionOf` returns the target. A fix that is outside the section but within its accuracy radius of the edge doesn't reset the hold (**hysteresis**). Entry is one-way: once the pin is revealed, it stays revealed.
 
 ## 4. Task-point pool
-- For each usable section, sample candidate points (best-candidate sampling) up to `taskPointsPerSection` (3), keeping them at least `taskPointMinSpacingM` (20 m) apart and outside no-go zones.
-- Each point stores `{id, lat, lng, regionId, section, source: 'auto'|'host', disabled: boolean}`.
+- For each section of at least `minSectionAreaM2`, sample candidate points (best-candidate sampling) up to `taskPointsPerSection` (3), keeping them at least `taskPointMinSpacingM` (20 m) apart (across sections too) and outside no-go zones (regions already exclude them). A point carries the section `sectionOf` assigns it, which can differ from the polygon it was sampled in only at a wedge border.
+- Each point stores `{id, lat, lng, regionId, section, source: 'auto'|'host', disabled: boolean}`; ids are `p1`, `p2`….
+- The host can add points (the server computes region and section and refuses points outside the playable area), delete points, and regenerate. Regenerating replaces the auto points and keeps host points. A no-go change deletes the points inside the zone but never brings deleted points back; a new layout regenerates the auto points (ADR-045).
 - When a task is assigned, pick from the target section, preferring points that are:
   - not active for another player
   - not used within the last `taskPointReuseCooldownS` (300 s)
@@ -79,7 +85,8 @@ Set by `playerVisibility`. **Dots never carry a username or tag in any mode.**
   - `ally`: imposters only, marks the other imposters
   - `infected` / `exposed`: imposters only
 - **Spectators** are never shown as dots and never counted.
-- **Region counts:** the number of active, non-stale players whose latest good fix is in each region. They are bucketed into `0`, `1`, `2–3`, `4+`, recomputed every `regionCountRefreshS` (30 s), and sent to everyone. The viewer is included in their own region's count, which avoids an off-by-one leak.
+- **Region counts:** the number of active, non-stale players whose latest fix is in each region. They are bucketed into `0`, `1`, `2–3`, `4+`, and a snapshot is taken every `regionCountRefreshS` (30 s). Each viewer sees the snapshot with their own entry replaced by their current position, so the viewer is always counted in their own region, which avoids an off-by-one leak (ADR-046). The lobby shows the counts on the region labels for testing.
+- **Phase 3 behaviour:** the modes apply in the lobby too (ADR-047). `nearby` measures from the viewer's own latest fix and shows nobody to a viewer with no fix.
 
 ## 7. Map rendering (client)
 - Tiles: standard **OSM** raster tiles (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`), darkened in CSS (`.dark-tiles`), credited "© OpenStreetMap contributors". CARTO Dark Matter was the first choice but now answers with an "API KEY REQUIRED" placeholder (ADR-039). No API key is needed.

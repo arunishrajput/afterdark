@@ -204,3 +204,63 @@ function compassBearing(from: LatLng, to: LatLng): number {
   const dN = to.lat - from.lat;
   return ((Math.atan2(dE, dN) * 180) / Math.PI + 360) % 360;
 }
+
+describe('odd shapes (a no-go zone can punch holes or split a region)', () => {
+  const outer = rectShape(300, 300);
+  const hole = ringFromMeters([
+    [100, 100],
+    [200, 100],
+    [200, 200],
+    [100, 200],
+  ]);
+
+  it('a region with a hole: the origin is in the ring of ground, and the hole belongs to no section', () => {
+    const donut = frameRegion({ id: 'd', name: 'd', area: [[outer, hole]], areaM2: 80_000 });
+    expect(areaContains(donut.area)(donut.origin)).toBe(true);
+    const middle = offsetByMeters(ORIGIN, 150, 150);
+    expect(sectionOf(middle, [donut], RATIO)).toBeNull();
+    const shapes = sectionShapes(donut, RATIO);
+    const total = shapes.reduce((sum, sh) => sum + sh.areaM2, 0);
+    // ≈ 300² − 100² (planar m², so within a percent or two of the geodesic figure)
+    expect(total).toBeGreaterThan(79_000);
+    expect(total).toBeLessThan(81_500);
+    expect(sectionOf(offsetByMeters(ORIGIN, 20, 20), [donut], RATIO)).not.toBeNull();
+  });
+
+  it('a region cut in two parts: both parts are placed relative to the one origin', () => {
+    const west = ringFromMeters([
+      [0, 0],
+      [100, 0],
+      [100, 300],
+      [0, 300],
+    ]);
+    const east = ringFromMeters([
+      [200, 0],
+      [300, 0],
+      [300, 300],
+      [200, 300],
+    ]);
+    const split = frameRegion({ id: 's', name: 's', area: [[west], [east]], areaM2: 60_000 });
+    expect(areaContains(split.area)(split.origin)).toBe(true);
+    const inWest = offsetByMeters(ORIGIN, 50, 150);
+    const inEast = offsetByMeters(ORIGIN, 250, 150);
+    const a = sectionOf(inWest, [split], RATIO);
+    const b = sectionOf(inEast, [split], RATIO);
+    expect(a?.regionId).toBe('s');
+    expect(b?.regionId).toBe('s');
+    expect(sectionOf(offsetByMeters(ORIGIN, 150, 150), [split], RATIO)).toBeNull(); // the gap
+    // ρ reaches the far part's far corner.
+    expect(split.rhoM).toBeGreaterThan(
+      distanceM(split.origin, offsetByMeters(ORIGIN, 300, 300)) - 1,
+    );
+  });
+
+  it('a very thin region still gets a frame with a usable origin', () => {
+    const strip = frameRegion({ id: 't', name: 't', area: [[rectShape(600, 12)]], areaM2: 7200 });
+    expect(areaContains(strip.area)(strip.origin)).toBe(true);
+    expect(strip.rhoM).toBeGreaterThan(290);
+    // Along the strip the compass says E / W, far from the centre disc.
+    expect(sectionInFrame(offsetByMeters(strip.origin, 200, 0), strip, RATIO)).toBe('E');
+    expect(sectionInFrame(offsetByMeters(strip.origin, -200, 0), strip, RATIO)).toBe('W');
+  });
+});

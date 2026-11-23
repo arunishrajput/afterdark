@@ -33,11 +33,11 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `lobby:kick` | `{playerId}` | — | host, lobby; not yourself (`NOT_ALLOWED`) | 1 |
 | `loc:update` | `{lat, lng, accuracy, ts, heading?, speed?}`. `ts` is server-aligned epoch ms (the client adds its clock offset) | none (volatile emit, no ack); invalid, rate-limited or rejected fixes are dropped silently | bound player. Own limit `locEventsPerSecond` (2/s), separate from the 10/s | 2 |
 | `lobby:setBoundary` | `{boundary: {type:'polygon', coords: [lng,lat][]} \| {type:'circle', center:{lat,lng}, radiusM}}` (polygon 3–500 points, radius ≤ 10 km) | `{areaM2}` | host, lobby. A rejected shape gets `INVALID_PAYLOAD` with a readable message (too small / too large / crosses itself). A changed boundary un-readies everyone and sends `lobby.mapChanged`; an identical one is a no-op | 2 |
-| `lobby:regenerateRegions` | `{regionCount?: 'auto' \| 2..6, seed?}` | — | host | 3 |
-| `lobby:renameRegion` | `{regionId, name}` | — | host | 3 |
-| `lobby:editTaskPoints` | `{add?: {lat,lng}[], remove?: string[], regenerate?: boolean}` | — | host | 3 |
-| `lobby:setNoGoZones` | `{zones: [lng,lat][][]}` | — | host | 3 |
-| `lobby:setBase` | `{lat, lng}` | — | host | 3 |
+| `lobby:regenerateRegions` | `{regionCount?: 'auto' \| 2..6, seed?: uint32}` | — | host, lobby, boundary set (`INVALID_PAYLOAD` otherwise). A `regionCount` is stored in `config.regionCount`. Builds a new layout (names reset, auto points regenerated, host points and Base kept if still valid) and un-readies everyone | 3 |
+| `lobby:renameRegion` | `{regionId, name}` (name: NFC, trimmed, spaces collapsed, 1–`regionNameMaxLen` (20) of letters, digits, space, `_ . ' -`) | — | host, lobby. `NOT_FOUND` for an unknown region; an unchanged name is a no-op | 3 |
+| `lobby:editTaskPoints` | `{add?: {lat,lng}[] (≤ 20), remove?: string[] (≤ 200), regenerate?: boolean}` | — | host, lobby. Order: remove, regenerate (keeps host points), add. The server computes each added point's region and section and rejects the whole call (`INVALID_PAYLOAD`) if any is outside the boundary or inside a no-go zone, or the pool would pass 400. Unknown ids to remove are ignored. No change → nobody is un-readied | 3 |
+| `lobby:setNoGoZones` | `{zones: [lng,lat][][]}` (≤ 20 zones of 3–200 corners; the list replaces the old one) | — | host, lobby. A zone that is too small or crosses itself → `INVALID_PAYLOAD` with a readable message. Removes pool points inside zones, rebuilds regions (same seed, names kept), moves the default Base out of a zone. An identical list is a no-op | 3 |
+| `lobby:setBase` | `{lat, lng}` | — | host, lobby. Must be inside the boundary and outside no-go zones (`INVALID_PAYLOAD`). Marks the Base as host-placed | 3 |
 | `game:forceStart` | `{}` | — | host, spawn phase | 4 |
 | `game:pause` / `game:resume` | `{}` | — | host, playing | 4 |
 | `game:abort` | `{}` | — | host, any game phase | 4 |
@@ -73,10 +73,12 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
 | `event` | `GameEvent` (toast or overlay trigger) | as they happen | 1 |
 | `kicked` | `{reason: 'replaced' \| 'kicked'}`; the server then disconnects the socket | once | 1 |
 
+**Radar visibility (Phase 3, ADR-047):** `playerVisibility` decides who appears in a viewer's `radar` frame: `nearby` (within `nearbyRadiusM` of the viewer's own fix), `regions` (no dots) or `all`. Dot flags stay `oob` and `stale` until Phase 4.
+
 **Field formats (Phase 1, `schemas.ts`):** `username` is NFC-normalised, trimmed, runs of spaces collapsed, `[\p{L}\p{M}\p{N} _.-]`, 2–16 code points (ADR-034). `code` is trimmed and upper-cased, then 6 symbols from `lobbyCodeAlphabet`. `token` is 16–64 symbols and `playerId` 12–64 symbols of the URL-safe ID alphabet. All payload objects are strict (unknown keys → `INVALID_PAYLOAD`).
 
 ### `PlayerView` (outline; the full type is in `shared/src/types/view.ts`)
-**Built so far (Phase 2):** `v`, `serverNow`, `lobby.{code, phase, hostId, testMode, config, map, players, countdownEndsAt?}` and `me.{id, username, isHost, ready, status, location?}`. `lobby.map` is `{boundary?: {ring: [lng,lat][] (closed), areaM2}}`; Phase 3 adds regions, points, no-go zones and the Base. `me.location` is the viewer's **own** fix only: `{lat, lng, accuracy, quality: 'good'|'weak'|'stale', oob}`; it is absent until the server accepts a fix. Quality and `oob` are derived when the view is built (ADR-040). `phase` is `'lobby' | 'starting'` (`starting` is a placeholder until Phase 4). `GameConfigPublic` = the host-editable keys (ADR-035). `countdownEndsAt` is present only while the start countdown runs. `PublicPlayer` has no `revealedRole` yet (Phase 8). `me.personalScore` and the other `me`/`game` fields arrive with their phases.
+**Built so far (Phase 3):** `v`, `serverNow`, `lobby.{code, phase, hostId, testMode, config, map, players, countdownEndsAt?}`, `me.{id, username, isHost, ready, status, location?}` and `game?.{regionCounts}`. `lobby.map` is `{boundary?: {ring: [lng,lat][] (closed), areaM2}, regions: RegionPublic[], taskPoints: TaskPointPublic[], noGo: ring[], base?: {lat,lng}}`. A `RegionPublic` is `{id, name, area: [lng,lat] multi-polygon, origin: {lat,lng}, rhoM, areaM2, sections: {id: 'N'|'NE'|'E'|'SE'|'S'|'SW'|'W'|'NW'|'C', areaM2, usable}[]}`: the 9 section polygons are not sent, clients derive them with `sectionShapes()` (ADR-044). A `TaskPointPublic` is `{id, lat, lng, regionId, section, source: 'auto'|'host'}` and is present **only while `lobby.phase === 'lobby'`** (empty afterwards: the pool is secret during play). Setup is identical for every viewer. `game.regionCounts` is `{regionId, bucket}[]` with bucket labels from `regionCountBuckets`, present once the lobby has regions, refreshed every `regionCountRefreshS`, with the viewer's own region live (ADR-046). `me.location` is the viewer's **own** fix only: `{lat, lng, accuracy, quality: 'good'|'weak'|'stale', oob}`; it is absent until the server accepts a fix. Quality and `oob` are derived when the view is built (ADR-040). `phase` is `'lobby' | 'starting'` (`starting` is a placeholder until Phase 4). `GameConfigPublic` = the host-editable keys (ADR-035). `countdownEndsAt` is present only while the start countdown runs. `PublicPlayer` has no `revealedRole` yet (Phase 8). `me.personalScore` and the other `me`/`game` fields arrive with their phases.
 
 ```ts
 interface PlayerView {
@@ -134,7 +136,7 @@ The type and points arrive only in the `task:open` ack.
 `{alias: string, lat, lng, flags: ('oob'|'stale'|'ally'|'exposed'|'infected')[]}`. The `ally`, `exposed` and `infected` flags are only ever sent to active imposters. The alias is per viewer, rotates every `dotAliasRotateS`, and dots are sorted by alias (ADR-041). A radar frame never contains a player id or username.
 
 ### `GameEvent` (examples)
-Phase 1–2 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}`, `{type:'lobby.configChanged'}` and `{type:'lobby.mapChanged'}` (the last two: everyone was un-readied). All go to every connected player.
+Phase 1–3 events: `{type:'lobby.countdown', endsAt}`, `{type:'lobby.countdownCancelled'}`, `{type:'lobby.configChanged'}` and `{type:'lobby.mapChanged'}` (the last two: everyone was un-readied; `mapChanged` now covers the boundary, regions, points, no-go zones and the Base). All go to every connected player.
 
 `lobby.countdown`, `game.spawnStarted`, `game.rolesRevealed`, `task.revealed` (Stage 2), `task.atPin`, `task.completed {points}`, `task.fooled`, `task.expired`, `task.rerolled`, `sabotage.started {until}`, `meeting.called {by}`, `meeting.result {...}`, `player.ejected {username, wasImposter}`, `zone.warning`, `zone.penalty`, `game.paused`, `game.resumed`, `game.ended`.
 

@@ -202,5 +202,5 @@ The server checks win conditions after **every** state change, in strict process
 | E36 | Phone locks or browser goes to background | The player becomes stale. They can't act or be infected until they return. The app re-acquires the wake lock. |
 | E37 | Imposter disconnects | Their abilities stop being usable. Forfeit applies if every active imposter has been gone 180 s. |
 | E38 | Spectator talks during a meeting | It can't be prevented physically. Spectators only receive public data, so they can't leak anything secret through the app. |
-| E39 | All players ready but no Base or no usable task points | The countdown doesn't start. The lobby shows exactly what is missing. |
+| E39 | All players ready but the setup is invalid: no boundary, no Base, fewer than `minTaskPointsPerPlayer` × players usable task points, or points in fewer than `minRegionsWithPoints` regions | The countdown doesn't start (or is cancelled if it was running). The lobby checklist shows exactly what is missing. A setup change makes everyone un-ready anyway (E40). |
 | E40 | Host changes settings after everyone is ready | Everyone is un-readied (§3.6). |
