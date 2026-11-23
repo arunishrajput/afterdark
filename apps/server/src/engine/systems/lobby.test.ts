@@ -18,17 +18,39 @@ const ok = (res: ReduceResult): OkResult => {
 };
 const errCode = (res: ReduceResult) => (res.ok ? 'OK' : res.code);
 
-/** A lobby created by `host`, plus `extra` joined players p1…pN. */
-function lobbyWith(extra: number, opts: { allowTestMode?: boolean } = {}): RoomState {
+const HOME = { lat: 28.6139, lng: 77.209 };
+const CIRCLE = { type: 'circle' as const, center: HOME, radiusM: 120 };
+
+/**
+ * A lobby created by `host`, plus `extra` joined players p1…pN. By default the
+ * host has drawn a boundary and everyone has a good fix, so they can ready up;
+ * `bare: true` leaves the room exactly as `join` made it.
+ */
+function lobbyWith(
+  extra: number,
+  opts: { allowTestMode?: boolean; bare?: boolean } = {},
+): RoomState {
   let state = createRoomState({
     code: 'ABC234',
     hostId: 'host',
     username: 'Host',
     allowTestMode: opts.allowTestMode ?? true,
+    radarSalt: 'salt',
   });
   for (let i = 1; i <= extra; i++) {
     state = ok(
       reduce(state, { type: 'join', playerId: `p${i}`, username: `Player ${i}` }, T0),
+    ).state;
+  }
+  if (opts.bare) return state;
+  state = ok(reduce(state, { type: 'setBoundary', playerId: 'host', boundary: CIRCLE }, T0)).state;
+  for (const p of state.players) {
+    state = ok(
+      reduce(
+        state,
+        { type: 'locUpdate', playerId: p.id, fix: { ...HOME, accuracy: 5, ts: T0 } },
+        T0,
+      ),
     ).state;
   }
   return state;
@@ -46,7 +68,7 @@ const player = (s: RoomState, id: string) => s.players.find((p) => p.id === id);
 
 describe('create (RULES §3.1)', () => {
   it('makes the creator the host, in the lobby phase, not ready', () => {
-    const s = lobbyWith(0);
+    const s = lobbyWith(0, { bare: true });
     expect(s.phase).toBe('lobby');
     expect(s.hostId).toBe('host');
     expect(s.players).toEqual([{ id: 'host', username: 'Host', ready: false, connected: true }]);
@@ -309,7 +331,9 @@ describe('connection state (RULES §3.9, §10.5; ADR-036)', () => {
   });
 
   it('reconnecting restores the same player', () => {
-    let s = ok(reduce(lobbyWith(1), { type: 'disconnect', playerId: 'p1' }, T0)).state;
+    let s = ok(
+      reduce(lobbyWith(1, { bare: true }), { type: 'disconnect', playerId: 'p1' }, T0),
+    ).state;
     s = ok(reduce(s, { type: 'connect', playerId: 'p1' }, T0 + S)).state;
     expect(player(s, 'p1')).toEqual({
       id: 'p1',

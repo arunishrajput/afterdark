@@ -1,5 +1,5 @@
 /** All live rooms by code: create, find, delete, and idle cleanup (RULES §3.9). */
-import { DEFAULT_CONFIG } from '@afterdark/shared';
+import { DEFAULT_CONFIG, randomId } from '@afterdark/shared';
 
 import { createRoomState } from '../engine/state';
 import { type CodeSource, cryptoCodeSource, generateLobbyCode } from './lobbyCode';
@@ -7,11 +7,14 @@ import { Room } from './Room';
 
 const MS_PER_S = 1000;
 const MS_PER_MIN = 60 * MS_PER_S;
+const RADAR_SALT_LENGTH = 24;
 
 export interface RoomManagerDeps {
   now: () => number;
   allowTestMode: boolean;
   codeSource?: CodeSource;
+  /** Secret for the rotating radar aliases of a new room (default: random). */
+  saltSource?: () => string;
   /** Called for every new room before its first command (wire views/effects here). */
   onCreate?: (room: Room) => void;
   /** Called after a room is removed (purge sessions here). */
@@ -37,6 +40,7 @@ export class RoomManager {
         hostId: host.playerId,
         username: host.username,
         allowTestMode: this.deps.allowTestMode,
+        radarSalt: this.deps.saltSource?.() ?? randomId(RADAR_SALT_LENGTH),
       }),
       { now: this.deps.now },
     );

@@ -1,5 +1,11 @@
 /** Engine commands, effects and results. */
-import type { ErrorCode, GameConfigEditablePatch, GameEvent } from '@afterdark/shared';
+import type {
+  BoundaryInput,
+  ErrorCode,
+  GameConfigEditablePatch,
+  GameEvent,
+  LocUpdatePayload,
+} from '@afterdark/shared';
 
 import type { RoomState } from './state';
 
@@ -11,7 +17,10 @@ export type Command =
   | { type: 'updateConfig'; playerId: string; patch: GameConfigEditablePatch }
   | { type: 'kick'; playerId: string; targetId: string }
   | { type: 'connect'; playerId: string }
-  | { type: 'disconnect'; playerId: string };
+  | { type: 'disconnect'; playerId: string }
+  | { type: 'locUpdate'; playerId: string; fix: LocUpdatePayload }
+  | { type: 'setBoundary'; playerId: string; boundary: BoundaryInput }
+  | { type: 'teleport'; playerId: string; lat: number; lng: number };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =

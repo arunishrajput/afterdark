@@ -9,18 +9,14 @@ import {
   startBlockers,
 } from '@afterdark/shared';
 
-import type { PlayerState, RoomState } from '../state';
+import type { RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
+import { requireGoodFix } from './location';
+import { findPlayer } from './players';
 
 const MS_PER_S = 1000;
 
 const nameKey = (username: string) => username.toLocaleLowerCase('en-US');
-
-export function findPlayer(state: RoomState, playerId: string): PlayerState {
-  const p = state.players.find((x) => x.id === playerId);
-  if (!p) throw new RuleError('NOT_FOUND', 'Player not in this lobby');
-  return p;
-}
 
 function requireLobby(state: RoomState): void {
   if (state.phase !== 'lobby') throw new RuleError('WRONG_PHASE', 'Only possible in the lobby');
@@ -48,6 +44,7 @@ export function evaluateCountdown(state: RoomState, now: number, effects: Effect
     startBlockers(state.config, {
       playerCount: state.players.length,
       readyCount: state.players.filter((p) => p.ready).length,
+      boundarySet: state.boundary !== undefined,
     }).length === 0;
 
   if (startable && state.countdownEndsAt === undefined) {
@@ -90,9 +87,12 @@ export function leave(state: RoomState, playerId: string, now: number, effects: 
   effects.push({ kind: 'removed', playerId, reason: 'left' });
 }
 
-export function setReady(state: RoomState, playerId: string, ready: boolean): void {
+/** Un-readying is always allowed; readying needs a good, fresh fix (RULES §3.5). */
+export function setReady(state: RoomState, playerId: string, ready: boolean, now: number): void {
   requireLobby(state);
-  findPlayer(state, playerId).ready = ready;
+  const p = findPlayer(state, playerId);
+  if (ready) requireGoodFix(p, state.config, now);
+  p.ready = ready;
 }
 
 export function updateConfig(

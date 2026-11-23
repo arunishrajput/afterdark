@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   errorCode,
+  HOME,
   openClient,
   startTestServer,
   type TestClient,
@@ -60,6 +61,14 @@ describe('lobby: 8 players over sockets', () => {
     return { code: created.code, members };
   }
 
+  /** The host draws a circle and everyone sends a good fix, so all of them can ready up. */
+  async function prepare(members: Member[]): Promise<void> {
+    await members[0]?.client.ok('lobby:setBoundary', {
+      boundary: { type: 'circle', center: HOME, radiusM: 120 },
+    });
+    for (const m of members) await m.client.locate(ts.clock.now);
+  }
+
   const everyoneSees = (
     members: Member[],
     pred: Parameters<TestClient['waitForView']>[0],
@@ -83,6 +92,7 @@ describe('lobby: 8 players over sockets', () => {
       'NAME_TAKEN',
     );
 
+    await prepare(members);
     // Everyone readies → countdown event + deadline in every view.
     for (const m of members) await m.client.ok('lobby:setReady', { ready: true });
     const endsAt = ts.clock.now + COUNTDOWN_MS;
@@ -148,6 +158,7 @@ describe('lobby: 8 players over sockets', () => {
 
   it('a config change un-readies everyone and reaches every client', async () => {
     const { members } = await lobbyOf(4);
+    await prepare(members);
     for (const m of members) await m.client.ok('lobby:setReady', { ready: true });
     await everyoneSees(members, (v) => v.lobby.countdownEndsAt !== undefined, 'countdown');
     await members[0]?.client.ok('lobby:updateConfig', { patch: { playTimeMin: 15 } });

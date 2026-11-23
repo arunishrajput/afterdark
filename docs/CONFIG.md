@@ -156,3 +156,4 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `ackTimeoutMs` | 5000 | — | 🔒 | Client gives up waiting for an ack after this. |
 | `tickIntervalMs` | 1000 | — | 🔒 | Server room tick (countdowns, timers, win checks). |
 | `socketEventsPerSecond` | 10 | — | 🔒 | Basic per-socket rate limit for client → server events; extra events get `RATE_LIMITED`. |
+| `locEventsPerSecond` | 2 | — | 🔒 | Separate per-socket limit for `loc:update` (which has no ack): extra fixes are dropped silently. It does not count against `socketEventsPerSecond`. |

@@ -4,8 +4,9 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { buildLobbyFixture, FORBIDDEN_KEY_NAMES, keysDeep } from './leakHarness';
+import { buildLobbyFixture, FIXTURE_NOW, FORBIDDEN_KEY_NAMES, keysDeep } from './leakHarness';
 import { projectView } from './projectView';
+import { buildRadar } from './radar';
 
 /** Every key path a Phase 1 view may contain. Anything else fails the test. */
 const ALLOWED_VIEW_KEYS = new Set([
@@ -15,6 +16,10 @@ const ALLOWED_VIEW_KEYS = new Set([
   'lobby.hostId',
   'lobby.testMode',
   'lobby.config',
+  'lobby.map',
+  'lobby.map.boundary',
+  'lobby.map.boundary.ring',
+  'lobby.map.boundary.areaM2',
   'lobby.players',
   'lobby.players[].id',
   'lobby.players[].username',
@@ -29,7 +34,19 @@ const ALLOWED_VIEW_KEYS = new Set([
   'me.isHost',
   'me.ready',
   'me.status',
+  'me.location',
+  'me.location.lat',
+  'me.location.lng',
+  'me.location.accuracy',
+  'me.location.quality',
+  'me.location.oob',
 ]);
+
+const NOW = FIXTURE_NOW;
+
+/** The number as a whole JSON token (so 28.6139 doesn't match inside 28.61391234). */
+const exactNumber = (n: number) =>
+  new RegExp(`(^|[^\\d.])${String(n).replace('.', '\\.')}($|[^\\d])`);
 
 const fixtures = {
   fresh: buildLobbyFixture({ players: 4 }),
@@ -39,10 +56,11 @@ const fixtures = {
     countdownEndsAt: 123,
   }),
   mixed: buildLobbyFixture({ players: 12, readyIds: ['p1', 'p4'], disconnectedIds: ['p2', 'p0'] }),
+  located: buildLobbyFixture({ players: 8, located: true }),
 };
 
 describe.each(Object.entries(fixtures))('leak: %s lobby', (_name, { state, tokens }) => {
-  const views = state.players.map((p) => ({ id: p.id, view: projectView(state, p.id) }));
+  const views = state.players.map((p) => ({ id: p.id, view: projectView(state, p.id, NOW) }));
 
   it('no view ever contains a session token (anyone’s)', () => {
     for (const { view } of views) {
@@ -68,6 +86,47 @@ describe.each(Object.entries(fixtures))('leak: %s lobby', (_name, { state, token
   it('the host’s view has the same structure as everyone else’s (no host powers in data)', () => {
     const hostKeys = keysDeep(views.find((v) => v.id === state.hostId)?.view);
     for (const { view } of views) expect(keysDeep(view)).toEqual(hostKeys);
+  });
+
+  it('a view never contains another player’s coordinates (only me.location is theirs)', () => {
+    for (const { id, view } of views) {
+      const json = JSON.stringify(view);
+      for (const other of state.players) {
+        if (other.id === id || !other.loc) continue;
+        expect(json, `${id} sees ${other.id}'s lat`).not.toMatch(exactNumber(other.loc.lat));
+        expect(json, `${id} sees ${other.id}'s lng`).not.toMatch(exactNumber(other.loc.lng));
+      }
+    }
+  });
+
+  it('me.location, when present, is the viewer’s own fix', () => {
+    for (const { id, view } of views) {
+      const mine = state.players.find((p) => p.id === id)?.loc;
+      if (!mine) expect(view.me.location).toBeUndefined();
+      else expect(view.me.location).toMatchObject({ lat: mine.lat, lng: mine.lng });
+    }
+  });
+
+  it('radar frames carry no player id, username, token or room salt', () => {
+    for (const { id } of views) {
+      const frame = JSON.stringify({ dots: buildRadar(state, id, NOW), at: NOW });
+      for (const p of state.players) {
+        expect(frame).not.toContain(`"${p.id}"`);
+        expect(frame).not.toContain(p.username);
+      }
+      for (const token of tokens.values()) expect(frame).not.toContain(token);
+      expect(frame).not.toContain(state.radarSalt);
+    }
+  });
+
+  it('radar dots have the same shape for every viewer and never include the viewer', () => {
+    for (const { id } of views) {
+      const dots = buildRadar(state, id, NOW);
+      expect(dots.length).toBeLessThanOrEqual(state.players.length - 1);
+      for (const d of dots) expect(Object.keys(d).sort()).toEqual(['alias', 'flags', 'lat', 'lng']);
+      const own = state.players.find((p) => p.id === id)?.loc;
+      if (own) expect(dots.some((d) => d.lat === own.lat && d.lng === own.lng)).toBe(false);
+    }
   });
 
   it('the roster is identical for every viewer (public data only)', () => {

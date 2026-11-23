@@ -90,7 +90,17 @@ describe('Room', () => {
     ] as const) {
       room.dispatch({ type: 'join', playerId: id, username: name });
     }
+    room.dispatch({
+      type: 'setBoundary',
+      playerId: 'h1',
+      boundary: { type: 'circle', center: { lat: 28.6139, lng: 77.209 }, radiusM: 120 },
+    });
     for (const p of room.state.players) {
+      room.dispatch({
+        type: 'locUpdate',
+        playerId: p.id,
+        fix: { lat: 28.6139, lng: 77.209, accuracy: 5, ts: T0 },
+      });
       room.dispatch({ type: 'setReady', playerId: p.id, ready: true });
     }
     expect(room.state.countdownEndsAt).toBe(T0 + COUNTDOWN_MS);

@@ -1,6 +1,8 @@
 /** `reduce(state, cmd, now)`: the single entry point for player commands. Pure. */
 import type { RoomState } from './state';
 import * as lobby from './systems/lobby';
+import * as location from './systems/location';
+import * as map from './systems/map';
 import { type Command, type Effect, type ReduceResult, RuleError } from './types';
 
 export type { ReduceResult } from './types';
@@ -17,7 +19,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         lobby.leave(draft, cmd.playerId, now, effects);
         break;
       case 'setReady':
-        lobby.setReady(draft, cmd.playerId, cmd.ready);
+        lobby.setReady(draft, cmd.playerId, cmd.ready, now);
         break;
       case 'updateConfig':
         lobby.updateConfig(draft, cmd.playerId, cmd.patch, effects);
@@ -30,6 +32,15 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'disconnect':
         lobby.disconnect(draft, cmd.playerId, now);
+        break;
+      case 'locUpdate':
+        location.locUpdate(draft, cmd.playerId, cmd.fix, now);
+        break;
+      case 'setBoundary':
+        map.setBoundary(draft, cmd.playerId, cmd.boundary, effects);
+        break;
+      case 'teleport':
+        location.teleport(draft, cmd.playerId, cmd.lat, cmd.lng, now);
         break;
     }
   } catch (err) {

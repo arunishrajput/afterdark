@@ -32,7 +32,7 @@ export class ViewEmitter {
   update(state: RoomState): void {
     for (const p of state.players) {
       if (!p.connected) continue;
-      const body = projectView(state, p.id);
+      const body = projectView(state, p.id, this.deps.now());
       const fingerprint = JSON.stringify(body);
       const t = this.track(p.id);
       if (t.fingerprint === fingerprint) continue;
@@ -46,7 +46,7 @@ export class ViewEmitter {
   /** Send this player's current view now, ignoring the throttle (a socket just bound). */
   resend(state: RoomState, playerId: string): void {
     const t = this.track(playerId);
-    const body = projectView(state, playerId);
+    const body = projectView(state, playerId, this.deps.now());
     t.fingerprint = JSON.stringify(body);
     t.body = body;
     t.v += 1;

@@ -27,7 +27,13 @@ describe('ViewEmitter', () => {
       throttleMs: THROTTLE,
       send: (to, view) => sent.push({ to, view }),
     });
-    state = createRoomState({ code: 'ABC234', hostId: 'h', username: 'Host', allowTestMode: true });
+    state = createRoomState({
+      code: 'ABC234',
+      hostId: 'h',
+      username: 'Host',
+      allowTestMode: true,
+      radarSalt: 'salt',
+    });
   });
 
   afterEach(() => {

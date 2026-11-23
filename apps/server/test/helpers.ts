@@ -7,7 +7,9 @@ import type {
   ClientToServerEvents,
   GameEvent,
   KickedPayload,
+  LatLng,
   PlayerView,
+  RadarPayload,
   ServerToClientEvents,
 } from '@afterdark/shared';
 import { createRng } from '@afterdark/shared';
@@ -20,6 +22,7 @@ import { rngCodeSource } from '../src/rooms/lobbyCode';
 export type ClientSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export const T0 = 1_700_000_000_000;
+export const HOME = { lat: 28.6139, lng: 77.209 };
 const ACK_TIMEOUT_MS = 2000;
 const WAIT_TIMEOUT_MS = 3000;
 const POLL_MS = 5;
@@ -67,6 +70,7 @@ export class TestClient {
   view: PlayerView | undefined;
   readonly views: PlayerView[] = [];
   readonly events: GameEvent[] = [];
+  readonly radars: RadarPayload[] = [];
   kicked: KickedPayload | undefined;
   /** Every server → client frame, serialised, for raw leak scans. */
   readonly frames: string[] = [];
@@ -78,6 +82,7 @@ export class TestClient {
       this.views.push(v);
     });
     this.socket.on('event', (e) => this.events.push(e));
+    this.socket.on('radar', (r) => this.radars.push(r));
     this.socket.on('kicked', (k) => (this.kicked = k));
     this.socket.onAny((event: string, ...args: unknown[]) => {
       this.frames.push(JSON.stringify([event, ...args]));
@@ -112,6 +117,18 @@ export class TestClient {
     const res = await this.call(event, payload);
     if (!res.ok) throw new Error(`${event} failed: ${res.error.code} ${res.error.message}`);
     return res.data;
+  }
+
+  /** Sends a fix (stamped `ts`) and waits until the server's view shows it. */
+  locate(ts: number, pos: LatLng = HOME, accuracy = 5): Promise<PlayerView> {
+    this.socket.emit('loc:update', { ...pos, accuracy, ts });
+    return this.waitForView(
+      (v) =>
+        v.me.location?.lat === pos.lat &&
+        v.me.location.lng === pos.lng &&
+        v.me.location.accuracy === accuracy,
+      'own location in view',
+    );
   }
 
   waitForView(predicate: (v: PlayerView) => boolean, what = 'view'): Promise<PlayerView> {

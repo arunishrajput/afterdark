@@ -141,4 +141,5 @@ export const DEFAULT_CONFIG = {
   ackTimeoutMs: 5000,
   tickIntervalMs: 1000,
   socketEventsPerSecond: 10,
+  locEventsPerSecond: 2,
 } as const satisfies GameConfig;

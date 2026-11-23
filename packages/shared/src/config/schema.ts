@@ -144,6 +144,7 @@ export const gameConfigSchema = z.strictObject({
   ackTimeoutMs: positiveInt(),
   tickIntervalMs: positiveInt(),
   socketEventsPerSecond: positiveInt(),
+  locEventsPerSecond: positiveInt(),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;

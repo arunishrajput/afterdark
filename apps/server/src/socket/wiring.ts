@@ -5,6 +5,7 @@
  */
 import type { Room } from '../rooms/Room';
 import { ViewEmitter } from '../rooms/ViewEmitter';
+import { buildRadar } from '../views/radar';
 import { type GatewayContext, socketOfPlayer } from './context';
 
 export function attachRoom(ctx: GatewayContext, room: Room, now: () => number): void {
@@ -14,6 +15,22 @@ export function attachRoom(ctx: GatewayContext, room: Room, now: () => number): 
     send: (playerId, view) => socketOfPlayer(ctx, playerId)?.emit('view', view),
   });
   ctx.emitters.set(room.code, emitter);
+
+  // Radar goes out once per `radarIntervalMs` bucket on the room's tick, to
+  // every connected player: each gets their own anonymous dots (never a broadcast).
+  let lastRadarBucket = -1;
+  room.onTick((state, at) => {
+    const bucket = Math.floor(at / state.config.radarIntervalMs);
+    if (bucket === lastRadarBucket) return;
+    lastRadarBucket = bucket;
+    for (const p of state.players) {
+      if (!p.connected) continue;
+      socketOfPlayer(ctx, p.id)?.volatile.emit('radar', {
+        dots: buildRadar(state, p.id, at),
+        at,
+      });
+    }
+  });
 
   room.subscribe((state, effects) => {
     for (const effect of effects) {

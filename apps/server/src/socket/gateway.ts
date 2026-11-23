@@ -12,6 +12,7 @@ import type { ViewEmitter } from '../rooms/ViewEmitter';
 import type { GatewayContext } from './context';
 import { validated } from './handler';
 import { registerLobbyHandlers } from './handlers/lobby';
+import { registerLocationHandlers } from './handlers/location';
 import { registerSessionHandlers } from './handlers/session';
 import { createRateLimiter } from './rateLimit';
 import type { GameIo } from './types';
@@ -59,7 +60,13 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     logger.debug({ socketId: socket.id }, 'socket connected');
 
     const limiter = createRateLimiter(DEFAULT_CONFIG.socketEventsPerSecond);
+    const locLimiter = createRateLimiter(DEFAULT_CONFIG.locEventsPerSecond);
     socket.use(([event, ...args], next) => {
+      // `loc:update` has its own, tighter limit and no ack: over the limit it is just dropped.
+      if (event === 'loc:update') {
+        if (locLimiter.allow()) next();
+        return;
+      }
       if (limiter.allow()) {
         next();
         return;
@@ -76,6 +83,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     );
     registerSessionHandlers(ctx, socket);
     registerLobbyHandlers(ctx, socket);
+    registerLocationHandlers(ctx, socket);
 
     socket.on('disconnect', (reason) => {
       logger.debug({ socketId: socket.id, reason }, 'socket disconnected');

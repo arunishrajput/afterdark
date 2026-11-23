@@ -11,6 +11,8 @@ import { tick } from '../engine/tick';
 import type { Command, Effect, ReduceResult } from '../engine/types';
 
 export type RoomListener = (state: RoomState, effects: readonly Effect[]) => void;
+/** Runs after every tick commit, with the tick's `now` (used for the 1 Hz radar). */
+export type TickListener = (state: RoomState, now: number) => void;
 
 export interface RoomDeps {
   now: () => number;
@@ -19,6 +21,7 @@ export interface RoomDeps {
 export class Room {
   private current: RoomState;
   private readonly listeners = new Set<RoomListener>();
+  private readonly tickListeners = new Set<TickListener>();
   private ticker: ReturnType<typeof setInterval> | undefined;
 
   constructor(
@@ -41,6 +44,11 @@ export class Room {
     return () => this.listeners.delete(listener);
   }
 
+  onTick(listener: TickListener): () => void {
+    this.tickListeners.add(listener);
+    return () => this.tickListeners.delete(listener);
+  }
+
   dispatch(cmd: Command): ReduceResult {
     const res = reduce(this.current, cmd, this.deps.now());
     if (res.ok) this.commit(res.state, res.effects);
@@ -48,8 +56,10 @@ export class Room {
   }
 
   tick(): void {
-    const res = tick(this.current, this.deps.now());
+    const now = this.deps.now();
+    const res = tick(this.current, now);
     this.commit(res.state, res.effects);
+    for (const l of this.tickListeners) l(this.current, now);
   }
 
   /** Re-run listeners without a state change (e.g. a socket bound and needs a view). */
