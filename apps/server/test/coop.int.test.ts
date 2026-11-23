@@ -127,8 +127,7 @@ describe('co-op over sockets', () => {
     }
   }
 
-  const cardOf = (m: Member, id: string) =>
-    m.client.view?.game?.tasks?.find((t) => t.id === id);
+  const cardOf = (m: Member, id: string) => m.client.view?.game?.tasks?.find((t) => t.id === id);
   const eventTypes = (m: Member): GameEvent['type'][] => m.client.events.map((e) => e.type);
 
   /** Both players stand at the pin; the owner starts, the partner (or stand-in) joins; they swap PINs and submit. */
