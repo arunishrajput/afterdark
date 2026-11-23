@@ -6,18 +6,19 @@ import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { gameConfigSchema } from '@afterdark/shared';
+import { type GameConfig, gameConfigSchema } from '@afterdark/shared';
 
 import { type GameStats, simulateGame } from './runGame';
 import { parseSimArgs, type SimArgs, summarise, USAGE } from './summary';
 
 const WORKER_ENV = 'AFTERDARK_SIM_WORKER';
 
-function loadOverrides(path: string | undefined) {
+function loadOverrides(path: string | undefined): Partial<GameConfig> {
   if (!path) return {};
   const raw: unknown = JSON.parse(readFileSync(path, 'utf8'));
   // Unknown keys and out-of-range values are a typo, not a tuning choice.
-  return gameConfigSchema.partial().parse(raw);
+  const parsed = gameConfigSchema.partial().parse(raw);
+  return Object.fromEntries(Object.entries(parsed).filter(([, value]) => value !== undefined));
 }
 
 function playRange(args: SimArgs, from: number, count: number): GameStats[] {
