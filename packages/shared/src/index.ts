@@ -34,6 +34,16 @@ export type { RegionConfig, RegionShape } from './geo/regions';
 export { MIN_REGIONS, partitionRegions, playableArea, resolveRegionCount } from './geo/regions';
 export type { BBox, BestCandidateOptions } from './geo/sampling';
 export { areaBBox, areaContains, sampleBestCandidate, sampleUniform } from './geo/sampling';
+export type { CompassSection, Region, SectionId, SectionPlace, SectionShape } from './geo/sections';
+export {
+  COMPASS_SECTIONS,
+  compassSectionOf,
+  frameRegion,
+  SECTION_IDS,
+  sectionInFrame,
+  sectionOf,
+  sectionShapes,
+} from './geo/sections';
 export type { LatLng, MultiPolygonCoords, PolygonCoords, Position, Ring } from './geo/types';
 export { toLatLng, toPosition } from './geo/types';
 export { ID_ALPHABET, randomId, randomString } from './ids';
