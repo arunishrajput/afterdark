@@ -48,5 +48,22 @@ You should see **AfterDark · Connected ✓** with a ping in milliseconds.
 
 **Layout:** `apps/client` (React PWA), `apps/server` (authoritative Socket.IO server), `packages/shared` (config, protocol schemas, RNG, IDs), `e2e/` (Playwright). See [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Deploying
+AfterDark is one Node process: it serves the built client and the Socket.IO server on the same port, so there is no CORS and HTTPS/WSS comes from the host. It deploys to [Render](https://render.com) from [`render.yaml`](render.yaml) (free plan, region `singapore`, auto-deploy on every push to `main`).
+
+**Live URL:** _not deployed yet: see PROGRESS.md › Manual actions_
+
+| | |
+|---|---|
+| Build / start | `corepack enable && pnpm install --frozen-lockfile && pnpm build`, then `pnpm start` (`node apps/server/dist/index.js`) |
+| Health / build id | `GET /health` → `{"ok":true}`; `GET /version` → `{"sha":"<git commit>"}` (from `RENDER_GIT_COMMIT`). The lobby and home screen show `build <short sha>`. |
+| Env | `NODE_ENV=production`, `LOG_LEVEL=info`, `ALLOW_TEST_MODE=true` (bots and the GPS simulator for demos), `PORT` (set by Render) |
+| Try it locally | `pnpm build && NODE_ENV=production ALLOW_TEST_MODE=true PORT=3100 pnpm start` |
+| Smoke test | `BASE_URL=https://<service>.onrender.com pnpm exec playwright test e2e/prod-smoke.spec.ts` |
+
+**Cold start:** the free tier sleeps after about 15 minutes idle, and the first load then takes up to a minute. Open the URL a couple of minutes before a demo or field test. A deploy restarts the process, so running lobbies end (state is in memory by design); players see "The server is restarting" first.
+
+Steps for the human: [MANUAL_SETUP.md › Phase 6](docs/MANUAL_SETUP.md#phase-6-deployment-on-render-free).
+
 ## Credits
 Map data © OpenStreetMap contributors, tiles © OpenStreetMap.

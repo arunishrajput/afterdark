@@ -1,0 +1,22 @@
+# Render Blueprint: one web service serves the client and the Socket.IO server (ADR-025).
+# Apply with Render dashboard > New > Blueprint. Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: afterdark
+    runtime: node
+    plan: free
+    # Nearest to the players (India). Cannot be changed after the service is created (ADR-065).
+    region: singapore
+    # Node comes from .nvmrc (24). corepack provides the pnpm version pinned in package.json.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      # Lets hosts switch on per-lobby test mode (bots, GPS simulator) for demos (ADR-024).
+      - key: ALLOW_TEST_MODE
+        value: 'true'

@@ -142,7 +142,20 @@ Format: `- 🔴/🟠/🟢 <issue> (found in phase NN): <notes>`
 - AR/camera minigames (out of scope, ADR-029).
 
 ## Field-test notes
-_The human pastes results here using the checklist in docs/TESTING.md §6. Mark blockers with 🔴._
+_The human pastes results here using the checklist in docs/TESTING.md §6. Mark blockers with 🔴. Copy the template below for each session and fill it in._
+
+```
+### Field test · <date> · build <short sha shown in the lobby> · <phones: model + browser, e.g. iPhone 13 Safari, Pixel 7 Chrome>
+- Where / weather / area size:
+- 1. Create, join, grant location, ready, start worked?:
+- 2. GPS accuracy still: ___ m   walking: ___ m
+- 3. Walked 50 m: other phone's dot followed within ~2 s? (needs "Everyone" visibility):
+- 4. Locked the screen 20 s: app recovered? dot went stale and came back?:
+- 5. Did 3 tasks: section highlight → pin → at-pin felt right? Distances noted:
+- 6. Left the boundary: warning after 0 s, penalty after 15 s?:
+- 7. Battery drop over 20 min: ___ %
+- 8. Confusing or annoying (🔴 blocks play · 🟠 should fix · 🟢 nice to have):
+```
 
 ## Session log
 | Date | Phase | Summary |
