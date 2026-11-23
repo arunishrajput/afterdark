@@ -210,7 +210,9 @@ interface Actions {
   myIds(): { me: string | undefined; tag: string | undefined; players: string[] };
   baseOf(): { lat: number; lng: number } | undefined;
   fakesOf(): { id: string; lat: number; lng: number; assigned: boolean }[];
-  cardsOf(): ({ stage: 'assigned' } | { stage: 'pin'; lat: number; lng: number })[];
+  cardsOf(): (
+    { id: string; stage: 'assigned' } | { id: string; stage: 'pin'; lat: number; lng: number }
+  )[];
 }
 
 /** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
@@ -251,14 +253,15 @@ export async function finishFirstTask(page: Page, shot = 'test-results/phase12')
   await reachPin(page, shot);
   const taskId = await page.evaluate(() => {
     const hook = (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions;
-    return (hook.cardsOf()[0] as { id: string }).id;
+    return hook.cardsOf()[0]?.id;
   });
+  expect(taskId).toBeDefined();
   await startTask(page);
   await expect(page.getByTestId('task-player')).toBeVisible();
   const res = await page.evaluate(
     (id) =>
       (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.devAutoComplete(id),
-    taskId,
+    taskId as string,
   );
   expect(res.ok).toBe(true);
   await expect(page.getByTestId('task-player')).toHaveCount(0, { timeout: 8000 });
