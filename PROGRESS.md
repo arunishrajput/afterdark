@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 06, Deploy & first field test** → [docs/phases/PHASE-06-deploy-field-test.md](docs/phases/PHASE-06-deploy-field-test.md)
+**◐ IN PROGRESS: Phase 06, Deploy & first field test** (started 2026-11-23) → [docs/phases/PHASE-06-deploy-field-test.md](docs/phases/PHASE-06-deploy-field-test.md)
 
 **Live URL:** _not deployed yet (Phase 06)_
 
@@ -17,7 +17,7 @@
 | 03 | [Regions, sections & task points](docs/phases/PHASE-03-regions-task-points.md) | ✅ DONE | 2026-11-23 | `phase-03-done` |
 | 04 | [Game start flow](docs/phases/PHASE-04-game-start.md) | ✅ DONE | 2026-11-23 | `phase-04-done` |
 | 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ✅ DONE | 2026-11-23 | `phase-05-done` |
-| 06 | [Deploy & first field test](docs/phases/PHASE-06-deploy-field-test.md) | ▶ NEXT | | |
+| 06 | [Deploy & first field test](docs/phases/PHASE-06-deploy-field-test.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 07 | [Infection system](docs/phases/PHASE-07-infection.md) | ☐ NOT STARTED | | |
 | 08 | [Meetings & voting](docs/phases/PHASE-08-meetings-voting.md) | ☐ NOT STARTED | | |
 | 09 | [Abilities: Saboteur & Phantom](docs/phases/PHASE-09-abilities-saboteur-phantom.md) | ☐ NOT STARTED | | |
