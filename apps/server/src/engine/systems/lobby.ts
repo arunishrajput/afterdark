@@ -28,10 +28,14 @@ function requireHost(state: RoomState, playerId: string): void {
   if (state.hostId !== playerId) throw new RuleError('NOT_HOST', 'Only the host can do that');
 }
 
-/** Earliest-joined connected player, else earliest-joined at all (RULES §3.8). */
+/** Earliest-joined connected human, else a connected bot, else earliest-joined at all (RULES §3.8). */
 function pickNewHost(state: RoomState, excludeId: string): string | undefined {
   const candidates = state.players.filter((p) => p.id !== excludeId && !p.left);
-  return (candidates.find((p) => p.connected) ?? candidates[0])?.id;
+  return (
+    candidates.find((p) => p.connected && !p.bot) ??
+    candidates.find((p) => p.connected) ??
+    candidates[0]
+  )?.id;
 }
 
 function updateEmptySince(state: RoomState, now: number): void {
@@ -59,7 +63,7 @@ export function evaluateCountdown(state: RoomState, now: number, effects: Effect
   }
 }
 
-export function join(state: RoomState, playerId: string, username: string): void {
+export function join(state: RoomState, playerId: string, username: string, bot?: true): void {
   if (state.phase !== 'lobby') throw new RuleError('GAME_IN_PROGRESS', 'The game has started');
   if (state.players.length >= state.config.maxPlayers) {
     throw new RuleError('LOBBY_FULL', 'This lobby is full');
@@ -67,7 +71,13 @@ export function join(state: RoomState, playerId: string, username: string): void
   if (state.players.some((p) => nameKey(p.username) === nameKey(username))) {
     throw new RuleError('NAME_TAKEN', 'That name is taken in this lobby');
   }
-  state.players.push({ id: playerId, username, ready: false, connected: true });
+  state.players.push({
+    id: playerId,
+    username,
+    ready: false,
+    connected: true,
+    ...(bot ? { bot } : {}),
+  });
   delete state.emptySince;
 }
 
@@ -172,7 +182,8 @@ export function tickLobby(state: RoomState, now: number, effects: Effect[]): voi
     host.disconnectedAt !== undefined &&
     now - host.disconnectedAt >= graceMs
   ) {
-    const next = state.players.find((p) => p.id !== host.id && p.connected);
+    const others = state.players.filter((p) => p.id !== host.id && p.connected);
+    const next = others.find((p) => !p.bot) ?? others[0];
     if (next) state.hostId = next.id;
   }
 }

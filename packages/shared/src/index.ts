@@ -1,3 +1,5 @@
+export type { BotWalkerOptions } from './bots';
+export { BotWalker, jittered, stepToward } from './bots';
 export { DEFAULT_CONFIG } from './config/defaults';
 export type {
   EditableConfigKey,

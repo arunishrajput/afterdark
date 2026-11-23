@@ -62,6 +62,8 @@ export interface PlayerState {
   connected: boolean;
   /** Server ms of the latest disconnect (cleared on reconnect). */
   disconnectedAt?: number;
+  /** An in-process test bot (`dev:addBots`). Never the host while a human could be. */
+  bot?: true;
   /** Left mid-game: a permanent disconnect (PROTOCOL `lobby:leave`). */
   left?: true;
   loc?: StoredFix;

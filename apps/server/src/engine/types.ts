@@ -15,7 +15,7 @@ import type { RoomState } from './state';
 
 /** A validated intent from one player (`playerId` is the actor). */
 export type Command =
-  | { type: 'join'; playerId: string; username: string }
+  | { type: 'join'; playerId: string; username: string; bot?: true }
   | { type: 'leave'; playerId: string }
   | { type: 'setReady'; playerId: string; ready: boolean }
   | { type: 'updateConfig'; playerId: string; patch: GameConfigEditablePatch }

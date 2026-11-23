@@ -3,6 +3,9 @@
  * players) and pushes changed views. Every send is per player: no room
  * broadcasts (PROTOCOL › Conventions).
  */
+import { randomId } from '@afterdark/shared';
+
+import { BotDriver } from '../rooms/bots';
 import type { Room } from '../rooms/Room';
 import { ViewEmitter } from '../rooms/ViewEmitter';
 import { buildRadar } from '../views/radar';
@@ -15,6 +18,9 @@ export function attachRoom(ctx: GatewayContext, room: Room, now: () => number): 
     send: (playerId, view) => socketOfPlayer(ctx, playerId)?.emit('view', view),
   });
   ctx.emitters.set(room.code, emitter);
+  const bots = new BotDriver(room, randomId);
+  ctx.bots.set(room.code, bots);
+  room.onTick((state, at) => bots.tick(state, at));
 
   // Radar goes out once per `radarIntervalMs` bucket on the room's tick, to
   // every connected player: each gets their own anonymous dots (never a broadcast).

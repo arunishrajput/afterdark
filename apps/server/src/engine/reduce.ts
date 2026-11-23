@@ -31,7 +31,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
   try {
     switch (cmd.type) {
       case 'join':
-        lobby.join(draft, cmd.playerId, cmd.username);
+        lobby.join(draft, cmd.playerId, cmd.username, cmd.bot);
         break;
       case 'leave':
         lobby.leave(draft, cmd.playerId, now, effects);

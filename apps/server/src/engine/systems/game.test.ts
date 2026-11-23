@@ -273,3 +273,34 @@ describe('moving through the phases', () => {
     expect(s.phase).toBe('spawning');
   });
 });
+
+describe('a full scripted game to time-up (04.11)', () => {
+  it('plays lobby → spawn → reveal → play → V4 on an accelerated clock, with a pause in the middle', () => {
+    const { state, now } = toPlaying(newLobby({ players: 8 }));
+    expect(state.game?.originalCrewCount).toBe(6);
+
+    // Crew scored 62 of 100 and one crew member was infected (1 of the 4 needed): crew lead.
+    let s = structuredClone(state);
+    if (s.game) s.game.teamScore = 62;
+    const victim = s.players.find((p) => p.role === 'crew');
+    if (victim) victim.infection = 'infected';
+
+    // Every 30 s of real time: fresh fixes and a tick. The host pauses for 5 minutes in the middle.
+    let t = now;
+    const MATCH = DEFAULT_CONFIG.playTimeMin * 60 * S;
+    let pausedFor = 0;
+    while (s.phase === 'playing') {
+      t += 30 * S;
+      if (t - now === 600 * S) s = run(s, { type: 'pause', playerId: 'host' }, t).state;
+      if (t - now === 900 * S) {
+        s = run(s, { type: 'resume', playerId: 'host' }, t).state;
+        pausedFor = 300 * S;
+      }
+      s = advanceTo(s, t);
+      expect(t - now).toBeLessThan(MATCH + pausedFor + 60 * S); // it must end shortly after the match length
+    }
+    expect(s.phase).toBe('ended');
+    expect(s.result).toEqual({ winner: 'crew', reason: 'time' });
+    expect(t - now).toBeGreaterThanOrEqual(MATCH + pausedFor);
+  });
+});

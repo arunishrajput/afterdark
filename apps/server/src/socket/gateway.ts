@@ -5,12 +5,14 @@
 import { DEFAULT_CONFIG, type ErrorCode, timePingSchema } from '@afterdark/shared';
 
 import type { Logger } from '../logger';
+import type { BotDriver } from '../rooms/bots';
 import type { CodeSource } from '../rooms/lobbyCode';
 import { RoomManager } from '../rooms/RoomManager';
 import { SessionRegistry } from '../rooms/sessions';
 import type { ViewEmitter } from '../rooms/ViewEmitter';
 import type { GatewayContext } from './context';
 import { validated } from './handler';
+import { registerGameHandlers } from './handlers/game';
 import { registerLobbyHandlers } from './handlers/lobby';
 import { registerLocationHandlers } from './handlers/location';
 import { registerSessionHandlers } from './handlers/session';
@@ -41,6 +43,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
   const { logger, now } = deps;
   const sessions = new SessionRegistry();
   const emitters = new Map<string, ViewEmitter>();
+  const bots = new Map<string, BotDriver>();
   // The hooks run only once rooms exist, after `ctx` below is initialised.
   const rooms = new RoomManager({
     now,
@@ -50,11 +53,12 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     onDelete: (code) => {
       emitters.get(code)?.dispose();
       emitters.delete(code);
+      bots.delete(code);
       sessions.purgeLobby(code);
       logger.info({ code }, 'lobby deleted');
     },
   });
-  const ctx: GatewayContext = { io, logger, sessions, emitters, rooms };
+  const ctx: GatewayContext = { io, logger, sessions, emitters, bots, rooms };
   const stopSweeper = rooms.startSweeper();
 
   io.on('connection', (socket) => {
@@ -86,6 +90,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     registerLobbyHandlers(ctx, socket);
     registerLocationHandlers(ctx, socket);
     registerSetupHandlers(ctx, socket);
+    registerGameHandlers(ctx, socket);
 
     socket.on('disconnect', (reason) => {
       logger.debug({ socketId: socket.id, reason }, 'socket disconnected');

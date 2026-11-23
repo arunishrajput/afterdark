@@ -1,6 +1,7 @@
 /** Shared plumbing for socket handlers: rooms, sessions, emitters and binding. */
 import type { Command } from '../engine/types';
 import type { Logger } from '../logger';
+import type { BotDriver } from '../rooms/bots';
 import type { Room } from '../rooms/Room';
 import type { RoomManager } from '../rooms/RoomManager';
 import type { SessionRegistry } from '../rooms/sessions';
@@ -14,6 +15,8 @@ export interface GatewayContext {
   rooms: RoomManager;
   sessions: SessionRegistry;
   emitters: Map<string, ViewEmitter>;
+  /** In-process test bots per room (`dev:addBots`). */
+  bots: Map<string, BotDriver>;
 }
 
 export function socketById(
