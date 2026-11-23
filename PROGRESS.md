@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 11, Remaining minigames & balance** → [docs/phases/PHASE-11-minigames-balance.md](docs/phases/PHASE-11-minigames-balance.md) → [docs/phases/PHASE-10-coop-camouflage.md](docs/phases/PHASE-10-coop-camouflage.md)
+**◐ IN PROGRESS: Phase 11, Remaining minigames & balance (started 2026-11-23, resume at task 11.1)** → [docs/phases/PHASE-11-minigames-balance.md](docs/phases/PHASE-11-minigames-balance.md)
 
 **Live URL:** <https://afterdark-24gx.onrender.com> (Render free, Singapore; sleeps after ~15 min idle, first load up to ~1 min)
 
@@ -23,7 +23,7 @@
 | 08 | [Meetings & voting](docs/phases/PHASE-08-meetings-voting.md) | ✅ DONE | 2026-11-23 | `phase-08-done` |
 | 09 | [Abilities: Saboteur & Phantom](docs/phases/PHASE-09-abilities-saboteur-phantom.md) | ✅ DONE | 2026-11-23 | `phase-09-done` |
 | 10 | [Co-op tasks & Camouflage](docs/phases/PHASE-10-coop-camouflage.md) | ✅ DONE | 2026-11-23 | `phase-10-done` |
-| 11 | [Remaining minigames & balance](docs/phases/PHASE-11-minigames-balance.md) | ▶ NEXT | | |
+| 11 | [Remaining minigames & balance](docs/phases/PHASE-11-minigames-balance.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 12 | [Results & replay](docs/phases/PHASE-12-results-replay.md) | ☐ NOT STARTED | | |
 | 13 | [PWA & mobile polish](docs/phases/PHASE-13-pwa-polish.md) | ☐ NOT STARTED | | |
 | 14 | [Hardening & demo](docs/phases/PHASE-14-hardening-demo.md) | ☐ NOT STARTED | | |
