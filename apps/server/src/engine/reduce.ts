@@ -1,6 +1,7 @@
 /** `reduce(state, cmd, now)`: the single entry point for player commands. Pure. */
 import type { RoomState } from './state';
 import * as abilities from './systems/abilities';
+import * as coop from './systems/coop';
 import * as control from './systems/control';
 import { advance } from './systems/game';
 import * as infection from './systems/infection';
@@ -105,7 +106,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         play.cancelTask(draft, cmd.playerId, cmd.taskId);
         break;
       case 'taskReroll':
-        play.rerollTask(draft, cmd.playerId, cmd.taskId, now);
+        play.rerollTask(draft, cmd.playerId, cmd.taskId, now, effects);
         break;
       case 'taskReportUnsafe':
         play.reportUnsafe(draft, cmd.playerId, cmd.taskId, now, effects);
@@ -121,6 +122,32 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         break;
       case 'abilityFakeTask':
         abilities.useAbility(draft, cmd.playerId, 'fakeTask', { at: cmd.at }, now, effects);
+        break;
+      case 'abilityCamouflage':
+        abilities.useAbility(draft, cmd.playerId, 'camouflage', {}, now, effects);
+        break;
+      case 'coopStart':
+        coop.startCoop(draft, cmd.playerId, cmd.taskId, now);
+        break;
+      case 'coopJoin':
+        effects.push({
+          kind: 'reply',
+          playerId: cmd.playerId,
+          reply: { type: 'coopJoin', ack: coop.joinCoop(draft, cmd.playerId, cmd.taskId, now) },
+        });
+        break;
+      case 'coopSubmit':
+        effects.push({
+          kind: 'reply',
+          playerId: cmd.playerId,
+          reply: {
+            type: 'coopSubmit',
+            ack: coop.submitCoop(draft, cmd.playerId, cmd.taskId, cmd.answer, now, effects),
+          },
+        });
+        break;
+      case 'coopCancel':
+        coop.cancelCoop(draft, cmd.playerId, cmd.taskId);
         break;
       case 'meetingCall':
         meetings.callMeeting(draft, cmd.playerId, now, effects);

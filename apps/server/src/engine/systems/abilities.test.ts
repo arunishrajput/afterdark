@@ -102,11 +102,15 @@ function freeSpot(state: RoomState, actorId: string, skip = 0): LatLng {
 }
 
 describe('class ability registry and `all` mode (RULES §7)', () => {
-  it('maps a class to the abilities that exist in this build (Camouflage comes in Phase 10)', () => {
+  it('maps a class to its ability', () => {
     expect(abilityIdsFor(['saboteur'])).toEqual(['taskStop']);
     expect(abilityIdsFor(['phantom'])).toEqual(['fakeTask']);
-    expect(abilityIdsFor(['camouflage'])).toEqual([]);
-    expect(abilityIdsFor(['saboteur', 'phantom', 'camouflage'])).toEqual(['taskStop', 'fakeTask']);
+    expect(abilityIdsFor(['camouflage'])).toEqual(['camouflage']);
+    expect(abilityIdsFor(['saboteur', 'phantom', 'camouflage'])).toEqual([
+      'taskStop',
+      'fakeTask',
+      'camouflage',
+    ]);
   });
 
   it('every ability starts with abilityInitialCooldownS', () => {
@@ -125,10 +129,10 @@ describe('class ability registry and `all` mode (RULES §7)', () => {
     expect(crewOf(state).every((p) => p.abilities === undefined)).toBe(true);
   });
 
-  it('all mode: every imposter holds Task Stop and Fake Task, each with its own cooldown', () => {
+  it('all mode: every imposter holds all three abilities, each with its own cooldown', () => {
     const { state } = toPlaying(newLobby({ players: 6, config: { imposterAbilityMode: 'all' } }));
     for (const p of imposters(state)) {
-      expect(Object.keys(p.abilities ?? {}).sort()).toEqual(['fakeTask', 'taskStop']);
+      expect(Object.keys(p.abilities ?? {}).sort()).toEqual(['camouflage', 'fakeTask', 'taskStop']);
     }
     const { state: used, now, a } = ready({ imposterAbilityMode: 'all' });
     const res = run(used, stop(used, a, now), now);

@@ -69,6 +69,8 @@ export function assignRoles(state: RoomState, now: number): void {
     teamScore: 0,
     taskSeq: 0,
     pointUsedAtGameMs: {},
+    coops: [],
+    coopPairs: {},
     fakeQueue: [],
     matchEndsAtGameMs: config.playTimeMin * MS_PER_MIN,
     lastInfectGameMs: 0,

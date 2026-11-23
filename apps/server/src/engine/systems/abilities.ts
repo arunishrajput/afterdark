@@ -17,6 +17,7 @@ import {
 import { gameNow } from '../clock';
 import type { AbilityRuntime, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
+import { activateCamouflage, isCamouflaged } from './camouflage';
 import { activateFakeTask, checkFakeTask } from './fakeTask';
 import { requireGoodFix } from './location';
 import { findPlayer } from './players';
@@ -46,10 +47,7 @@ export interface AbilityDef {
   ): void;
 }
 
-/**
- * The abilities that exist in this build, keyed by id. Camouflage joins in Phase 10;
- * until then a Camouflage-class imposter simply has Infect.
- */
+/** The abilities that exist in this build, keyed by id: one per imposter class. */
 export const ABILITIES: Partial<Record<AbilityId, AbilityDef>> = {
   taskStop: {
     id: 'taskStop',
@@ -70,6 +68,18 @@ export const ABILITIES: Partial<Record<AbilityId, AbilityDef>> = {
     activate: (state, actor, payload, _now, effects) => {
       if (payload.at) activateFakeTask(state, actor, payload.at, effects);
     },
+  },
+  camouflage: {
+    id: 'camouflage',
+    class: 'camouflage',
+    cooldownS: (c) => c.camouflageCooldownS,
+    canActivate: (state, actor, _payload, now) => {
+      if (isCamouflaged(state, actor, now)) {
+        throw new RuleError('NOT_ALLOWED', 'You are already disguised');
+      }
+    },
+    activate: (state, actor, _payload, now, effects) =>
+      activateCamouflage(state, actor, now, effects),
   },
 };
 
@@ -96,7 +106,7 @@ export function initialAbilities(
 export const abilitiesOf = (p: PlayerState): [AbilityId, AbilityRuntime][] =>
   Object.entries(p.abilities ?? {}) as [AbilityId, AbilityRuntime][];
 
-/** `ability:taskStop` / `ability:fakeTask`: the shared checks, the ability's own, then the cooldown. */
+/** `ability:taskStop` / `ability:fakeTask` / `ability:camouflage`: the shared checks, the ability's own, then the cooldown. */
 export function useAbility(
   state: RoomState,
   playerId: string,
@@ -145,8 +155,8 @@ export function applyPostMeetingGrace(p: PlayerState, graceUntilGameMs: number):
 
 /**
  * Cooldown recovery through apparent cooperation (RULES §7.5): cuts the remaining
- * time of every class ability by `fraction`. Infect is untouched. Nothing calls it
- * until Phase 10's co-op tasks.
+ * time of every class ability by `fraction`. Infect is untouched. `coop.ts` calls it
+ * when an imposter completes a co-op task.
  */
 export function applyRecovery(
   state: RoomState,

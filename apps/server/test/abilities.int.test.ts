@@ -73,7 +73,7 @@ describe('abilities over sockets', () => {
       members.push({ client, name: `Player ${i}` });
     }
     await host.ok('lobby:updateConfig', {
-      patch: { testMode: true, imposterAbilityMode: 'all', ...config },
+      patch: { testMode: true, coopChance: 0, imposterAbilityMode: 'all', ...config },
     });
     await host.ok('dev:setMinigames', { types: ['wires'] });
     await host.ok('lobby:setBoundary', {
@@ -158,7 +158,7 @@ describe('abilities over sockets', () => {
     tick(code, DEFAULT_CONFIG.abilityInitialCooldownS);
     await relocate(members);
     const abilities = phantom.client.view?.me.imposter?.abilities ?? [];
-    expect(abilities.map((a) => a.id).sort()).toEqual(['fakeTask', 'taskStop']);
+    expect(abilities.map((a) => a.id).sort()).toEqual(['camouflage', 'fakeTask', 'taskStop']);
 
     // A crew member cannot, a pin outside the area is refused (and costs nothing).
     expect(errorCode(await holder.client.call('ability:fakeTask', HOME))).toBe('NOT_ALLOWED');
@@ -290,7 +290,7 @@ describe('abilities over sockets', () => {
       room.tick();
     };
     await human.ok('lobby:updateConfig', {
-      patch: { testMode: true, imposterAbilityMode: 'all', playerVisibility: 'all' },
+      patch: { testMode: true, coopChance: 0, imposterAbilityMode: 'all', playerVisibility: 'all' },
     });
     await human.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },

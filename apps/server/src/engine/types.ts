@@ -1,6 +1,9 @@
 /** Engine commands, effects and results. */
 import type {
   BoundaryInput,
+  CamouflageAck,
+  CoopJoinAck,
+  CoopSubmitAck,
   ErrorCode,
   FakeTaskAck,
   GameConfigEditablePatch,
@@ -51,6 +54,11 @@ export type Command =
   | { type: 'infectCancel'; playerId: string }
   | { type: 'abilityTaskStop'; playerId: string }
   | { type: 'abilityFakeTask'; playerId: string; at: LatLng }
+  | { type: 'abilityCamouflage'; playerId: string }
+  | { type: 'coopStart'; playerId: string; taskId: string }
+  | { type: 'coopJoin'; playerId: string; taskId: string }
+  | { type: 'coopSubmit'; playerId: string; taskId: string; answer: unknown }
+  | { type: 'coopCancel'; playerId: string; taskId: string }
   | { type: 'meetingCall'; playerId: string }
   | { type: 'meetingSkipDiscussion'; playerId: string }
   | { type: 'meetingVote'; playerId: string; target: string }
@@ -68,7 +76,10 @@ export type CommandReply =
   | { type: 'submit'; ack: TaskSubmitAck }
   | { type: 'infect'; ack: InfectAck }
   | { type: 'taskStop'; ack: TaskStopAck }
-  | { type: 'fakeTask'; ack: FakeTaskAck };
+  | { type: 'fakeTask'; ack: FakeTaskAck }
+  | { type: 'camouflage'; ack: CamouflageAck }
+  | { type: 'coopJoin'; ack: CoopJoinAck }
+  | { type: 'coopSubmit'; ack: CoopSubmitAck };
 
 /** Something the Room must do outside the state: send an event, close a session. */
 export type Effect =

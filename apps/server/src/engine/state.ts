@@ -8,18 +8,19 @@ import {
   DEFAULT_CONFIG,
   type EndReason,
   type GameConfig,
+  type CoopPins,
   hashSeed,
   type ImposterClass,
   type LatLng,
   type MeetingStage,
   type MeetingTally,
+  type MinigameType,
   type Phase,
   type Position,
   type Region,
   type Ring,
   type Role,
   type SectionId,
-  type SoloMinigameType,
   type TaskKind,
   type TaskPoint,
   type Winner,
@@ -85,7 +86,10 @@ export interface TaskState {
   lng: number;
   regionId: string;
   section: SectionId;
-  type: SoloMinigameType;
+  /** `coop_pin` for a co-op task, otherwise a solo minigame. */
+  type: MinigameType;
+  /** A co-op task only: the session both copies belong to (`GameState.coops`). */
+  coopId?: string;
   fake?: true;
   /** A fake only: the Phantom who planted it. Server-only (it frees that Phantom's count when the task goes). */
   fakeOwnerId?: string;
@@ -96,6 +100,40 @@ export interface TaskState {
   /** Within `reachRadiusM` of the pin on a good fix right now. */
   atPin: boolean;
   open?: OpenTaskState;
+}
+
+/**
+ * One co-op task (RULES §6.7, TASKS §5): the owner's own-slot card and the assigned
+ * partner's partner-slot card share a session. A camouflaged imposter can take the
+ * partner's place while the owner waits. Everything here is server-only; each
+ * participant's view carries only what they need.
+ */
+export interface CoopSession {
+  /** Also the join id a camouflaged stand-in is offered (never the owner's task id). */
+  id: string;
+  /** The crew member whose own slot rolled the task. */
+  ownerId: string;
+  /** The partner the server drew: any other active player, imposters included. */
+  assignedId: string;
+  ownerTaskId: string;
+  partnerTaskId: string;
+  /** The pool point both cards sit on (it rests after the task ends). */
+  pointId?: string;
+  lat: number;
+  lng: number;
+  /** Game ms when it expires (game time: a meeting freezes it). */
+  expiresAtGameMs: number;
+  /** `idle`: nobody started. `waiting`: the starter is at the pin. `active`: both joined and the PINs are out. */
+  phase: 'idle' | 'waiting' | 'active';
+  starterId?: string;
+  /** The second participant: the assigned partner, or a camouflaged stand-in. */
+  joinerId?: string;
+  /** Made when the second participant joins. Never projected whole. */
+  pins?: CoopPins;
+  /** Participants who typed the other's PIN correctly. */
+  done: string[];
+  /** Per participant: game ms until which a submit is refused after a wrong PIN. */
+  lockedUntilGameMs: Record<string, number>;
 }
 
 /** A fake task waiting for the next crew slot that refills (RULES §7.3). */
@@ -134,6 +172,8 @@ export interface InfectState {
 export interface AbilityRuntime {
   /** Game ms when the ability is ready again (pushed back while the imposter is out of bounds, RULES §9.3). */
   readyAtGameMs: number;
+  /** Camouflage only: game ms when the disguise ends (later while a co-op runs, `camouflage.ts`). */
+  activeUntilGameMs?: number;
 }
 
 /** What a target carries between the end of a channel and becoming infected (RULES §7.1.3). Server-only. */
@@ -169,6 +209,8 @@ export interface PlayerState {
   personalScore?: number;
   /** Crew only, from the start of play: `taskSlots` tasks, refilled as they leave (RULES §6.1). */
   tasks?: TaskState[];
+  /** The partner slot (TASKS §5): at most one co-op task someone else rolled, for crew and imposters alike. */
+  partnerTask?: TaskState;
   /** Game ms when this player may reroll again (RULES §6.5). */
   rerollReadyAtGameMs?: number;
   /**
@@ -258,6 +300,10 @@ export interface GameState {
   taskSeq: number;
   /** Game ms when each pool point last left a player's hands (completed or rerolled): it rests for `taskPointReuseCooldownS`. */
   pointUsedAtGameMs: Record<string, number>;
+  /** Live co-op tasks (TASKS §5), oldest first. */
+  coops: CoopSession[];
+  /** How many co-ops each imposter has completed with each crew partner, keyed `imposterId|crewId` (RULES §7.5). */
+  coopPairs: Record<string, number>;
   /** Fakes waiting for a free crew slot, oldest first (TASKS §2). */
   fakeQueue: QueuedFake[];
   /** Game-time deadline of the match (`playTimeMin`). */

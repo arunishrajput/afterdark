@@ -5,10 +5,7 @@
  * every roll comes from an RNG seeded from the room's secret seed and a counter.
  */
 import {
-  createRng,
   distanceM,
-  hashSeed,
-  ID_ALPHABET,
   offsetByMeters,
   pickMinigameType,
   type Rng,
@@ -22,10 +19,14 @@ import { gameNow } from '../clock';
 import type { PlayerState, RoomState, TaskState } from '../state';
 import type { Effect } from '../types';
 import { fixQuality } from './location';
+import { updateCoops } from './coop';
+import { eligiblePartners, heldTasks, makeCoop } from './coopPairing';
 import { activePlayers } from './players';
+import { newTaskId, taskRng } from './taskRng';
+
+export { newTaskId, taskRng };
 
 const MS_PER_S = 1000;
-const TASK_ID_LENGTH = 16;
 
 /** Weight multipliers for choosing the section of a new task (MAP §4). */
 const CURRENT_REGION_WEIGHT = 0.5;
@@ -33,19 +34,6 @@ const HELD_SECTION_WEIGHT = 0.25;
 
 /** Directions probed around a fix to see whether its error circle touches the section (hysteresis). */
 const EDGE_PROBES = 8;
-
-/** A fresh RNG for one roll. Counting the rolls keeps the game reproducible from the secret seed. */
-export function taskRng(state: RoomState): Rng {
-  const game = state.game;
-  if (!game) throw new Error('taskRng: no game');
-  return createRng(hashSeed(`${state.secretSeed}|task|${game.taskSeq++}`));
-}
-
-export function newTaskId(rng: Rng): string {
-  let id = '';
-  for (let i = 0; i < TASK_ID_LENGTH; i++) id += ID_ALPHABET[rng.int(0, ID_ALPHABET.length - 1)];
-  return id;
-}
 
 /** Crew with a task list: the only players who hold own tasks in Phase 5. */
 export const isTasker = (p: PlayerState): boolean => p.role === 'crew' && p.tasks !== undefined;
@@ -165,7 +153,7 @@ function assignSolo(state: RoomState, p: PlayerState, now: number): TaskState | 
   };
 }
 
-/** The next task for a slot, in the order TASKS §2 sets: a queued fake, a co-op task (Phase 10), then solo. */
+/** The next task for a slot, in the order TASKS §2 sets: a queued fake, a co-op task, then solo. */
 function nextTask(state: RoomState, p: PlayerState, now: number): TaskState | undefined {
   const fake = state.game?.fakeQueue.shift();
   if (fake) {
@@ -184,7 +172,13 @@ function nextTask(state: RoomState, p: PlayerState, now: number): TaskState | un
       atPin: false,
     };
   }
-  return assignSolo(state, p, now);
+  const solo = assignSolo(state, p, now);
+  if (!solo || state.config.coopChance <= 0) return solo;
+  // A co-op roll only happens when someone could be the partner, so a lone player never burns a roll (TASKS §2.2).
+  if (eligiblePartners(state, p).length === 0 || !taskRng(state).chance(state.config.coopChance)) {
+    return solo;
+  }
+  return makeCoop(state, p, solo, now) ?? solo;
 }
 
 /** Fills the player's empty slots (RULES §6.1). A slot stays empty while no section can host a task. */
@@ -252,8 +246,8 @@ export function resetAllOpen(p: PlayerState, reason: ResetReason, effects: Effec
 /** One player's tasks against their latest fix. */
 function updatePlayerTasks(state: RoomState, p: PlayerState, now: number, effects: Effect[]) {
   const game = state.game;
-  const tasks = p.tasks;
-  if (!game || !tasks || tasks.length === 0) return;
+  const tasks = heldTasks(p);
+  if (!game || tasks.length === 0) return;
   const loc = p.loc;
   const quality = loc ? fixQuality(loc, now, state.config) : 'stale';
 
@@ -308,8 +302,9 @@ function updatePlayerTasks(state: RoomState, p: PlayerState, now: number, effect
 export function updateTasks(state: RoomState, now: number, effects: Effect[]): void {
   if (state.phase !== 'playing' || !state.game) return;
   for (const p of activePlayers(state)) {
-    if (!isTasker(p)) continue;
-    refillSlots(state, p, now);
+    // Crew refill their own slots; an imposter only ever holds a partner card (TASKS §5.2).
+    if (isTasker(p)) refillSlots(state, p, now);
     updatePlayerTasks(state, p, now, effects);
   }
+  updateCoops(state, now, effects);
 }

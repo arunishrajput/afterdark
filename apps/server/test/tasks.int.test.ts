@@ -72,7 +72,7 @@ describe('tasks over sockets', () => {
       await client.ok('lobby:join', { code: created.code, username: `Player ${i}`, ...SAFE });
       members.push({ client, name: `Player ${i}` });
     }
-    await host.ok('lobby:updateConfig', { patch: { testMode: true, ...config } });
+    await host.ok('lobby:updateConfig', { patch: { testMode: true, coopChance: 0, ...config } });
     await host.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },
     });
@@ -304,7 +304,7 @@ describe('bots drive a whole game to a crew win (acceptance)', () => {
       ts.clock.now += s * S;
       room.tick();
     };
-    await human.ok('lobby:updateConfig', { patch: { testMode: true, targetScore: 40 } });
+    await human.ok('lobby:updateConfig', { patch: { testMode: true, coopChance: 0, targetScore: 40 } });
     await human.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },
     });

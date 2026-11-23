@@ -7,6 +7,7 @@
 import { gameNow, wallTimeOf } from '../clock';
 import type { PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
+import { resetCoops } from './coop';
 import { resetAllOpen } from './tasks';
 
 const MS_PER_S = 1000;
@@ -38,6 +39,8 @@ export function activateTaskStop(
   const untilGameMs = gameNow(game.clock, now) + state.config.taskStopLockS * MS_PER_S;
   game.taskLock = { untilGameMs };
   for (const p of state.players) resetAllOpen(p, 'sabotage', effects);
+  // A co-op puzzle in progress is thrown away too: its session waits for its starter again (RULES §7.2).
+  resetCoops(state, 'sabotage', effects);
   const until = wallTimeOf(game.clock, untilGameMs, now) ?? now;
   effects.push({ kind: 'event', to: 'all', event: { type: 'sabotage.started', until } });
   effects.push({

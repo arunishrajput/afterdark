@@ -18,7 +18,7 @@ import {
 const SAFE = { acceptedSafety: true } as const;
 const S = 1000;
 /** Short but legal host settings: the exposure still has to be channelled, left and incubated. */
-const FAST = { testMode: true, infectionChannelS: 5, incubationS: 10 } as const;
+const FAST = { testMode: true, coopChance: 0, infectionChannelS: 5, incubationS: 10 } as const;
 
 interface Member {
   client: TestClient;
@@ -243,7 +243,7 @@ describe('bots drive a game to an imposter win (acceptance, V3)', () => {
     };
     await human.ok('lobby:updateConfig', {
       patch: {
-        testMode: true,
+        testMode: true, coopChance: 0,
         infectionChannelS: 5,
         incubationS: 0,
         infectionWinPercent: 40,

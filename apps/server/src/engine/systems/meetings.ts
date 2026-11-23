@@ -16,6 +16,8 @@ import { countVotes, eject, SKIP } from './ejection';
 import { cancelAllChannels } from './infection';
 import { fixQuality } from './location';
 import { activePlayers, findPlayer } from './players';
+import { endAllCamouflage } from './camouflage';
+import { resetCoops } from './coop';
 import { resetAllOpen } from './tasks';
 
 const MS_PER_S = 1000;
@@ -97,6 +99,9 @@ export function callMeeting(
   pauseClock(game.clock, 'meeting', now);
   // E22: every minigame in progress resets and every infection channel is cancelled. Incubation, cooldowns and expiry stop with the clock.
   for (const q of state.players) resetAllOpen(q, 'meeting', effects);
+  resetCoops(state, 'meeting', effects);
+  // The meeting is neutral for everyone, so every disguise ends with the call (ADR-084).
+  endAllCamouflage(state);
   cancelAllChannels(state, 'meeting', effects);
   effects.push({
     kind: 'event',

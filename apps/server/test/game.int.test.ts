@@ -68,7 +68,7 @@ describe('game start flow over sockets', () => {
   /** Test mode on, a 250 m boundary, everyone located and ready: the countdown is running. */
   async function readyUp(members: Member[]): Promise<void> {
     const host = members[0]?.client;
-    await host?.ok('lobby:updateConfig', { patch: { testMode: true } });
+    await host?.ok('lobby:updateConfig', { patch: { testMode: true, coopChance: 0 } });
     await host?.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },
     });
@@ -294,7 +294,7 @@ describe('1 human + 7 bots reach play (acceptance)', () => {
       ts.clock.now += s * S;
       room?.tick();
     };
-    await human.ok('lobby:updateConfig', { patch: { testMode: true } });
+    await human.ok('lobby:updateConfig', { patch: { testMode: true, coopChance: 0 } });
     await human.ok('lobby:setBoundary', {
       boundary: { type: 'circle', center: HOME, radiusM: 250 },
     });

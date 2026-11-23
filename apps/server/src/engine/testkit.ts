@@ -31,7 +31,7 @@ export interface LobbyOptions {
   players?: number;
   radiusM?: number;
   radarSalt?: string;
-  /** Overrides for fixed config values (state is built directly, so even 🔒 keys can change). */
+  /** Overrides for config values (state is built directly, so even 🔒 keys can change). Co-op is off unless a test turns it on. */
   config?: Partial<GameConfig>;
 }
 
@@ -44,7 +44,7 @@ export function newLobby(opts: LobbyOptions = {}): RoomState {
     allowTestMode: true,
     radarSalt: opts.radarSalt ?? 'salt',
   });
-  state.config = { ...state.config, testMode: true, ...opts.config };
+  state.config = { ...state.config, testMode: true, coopChance: 0, ...opts.config };
   for (let i = 1; i < (opts.players ?? 8); i++) {
     state = run(state, { type: 'join', playerId: `p${i}`, username: `Player ${i}` }).state;
   }

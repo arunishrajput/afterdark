@@ -18,6 +18,8 @@ import {
 import { gameNow } from '../clock';
 import type { PlayerState, RoomState, TaskState } from '../state';
 import { type Effect, RuleError } from '../types';
+import { expireCoopById, expireCoopsAtPoint } from './coop';
+import { heldTasks } from './coopPairing';
 import { requireGoodFix } from './location';
 import { findPlayer } from './players';
 import { isTasker, refillSlots, resetOpen, taskRng } from './tasks';
@@ -33,15 +35,26 @@ function resolve(state: RoomState, playerId: string, taskId: string) {
   }
   if (state.game.meeting) throw new RuleError('MEETING_ACTIVE', 'Not during a meeting');
   const p = findPlayer(state, playerId);
-  if (!isTasker(p)) throw new RuleError('NOT_ALLOWED', 'Only crew hold tasks');
-  const task = p.tasks?.find((t) => t.id === taskId);
-  if (!task) throw new RuleError('NOT_FOUND', 'That task is not in your list');
+  // Crew hold own slots; anyone active can hold the partner card (TASKS §5.2).
+  const task = heldTasks(p).find((t) => t.id === taskId);
+  if (!task) {
+    if (!isTasker(p)) throw new RuleError('NOT_ALLOWED', 'Only crew hold tasks');
+    throw new RuleError('NOT_FOUND', 'That task is not in your list');
+  }
   return { p, task, game: state.game };
+}
+
+/** The solo minigame of a task. A co-op task is played through `coop:*` instead. */
+function soloTypeOf(task: TaskState): SoloMinigameType {
+  if (task.type === 'coop_pin') {
+    throw new RuleError('NOT_ALLOWED', 'That is a co-op task: start it with your partner');
+  }
+  return task.type;
 }
 
 /** The minigame of a task. A task's type always has a game: only those types are ever rolled. */
 function gameOf(task: TaskState) {
-  const game = minigameOf(task.type);
+  const game = minigameOf(soloTypeOf(task));
   if (!game) throw new RuleError('INTERNAL', 'No such minigame');
   return game;
 }
@@ -73,6 +86,7 @@ export function openTask(
     throw new RuleError('OUT_OF_RANGE', 'Walk closer to the pin');
   }
   const game = gameOf(task);
+  const type = soloTypeOf(task);
   if (!task.open) {
     if (p.tasks?.some((t) => t.open)) {
       throw new RuleError('NOT_ALLOWED', 'Finish or cancel the task you have open');
@@ -81,11 +95,11 @@ export function openTask(
     task.open = { puzzle, solution };
   }
   // The same ack for a real and a fake task: only the submit result differs (TASKS §1).
-  const points = state.config.points[task.type];
+  const points = state.config.points[type];
   effects.push({
     kind: 'reply',
     playerId,
-    reply: { type: 'open', ack: openAck(task.type, points, task.open.puzzle) },
+    reply: { type: 'open', ack: openAck(type, points, task.open.puzzle) },
   });
 }
 
@@ -151,7 +165,7 @@ function finishTask(
     // A fake pays nothing, to the team or to the player (SCORING: Fake tasks).
     outcome = { result: 'fooled', points: 0 };
   } else {
-    const points = state.config.points[task.type];
+    const points = state.config.points[soloTypeOf(task)];
     game.teamScore += points;
     p.personalScore = (p.personalScore ?? 0) + points;
     effects.push({ kind: 'event', to: [p.id], event: { type: 'task.completed', points } });
@@ -200,8 +214,18 @@ export function cancelTask(state: RoomState, playerId: string, taskId: string): 
 }
 
 /** `task:reroll`: swap one task for a new one, once per `rerollCooldownS` (RULES §6.5). */
-export function rerollTask(state: RoomState, playerId: string, taskId: string, now: number): void {
+export function rerollTask(
+  state: RoomState,
+  playerId: string,
+  taskId: string,
+  now: number,
+  effects: Effect[],
+): void {
   const { p, task, game } = resolve(state, playerId, taskId);
+  // The partner card is a teammate's request: only its owner can swap it out (TASKS §5.2).
+  if (p.partnerTask?.id === task.id) {
+    throw new RuleError('NOT_ALLOWED', 'You cannot reroll a teammate’s request');
+  }
   const gameMs = gameNow(game.clock, now);
   if (p.rerollReadyAtGameMs !== undefined && gameMs < p.rerollReadyAtGameMs) {
     throw new RuleError('COOLDOWN', 'Reroll is not ready yet');
@@ -210,6 +234,8 @@ export function rerollTask(state: RoomState, playerId: string, taskId: string, n
   p.tasks = (p.tasks ?? []).filter((t) => t.id !== task.id);
   // The rejected point rests, so the new task does not just hand it back.
   if (task.pointId) game.pointUsedAtGameMs[task.pointId] = gameMs;
+  // A rerolled co-op card closes the partner's copy too.
+  if (task.coopId) expireCoopById(state, task.coopId, now, effects);
   refillSlots(state, p, now);
 }
 
@@ -235,6 +261,8 @@ export function reportUnsafe(
   const point = state.setup.taskPoints.find((tp) => tp.id === pointId);
   if (point) point.disabled = true;
   effects.push({ kind: 'audit', what: 'unsafePoint', pointId });
+  // A co-op task on that point closes for both sides before the solo tasks are swapped.
+  expireCoopsAtPoint(state, pointId, now, effects);
   for (const owner of state.players) {
     if (!isTasker(owner) || !owner.tasks?.some((t) => t.pointId === pointId)) continue;
     owner.tasks = owner.tasks.filter((t) => t.pointId !== pointId);
