@@ -137,6 +137,8 @@ export function toastFor(event: GameEvent): string | undefined {
       return `Out of bounds: −${event.points} ${event.points === 1 ? 'point' : 'points'}`;
     case 'task.reset':
       return TASK_RESET_COPY[event.reason];
+    case 'task.expired':
+      return 'Co-op task expired';
     case 'task.removed':
       return 'A task was swapped: its spot was reported unsafe';
     case 'task.revealed':

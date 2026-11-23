@@ -185,6 +185,7 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'game.coop.puzzle',
   'game.coop.puzzle.show',
   'game.coop.puzzle.digits',
+  'game.coop.botShows',
   'game.rerollReadyAt',
   // Phase 9: a Task Stop lock is public (no field says who).
   'game.taskLock',

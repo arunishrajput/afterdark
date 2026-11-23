@@ -182,4 +182,5 @@ export const DEFAULT_CONFIG = {
   botMeetingMinS: 150,
   botMeetingMaxS: 400,
   botFakeScatterM: 120,
+  botStandInRangeM: 50,
 } as const satisfies GameConfig;

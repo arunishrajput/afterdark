@@ -16,7 +16,7 @@ import {
 } from '@afterdark/shared';
 
 import { clockView, gameNow } from '../engine/clock';
-import type { PlayerState, RoomState } from '../engine/state';
+import type { CoopSession, PlayerState, RoomState } from '../engine/state';
 import { abilitiesOf } from '../engine/systems/abilities';
 import { camouflageEndsGameMs } from '../engine/systems/camouflage';
 import { sessionOfPlayer, slotOf, taskIdFor } from '../engine/systems/coop';
@@ -56,6 +56,14 @@ function projectAbilities(state: RoomState, p: PlayerState, now: number): Abilit
   }));
 }
 
+/** Test mode only: a bot partner has no phone, so the human is shown the PIN it would show (the lobby badge says test mode). */
+function botShows(state: RoomState, s: CoopSession, me: PlayerState): { botShows?: string } {
+  if (!state.config.testMode || s.phase !== 'active' || !s.pins) return {};
+  const otherId = s.starterId === me.id ? s.joinerId : s.starterId;
+  const other = state.players.find((p) => p.id === otherId);
+  return other?.bot ? { botShows: s.pins[slotOf(s, other.id)] } : {};
+}
+
 /** The viewer's own started co-op session: the same shape whoever the other side is (ADR-005). */
 function projectCoop(state: RoomState, me: PlayerState, now: number): CoopView | undefined {
   const s = sessionOfPlayer(state, me.id);
@@ -65,6 +73,7 @@ function projectCoop(state: RoomState, me: PlayerState, now: number): CoopView |
     phase: s.phase === 'active' ? 'active' : 'waiting',
     endsAt: deadlineAt(state, s.expiresAtGameMs, now),
     ...(s.phase === 'active' && s.pins ? { puzzle: puzzleFor(s.pins, slotOf(s, me.id)) } : {}),
+    ...botShows(state, s, me),
   };
 }
 

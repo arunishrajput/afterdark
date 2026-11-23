@@ -192,3 +192,4 @@ Used by the bot CLI and the in-process bots from `dev:addBots` (TESTING §5, ADR
 | `botMeetingMinS` | 150 | — | 🔒 | With bots added with `meetings: 'random'`: each bot calls its meeting once, at a random game time between this many seconds into play… |
 | `botMeetingMaxS` | 400 | — | 🔒 | …and this many. |
 | `botFakeScatterM` | 120 | — | 🔒 | A `sabotage` imposter bot tries fake-task pins at random spots within this many metres of the Base (an invalid spot is refused and it tries another next step). |
+| `botStandInRangeM` | 50 | — | 🔒 | A `sabotage` imposter bot with Camouflage ready disguises itself and stands in when a crew member is waiting for a co-op partner within this many metres (about what it can walk in a disguise). |

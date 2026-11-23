@@ -13,6 +13,11 @@
  * away afterwards so the incubation can begin. With `imposterBehaviour: 'sabotage'` (Phase 9) it chases as
  * well and uses Task Stop and Fake Task through the real ability commands whenever they are ready (a fake
  * goes to a random spot near the Base; an invalid spot is refused and another is tried on the next step).
+ * Co-op (Phase 10): a bot holding a co-op card (the partner card first) walks to its pin, starts or joins
+ * the session there, and after a work wait types the other side's PIN (it reads it from the room state, as
+ * test tooling may; a human paired with a bot is shown the bot's PIN, `botShows`). A `sabotage` imposter bot
+ * whose Camouflage is ready disguises itself when a crew member waits for a partner within `botStandInRangeM`,
+ * walks there and stands in as the partner.
  * In a meeting (Phase 8) every bot walks to the Base, skips the
  * discussion and votes (a random active player, or Skip with `botVoteSkipPercent`; an imposter bot never
  * votes for another imposter). Only with `meetings: 'random'` does a bot also call a meeting, once, at a
@@ -24,6 +29,7 @@ import {
   BotWalker,
   ChaseBrain,
   createRng,
+  distanceM,
   hashSeed,
   type LatLng,
   offsetByMeters,
@@ -31,7 +37,9 @@ import {
 } from '@afterdark/shared';
 
 import { gameNow } from '../engine/clock';
-import type { PlayerState, RoomState } from '../engine/state';
+import type { CoopSession, PlayerState, RoomState, TaskState } from '../engine/state';
+import { isCamouflaged } from '../engine/systems/camouflage';
+import { sessionOfPlayer, slotOf, taskIdFor } from '../engine/systems/coop';
 import { fixQuality } from '../engine/systems/location';
 import { meetingsLeft } from '../engine/systems/meetings';
 import { isActive } from '../engine/systems/players';
@@ -51,6 +59,8 @@ interface Bot {
   brain: ChaseBrain;
   /** Real ms when this bot finishes the task it has open. */
   doneAt?: number;
+  /** Real ms when this bot types its co-op PIN. */
+  coopDoneAt?: number;
   /** Game ms when this bot calls its meeting (`meetings: 'random'`). */
   callAtGameMs?: number;
 }
@@ -129,11 +139,12 @@ export class BotDriver {
       const bot = this.walkerFor(state, p);
       if (!bot) continue;
       const spawn = state.phase === 'spawning' && p.spawn && !p.spawn.reached ? p.spawn : undefined;
-      const task = state.phase === 'playing' ? p.tasks?.[0] : undefined;
+      const task = state.phase === 'playing' ? this.focusTask(p) : undefined;
+      const inCoop = state.phase === 'playing' && sessionOfPlayer(state, p.id) !== undefined;
       const meeting = state.phase === 'playing' ? state.game?.meeting : undefined;
       const hunt = meeting ? undefined : this.hunt(bot, state, p, now);
       // At a revealed pin the bot stays put to work; before that it heads for the task.
-      const working = task?.stage === 'pin' && task.atPin;
+      const working = (task?.stage === 'pin' && task.atPin) || inCoop;
       if (meeting) {
         // Everyone goes to the Base and stays there; an ejected bot has nowhere to be.
         if (p.spectator || meeting.gathered.includes(p.id) || !state.setup.base) bot.walker.stay();
@@ -156,6 +167,15 @@ export class BotDriver {
     }
   }
 
+  /** What a bot walks to: a co-op card first (so pairs really finish), then its first solo task. */
+  private focusTask(p: PlayerState): TaskState | undefined {
+    return (
+      p.partnerTask ??
+      p.tasks?.find((t) => t.kind === 'coop') ??
+      p.tasks?.find((t) => t.kind === 'solo')
+    );
+  }
+
   /**
    * A chasing imposter bot's decision for this step (undefined for everyone else): where to walk, and
    * `infectStart` when it is close enough. The command can still be refused (cooldown, GPS), which is fine: it retries.
@@ -168,7 +188,11 @@ export class BotDriver {
   ): { to: LatLng | undefined } | undefined {
     if (this.imposterBehaviour === 'wander' || p.role !== 'imposter' || !p.infect || !p.loc) return;
     if (state.phase !== 'playing' || !state.game) return;
-    if (this.imposterBehaviour === 'sabotage') this.useAbilities(bot, state, p, now);
+    if (this.imposterBehaviour === 'sabotage') {
+      this.useAbilities(bot, state, p, now);
+      const standIn = this.standIn(state, p, now);
+      if (standIn) return { to: standIn };
+    }
     const targets = state.players
       // Only players the server would accept as a target: a stale human is not worth chasing.
       .filter(
@@ -199,12 +223,16 @@ export class BotDriver {
     const game = state.game;
     if (!game || game.meeting) return;
     const gameMs = gameNow(game.clock, now);
-    const ready = (id: 'taskStop' | 'fakeTask') => {
+    const ready = (id: 'taskStop' | 'fakeTask' | 'camouflage') => {
       const a = p.abilities?.[id];
       return a !== undefined && gameMs >= a.readyAtGameMs;
     };
     if (ready('taskStop') && game.taskLock === undefined) {
       this.room.dispatch({ type: 'abilityTaskStop', playerId: p.id });
+    }
+    // Disguise only when there is a seat to take: a crew member waiting for a partner close by.
+    if (ready('camouflage') && !isCamouflaged(state, p, now) && this.waitingNear(state, p)) {
+      this.room.dispatch({ type: 'abilityCamouflage', playerId: p.id });
     }
     const base = state.setup.base;
     if (ready('fakeTask') && base) {
@@ -212,6 +240,81 @@ export class BotDriver {
       const at = offsetByMeters(base, (bot.rng.next() * 2 - 1) * r, (bot.rng.next() * 2 - 1) * r);
       this.room.dispatch({ type: 'abilityFakeTask', playerId: p.id, at });
     }
+  }
+
+  /** A waiting session whose owner is alone and within `botStandInRangeM` of the bot, if any. */
+  private waitingNear(state: RoomState, p: PlayerState): CoopSession | undefined {
+    const loc = p.loc;
+    if (!loc || !state.game) return undefined;
+    return state.game.coops.find(
+      (c) =>
+        c.phase === 'waiting' &&
+        c.starterId === c.ownerId &&
+        c.assignedId !== p.id &&
+        distanceM(loc, c) <= state.config.botStandInRangeM,
+    );
+  }
+
+  /** While disguised and a crew member waits nearby: walk to them and take the partner's seat. Returns where to walk. */
+  private standIn(state: RoomState, p: PlayerState, now: number): LatLng | undefined {
+    if (!isCamouflaged(state, p, now) || sessionOfPlayer(state, p.id)) return undefined;
+    const target = this.waitingNear(state, p);
+    if (!target) return undefined;
+    if (p.loc && distanceM(p.loc, target) <= state.config.reachRadiusM) {
+      this.room.dispatch({ type: 'coopJoin', playerId: p.id, taskId: target.id });
+    }
+    return { lat: target.lat, lng: target.lng };
+  }
+
+  /**
+   * A bot's part in a co-op task. Returns true while the bot is busy with one (so it leaves solo tasks alone):
+   * start or join at the pin, then type the other side's PIN after a work wait.
+   */
+  private coop(bot: Bot, p: PlayerState, now: number): boolean {
+    const state = this.room.state;
+    const mine = sessionOfPlayer(state, p.id);
+    if (mine) {
+      if (mine.phase !== 'active' || !mine.pins) {
+        delete bot.coopDoneAt;
+        // Someone may be waiting for this bot as their partner: go there first, or two bots waiting on each other never meet.
+        const helping = p.partnerTask;
+        if (
+          mine.phase === 'waiting' &&
+          mine.starterId === p.id &&
+          helping &&
+          helping.coopId !== mine.id
+        ) {
+          this.room.dispatch({ type: 'coopCancel', playerId: p.id, taskId: taskIdFor(mine, p.id) });
+        }
+        return true;
+      }
+      const { botTaskMinS, botTaskMaxS } = state.config;
+      bot.coopDoneAt ??=
+        now + (botTaskMinS + bot.rng.next() * (botTaskMaxS - botTaskMinS)) * MS_PER_S;
+      if (now >= bot.coopDoneAt) {
+        const other = slotOf(mine, p.id) === 'owner' ? 'partner' : 'owner';
+        const res = this.room.dispatch({
+          type: 'coopSubmit',
+          playerId: p.id,
+          taskId: taskIdFor(mine, p.id),
+          answer: { pin: mine.pins[other] },
+        });
+        if (res.ok) delete bot.coopDoneAt;
+      }
+      return true;
+    }
+    delete bot.coopDoneAt;
+    const card = p.partnerTask ?? p.tasks?.find((t) => t.kind === 'coop');
+    if (!card) return false;
+    if (card.stage === 'pin' && card.atPin) {
+      const session = state.game?.coops.find((c) => c.id === card.coopId);
+      if (session?.phase === 'idle') {
+        this.room.dispatch({ type: 'coopStart', playerId: p.id, taskId: card.id });
+      } else if (session?.phase === 'waiting' && session.starterId !== p.id) {
+        this.room.dispatch({ type: 'coopJoin', playerId: p.id, taskId: card.id });
+      }
+    }
+    return true;
   }
 
   /** Take part in the meeting in progress, or (in `random` mode) call one when this bot's time has come. */
@@ -248,8 +351,10 @@ export class BotDriver {
 
   /** Open the task at the pin, then finish it after a random wait. */
   private work(bot: Bot, p: PlayerState, now: number): void {
-    const task = p.tasks?.[0];
-    if (!task || this.room.state.phase !== 'playing' || this.room.state.game?.meeting) return;
+    if (this.room.state.phase !== 'playing' || this.room.state.game?.meeting) return;
+    if (this.coop(bot, p, now)) return;
+    const task = p.tasks?.find((t) => t.kind === 'solo');
+    if (!task) return;
     if (!task.open) {
       if (task.stage !== 'pin' || !task.atPin) return;
       const res = this.room.dispatch({ type: 'taskOpen', playerId: p.id, taskId: task.id });

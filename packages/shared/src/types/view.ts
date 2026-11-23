@@ -228,6 +228,8 @@ export interface CoopView {
   endsAt: number;
   /** `active` only: the PIN the viewer must show their partner. */
   puzzle?: CoopPuzzle;
+  /** Test mode only, `active`, when the other side is a bot: the PIN that bot "shows", since a bot has no phone to read it from. */
+  botShows?: string;
 }
 
 /**

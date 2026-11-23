@@ -11,7 +11,10 @@
  * Fake Task (`ability:taskStop`, `ability:fakeTask` at a random spot near the Base) whenever its
  * own view says they are ready. In a meeting every bot walks to the Base, skips
  * the discussion and votes at random (Skip with `botVoteSkipPercent`; an imposter never votes for an
- * ally). With `meetings: 'random'` a bot also calls one meeting, at a random time into play.
+ * ally). Co-op (Phase 10): a bot works its co-op card before any solo one: at the pin it starts the
+ * session (or joins when the partner is waiting) and, once both are in, types the partner's PIN. Bots in
+ * one process share a PIN board (tag → the PIN that tag shows) to stand in for the partner's phone; a
+ * human partner's PIN is unreadable to a bot, so that task simply expires. With `meetings: 'random'` a bot also calls one meeting, at a random time into play.
  */
 import {
   type BotImposterBehaviour,
@@ -42,6 +45,9 @@ const BOT_ACCURACY_M = 5;
 const START_SCATTER_M = 10;
 const MS_PER_S = 1000;
 const RETRY_CALL_MS = 10_000;
+
+/** Bots in one process hold up their PINs here, keyed by the tag that shows them: the stand-in for reading a partner's phone. */
+const PIN_BOARD = new Map<string, string>();
 
 export interface BotOptions {
   url: string;
@@ -74,6 +80,8 @@ export class Bot {
   /** The card being worked and where its section spot is (found once per card). */
   private job:
     { taskId: string; spot: LatLng | undefined; opened?: boolean; doneAt?: number } | undefined;
+  /** Real ms when this bot types its co-op PIN, once the puzzle is out. */
+  private coopDoneAt: number | undefined;
 
   constructor(private readonly o: BotOptions) {
     this.rng = createRng(hashSeed(`${o.seed}|${o.name}`));
@@ -227,8 +235,11 @@ export class Bot {
 
   /** The card to work on and the place to walk to for it, or nothing when the bot is just wandering. */
   private target(view: PlayerView): { card: TaskCard; goal: LatLng | undefined } | undefined {
-    const card = view.game?.tasks?.[0];
-    if (!card || view.lobby.phase !== 'playing') return undefined;
+    if (view.lobby.phase !== 'playing') return undefined;
+    const tasks = view.game?.tasks ?? [];
+    // A co-op card first (the last one is the partner slot), so pairs really meet; then the first card.
+    const card = tasks.filter((t) => t.kind === 'coop').at(-1) ?? tasks[0];
+    if (!card) return undefined;
     if (this.job?.taskId !== card.id) this.job = { taskId: card.id, spot: undefined };
     if (card.stage === 'pin') return { card, goal: { lat: card.lat, lng: card.lng } };
     this.job.spot ??= pointInSection(
@@ -240,8 +251,46 @@ export class Bot {
     return { card, goal: this.job.spot };
   }
 
+  /**
+   * A co-op card at the pin: start the session (or join a waiting partner), then type the partner's PIN
+   * from the shared board. A bot that waits as owner while it is also somebody's partner goes to help first.
+   */
+  private async coopWork(view: PlayerView, card: TaskCard): Promise<void> {
+    const coop = view.game?.coop;
+    const tag = view.me.tag;
+    if (coop?.puzzle && tag) PIN_BOARD.set(tag, coop.puzzle.show);
+    if (!coop) {
+      this.coopDoneAt = undefined;
+      if (card.stage !== 'pin' || !card.atPin) return;
+      await this.call(card.partnerWaiting ? 'coop:join' : 'coop:start', { taskId: card.id });
+      return;
+    }
+    if (coop.phase === 'waiting') {
+      const helping = (view.game?.tasks ?? []).filter((t) => t.kind === 'coop').at(-1);
+      if (helping && helping.id !== coop.taskId)
+        await this.call('coop:cancel', { taskId: coop.taskId });
+      return;
+    }
+    const partnerShows = card.partnerTag ? PIN_BOARD.get(card.partnerTag) : undefined;
+    if (partnerShows === undefined) return;
+    const { botTaskMinS, botTaskMaxS } = DEFAULT_CONFIG;
+    this.coopDoneAt ??=
+      Date.now() +
+      ((botTaskMinS + this.rng.next() * (botTaskMaxS - botTaskMinS)) * MS_PER_S) / this.o.speed;
+    if (Date.now() < this.coopDoneAt) return;
+    const res = await this.call('coop:submit', {
+      taskId: coop.taskId,
+      answer: { pin: partnerShows },
+    });
+    if (res.ok) {
+      this.o.log(`${this.o.name}: typed a co-op PIN`);
+      this.coopDoneAt = undefined;
+    }
+  }
+
   /** At the pin: open the task once, then finish it after a random wait. */
-  private async work(card: TaskCard): Promise<void> {
+  private async work(view: PlayerView, card: TaskCard): Promise<void> {
+    if (card.kind === 'coop') return this.coopWork(view, card);
     const job = this.job;
     if (!job || card.stage !== 'pin' || !card.atPin) return;
     if (!job.opened) {
@@ -319,7 +368,8 @@ export class Bot {
     const meet = await this.meet(view);
     const inMeeting = view.game?.meeting !== undefined;
     const work = inMeeting ? undefined : this.target(view);
-    const working = work?.card.stage === 'pin' && work.card.atPin;
+    const working =
+      (work?.card.stage === 'pin' && work.card.atPin) || view.game?.coop !== undefined;
     const hunt = inMeeting ? undefined : await this.hunt(view, walker);
     if (meet === 'stay') walker.stay();
     else if (meet) walker.step(meet);
@@ -338,6 +388,6 @@ export class Bot {
     if (view.lobby.phase === 'lobby' && !view.me.ready && view.me.location?.quality === 'good') {
       await this.call('lobby:setReady', { ready: true });
     }
-    if (work) await this.work(work.card);
+    if (work) await this.work(view, work.card);
   }
 }
