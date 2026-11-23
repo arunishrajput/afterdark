@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 08, Meetings & voting** → [docs/phases/PHASE-08-meetings-voting.md](docs/phases/PHASE-08-meetings-voting.md)
+**◐ IN PROGRESS: Phase 08, Meetings & voting** (started 2026-11-23, resume at task 08.1) → [docs/phases/PHASE-08-meetings-voting.md](docs/phases/PHASE-08-meetings-voting.md)
 
 **Live URL:** <https://afterdark-24gx.onrender.com> (Render free, Singapore; sleeps after ~15 min idle, first load up to ~1 min)
 
@@ -19,7 +19,7 @@
 | 05 | [Task engine & first minigames](docs/phases/PHASE-05-tasks-core.md) | ✅ DONE | 2026-11-23 | `phase-05-done` |
 | 06 | [Deploy & first field test](docs/phases/PHASE-06-deploy-field-test.md) | ✅ DONE | 2026-11-23 | `phase-06-done` |
 | 07 | [Infection system](docs/phases/PHASE-07-infection.md) | ✅ DONE | 2026-11-23 | `phase-07-done` |
-| 08 | [Meetings & voting](docs/phases/PHASE-08-meetings-voting.md) | ▶ NEXT | | |
+| 08 | [Meetings & voting](docs/phases/PHASE-08-meetings-voting.md) | ◐ IN PROGRESS | 2026-11-23 | |
 | 09 | [Abilities: Saboteur & Phantom](docs/phases/PHASE-09-abilities-saboteur-phantom.md) | ☐ NOT STARTED | | |
 | 10 | [Co-op tasks & Camouflage](docs/phases/PHASE-10-coop-camouflage.md) | ☐ NOT STARTED | | |
 | 11 | [Remaining minigames & balance](docs/phases/PHASE-11-minigames-balance.md) | ☐ NOT STARTED | | |
