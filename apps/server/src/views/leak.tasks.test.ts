@@ -30,6 +30,8 @@ const TASK_SECRETS = [
   'pointId',
   'holdSince',
   'fake',
+  'fakeOwnerId',
+  'ownerId',
   'lockedUntilGameMs',
   'rerollReadyAtGameMs',
   'tasks.type',
