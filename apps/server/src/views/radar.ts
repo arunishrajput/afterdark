@@ -7,7 +7,7 @@
  * `playerVisibility` decides who appears (ADR-008): `nearby` (within
  * `nearbyRadiusM` of the viewer's own latest fix), `regions` (nobody; region
  * counts only) or `all`. An active imposter's radar also marks the other
- * imposters with `ally` (ROLES.md); Phase 7 adds exposed and infected.
+ * imposters with `ally`, and exposed or infected crew with `exposed` / `infected` (ROLES.md).
  */
 import { type AnonDot, distanceM, type DotFlag, hashSeed } from '@afterdark/shared';
 
@@ -45,6 +45,8 @@ export function buildRadar(state: RoomState, viewerId: string, now: number): Ano
     if (fixQuality(p.loc, now, state.config) === 'stale') flags.push('stale');
     if (isOutOfBounds(state, p.loc)) flags.push('oob');
     if (viewerIsImposter && p.role === 'imposter') flags.push('ally');
+    // Only an imposter learns who is exposed or infected (RULES §7.1.6, ROLES.md).
+    if (viewerIsImposter && p.infection) flags.push(p.infection);
     dots.push({
       alias: alias(state.radarSalt, viewerId, p.id, epoch),
       lat: p.loc.lat,

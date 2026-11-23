@@ -31,7 +31,7 @@ export function keysDeep(value: unknown, prefix = ''): string[] {
   return [...out].sort();
 }
 
-/** Every key path a view may contain (through Phase 5). Anything else fails the test. */
+/** Every key path a view may contain (through Phase 7). Anything else fails the test. */
 export const ALLOWED_VIEW_KEYS = new Set([
   'lobby',
   'lobby.code',
@@ -105,6 +105,15 @@ export const ALLOWED_VIEW_KEYS = new Set([
   'me.imposter.allies[].username',
   'me.imposter.allies[].tag',
   'me.imposter.allies[].classes',
+  'me.imposter.infect',
+  'me.imposter.infect.readyAt',
+  'me.imposter.infect.channel',
+  'me.imposter.infect.channel.endsAt',
+  'me.imposter.infect.channel.inRange',
+  'me.imposter.compromisedIds',
+  'me.imposter.exposures',
+  'me.imposter.exposures[].playerId',
+  'me.imposter.exposures[].incubationEndsAt',
   'me.personalScore',
   'me.zone',
   'me.zone.oob',

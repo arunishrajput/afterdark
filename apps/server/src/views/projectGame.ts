@@ -16,9 +16,47 @@ import { projectRerollReadyAt, projectTasks } from './projectTasks';
 
 const MS_PER_S = 1000;
 
-/** Imposters see the others' username, tag and class (RULES §5.4). Nothing about infection yet. */
-function projectImposter(state: RoomState, me: PlayerState): ImposterView {
+/**
+ * A game-time deadline as server epoch ms. Constant while the clock runs or is
+ * stopped (like `clockView`), so a view only changes when something happens.
+ * Before play the clock has not started: the deadline counts from the reveal's end.
+ */
+function deadlineAt(state: RoomState, gameMs: number, now: number): number {
+  const g = state.game;
+  if (!g) return now;
+  return g.clock.started ? clockView(g.clock, gameMs, now).endsAt : g.revealEndsAt + gameMs;
+}
+
+/**
+ * Imposters see the others' username, tag and class (RULES §5.4), their own Infect
+ * state, and who is exposed or infected, whichever imposter caused it (ROLES.md).
+ * This is the only place infection status leaves the engine.
+ */
+function projectImposter(state: RoomState, me: PlayerState, now: number): ImposterView {
+  const channel = me.infect?.channel;
+  const affected = state.players.filter((p) => p.infection !== undefined);
   return {
+    infect: {
+      readyAt: deadlineAt(state, me.infect?.readyAtGameMs ?? 0, now),
+      ...(channel
+        ? {
+            channel: {
+              endsAt: deadlineAt(state, channel.endsAtGameMs, now),
+              inRange: channel.inRange,
+            },
+          }
+        : {}),
+    },
+    compromisedIds: affected.map((p) => p.id),
+    exposures: affected
+      .filter((p) => p.infection === 'exposed')
+      .map((p) => {
+        const ends = p.exposure?.incubationEndsAtGameMs;
+        return {
+          playerId: p.id,
+          ...(ends === undefined ? {} : { incubationEndsAt: deadlineAt(state, ends, now) }),
+        };
+      }),
     classes: [...(me.classes ?? [])],
     allies: state.players
       .filter((p) => p.id !== me.id && p.role === 'imposter' && !p.left)
@@ -43,7 +81,7 @@ export function projectOwnGame(
   out.tag = me.tag;
   out.role = me.role;
   out.personalScore = me.personalScore ?? 0;
-  if (me.role === 'imposter') out.imposter = projectImposter(state, me);
+  if (me.role === 'imposter' && !me.left) out.imposter = projectImposter(state, me, now);
   if (state.phase === 'playing') {
     const grace = state.config.zoneGraceS * MS_PER_S;
     const outSince = me.zone?.outSince;

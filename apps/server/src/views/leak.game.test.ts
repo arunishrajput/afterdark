@@ -229,7 +229,8 @@ describe('leak: an infected crew member looks exactly like a healthy one (Phase 
 
   it('no view contains the words infected, exposed or incubation as a key', () => {
     for (const f of [infectedFixture, exposedFixture]) {
-      for (const p of f.state.players) {
+      // Only imposters may carry these (ROLES.md): see leak.infection.test.ts for what they get.
+      for (const p of f.state.players.filter((x) => x.role === 'crew')) {
         const names = namesOf(projectView(f.state, p.id, f.now));
         for (const bad of ['infected', 'exposed', 'incubation', 'compromisedIds', 'infection']) {
           expect(names.has(bad), `${p.id}: ${bad}`).toBe(false);
