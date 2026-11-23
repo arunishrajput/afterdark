@@ -2,7 +2,7 @@ import { DEFAULT_CONFIG, IMPOSTER_CLASSES, TAG_PATTERN } from '@afterdark/shared
 import { describe, expect, it } from 'vitest';
 
 import { newLobby, toReveal } from '../testkit';
-import { imposterCountFor } from './roles';
+import { assignRoles, imposterCountFor } from './roles';
 
 const reveal = (players: number, radarSalt = 'salt', config = {}) =>
   toReveal(newLobby({ players, radarSalt, config })).state;
@@ -110,9 +110,14 @@ describe('determinism (RULES §1.3)', () => {
   });
 
   it('over many seeds every seat is an imposter some of the time (a fair shuffle)', () => {
+    // Re-draw the roles of one revealed game under 60 different secret seeds: no full game per seed.
+    const base = toReveal(newLobby({ players: 6 })).state;
     const counts = new Map<string, number>();
     for (let n = 0; n < 60; n++) {
-      for (const p of reveal(6, `fair${n}`).players) {
+      const s = structuredClone(base);
+      s.secretSeed = n + 1;
+      assignRoles(s, 0);
+      for (const p of s.players) {
         if (p.role === 'imposter') counts.set(p.id, (counts.get(p.id) ?? 0) + 1);
       }
     }
