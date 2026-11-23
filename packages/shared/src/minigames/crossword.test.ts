@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config/defaults';
 import { createRng } from '../rng';
-import { eraseMinigame } from './types';
 import { crossword, entriesOf, transpose } from './crossword';
 import { CLUES, CROSSWORD_GRIDS } from './data/crosswords';
 import { CTX } from './testCtx';
+import { eraseMinigame } from './types';
 
 const gen = (seed: number) => crossword.generate(createRng(seed), 1, DEFAULT_CONFIG, CTX);
 

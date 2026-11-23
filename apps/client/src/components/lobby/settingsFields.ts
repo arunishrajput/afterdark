@@ -7,6 +7,8 @@ import {
   type GameConfigPublic,
   HOST_CONFIG_TIER,
   type HostConfigTier,
+  MIN_ENABLED_MINIGAMES,
+  SOLO_MINIGAME_TYPES,
 } from '@afterdark/shared';
 
 export interface Option<V> {
@@ -34,7 +36,13 @@ export interface ChoiceField extends Base {
 export interface ToggleField extends Base {
   kind: 'toggle';
 }
-export type Field = NumberField | ChoiceField | ToggleField;
+/** Pick any of several values (Minigame variety): at least `min` stay on. */
+export interface MultiField extends Base {
+  kind: 'multi';
+  options: Option<string>[];
+  min: number;
+}
+export type Field = NumberField | ChoiceField | ToggleField | MultiField;
 
 const AUTO = 'auto';
 const autoPlus = (from: number, to: number): Option<string | number>[] => [
@@ -44,6 +52,17 @@ const autoPlus = (from: number, to: number): Option<string | number>[] => [
     label: String(from + i),
   })),
 ];
+
+/** Player-facing names of the solo games (the same words the game sheet uses). */
+export const MINIGAME_NAMES: Record<(typeof SOLO_MINIGAME_TYPES)[number], string> = {
+  wires: 'Wire Connect',
+  lock: 'Lock Breaker',
+  pattern: 'Pattern Memory',
+  signal: 'Signal Decode',
+  slide: 'Sliding Puzzle',
+  crossword: 'Mini Crossword',
+  keyfetch: 'Key Fetch',
+};
 
 export const FIELDS: Field[] = [
   { key: 'playTimeMin', kind: 'number', label: 'Play time', unit: 'min', step: 5 },
@@ -101,6 +120,14 @@ export const FIELDS: Field[] = [
   { key: 'incubationS', kind: 'number', label: 'Incubation', unit: 's', step: 10 },
   { key: 'infectionWinPercent', kind: 'number', label: 'Infection win at', unit: '%', step: 5 },
   { key: 'taskStopLockS', kind: 'number', label: 'Task Stop lock', unit: 's', step: 5 },
+  {
+    key: 'minigamesEnabled',
+    kind: 'multi',
+    label: 'Minigame variety',
+    hint: `Switch games off if players dislike them. At least ${MIN_ENABLED_MINIGAMES} stay on.`,
+    min: MIN_ENABLED_MINIGAMES,
+    options: SOLO_MINIGAME_TYPES.map((t) => ({ value: t, label: MINIGAME_NAMES[t] })),
+  },
 ];
 
 export const fieldsOfTier = (tier: HostConfigTier): Field[] =>
@@ -139,5 +166,7 @@ export function formatValue(field: Field, value: GameConfigPublic[EditableConfig
       return field.options.find((o) => o.value === value)?.label ?? String(value);
     case 'toggle':
       return value ? 'On' : 'Off';
+    case 'multi':
+      return `${(value as string[]).length} of ${field.options.length} games`;
   }
 }

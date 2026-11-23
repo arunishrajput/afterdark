@@ -126,6 +126,7 @@ export function TaskPanel({
             data-stage={stage}
             data-kind={card.kind}
             data-requested={card.requested ? 'true' : undefined}
+            data-holds-key={card.holdsKey ? 'true' : undefined}
             className={`flex items-center gap-3 rounded-2xl border bg-surface px-3 py-2 ${stage === 'atPin' ? 'border-accent shadow-[0_0_14px_var(--accent-glow)]' : 'border-white/10'}`}
           >
             <button
@@ -144,7 +145,9 @@ export function TaskPanel({
                 <span className="block text-xs text-muted">
                   {card.kind === 'coop'
                     ? `${card.requested ? 'Requested by a teammate' : 'Co-op'} · ${STAGE_NAME[stage]}`
-                    : STAGE_NAME[stage]}
+                    : card.holdsKey
+                      ? `🔑 Key in hand · ${STAGE_NAME[stage]}`
+                      : STAGE_NAME[stage]}
                 </span>
               </span>
               {g && stage !== 'atPin' && (

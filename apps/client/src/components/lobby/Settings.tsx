@@ -21,6 +21,7 @@ import {
   fieldsOfTier,
   formatValue,
   matchingPreset,
+  type MultiField,
   type NumberField,
   PRESETS,
 } from './settingsFields';
@@ -102,6 +103,51 @@ function Chips({
   );
 }
 
+function Variety({
+  field,
+  value,
+  onChange,
+}: {
+  field: MultiField;
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const toggle = (v: string) => {
+    if (value.includes(v)) {
+      if (value.length <= field.min) return;
+      onChange(value.filter((x) => x !== v));
+    } else {
+      // Keep the list in the catalogue's order, so the same choice always compares equal.
+      onChange(field.options.map((o) => o.value).filter((x) => x === v || value.includes(x)));
+    }
+  };
+  return (
+    <div className="flex flex-col gap-1.5" data-testid="setting-minigamesEnabled">
+      <span className="font-medium">{field.label}</span>
+      <div role="group" aria-label={field.label} className="flex flex-wrap gap-1">
+        {field.options.map((opt) => {
+          const on = value.includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              aria-pressed={on}
+              data-testid={`variety-${opt.value}`}
+              disabled={on && value.length <= field.min}
+              onClick={() => toggle(opt.value)}
+              className="min-h-11 rounded-lg border border-white/15 px-3 font-semibold aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-bg disabled:opacity-60"
+            >
+              {on ? '✓ ' : ''}
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+      {field.hint && <p className="text-xs text-muted">{field.hint}</p>}
+    </div>
+  );
+}
+
 function Toggle({
   field,
   value,
@@ -149,7 +195,8 @@ export function SettingsSheet({
 
   const patch: GameConfigEditablePatch = {};
   for (const key of EDITABLE_CONFIG_KEYS) {
-    if (draft[key] !== config[key]) Object.assign(patch, { [key]: draft[key] });
+    if (JSON.stringify(draft[key]) !== JSON.stringify(config[key]))
+      Object.assign(patch, { [key]: draft[key] });
   }
   const dirty = Object.keys(patch).length > 0;
 
@@ -188,6 +235,15 @@ export function SettingsSheet({
             key={field.key}
             field={field}
             value={value as string | number}
+            onChange={(v) => set(field.key, v as never)}
+          />
+        );
+      case 'multi':
+        return (
+          <Variety
+            key={field.key}
+            field={field}
+            value={value as string[]}
             onChange={(v) => set(field.key, v as never)}
           />
         );

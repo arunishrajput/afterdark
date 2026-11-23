@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../config/defaults';
 import { createRng } from '../rng';
 import { lock, type LockCode, type LockFeedback, type LockState, scoreGuess } from './lock';
-import { eraseMinigame } from './types';
 import { CTX } from './testCtx';
+import { eraseMinigame } from './types';
 
 const params = DEFAULT_CONFIG;
 const game = eraseMinigame(lock);

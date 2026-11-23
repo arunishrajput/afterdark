@@ -27,8 +27,8 @@ import {
   toPlaying,
 } from '../testkit';
 import type { Effect } from '../types';
-import { refillSlots, resetAllOpen } from './tasks';
 import { resetOnDisconnect } from './taskPlay';
+import { refillSlots, resetAllOpen } from './tasks';
 
 const replyOf = (effects: Effect[]) => {
   const e = effects.find((x) => x.kind === 'reply');

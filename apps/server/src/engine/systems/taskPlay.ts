@@ -5,8 +5,8 @@
  * Game time (pausable) drives every timer.
  */
 import {
-  distanceM,
   type CrosswordPuzzle,
+  distanceM,
   type KeyFeedback,
   type KeyPuzzle,
   type LockFeedback,

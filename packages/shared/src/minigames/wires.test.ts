@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config/defaults';
 import { createRng } from '../rng';
+import { CTX } from './testCtx';
 import { eraseMinigame } from './types';
 import { generateWires, wires } from './wires';
-import { CTX } from './testCtx';
 
 const params = DEFAULT_CONFIG;
 const erased = eraseMinigame(wires);

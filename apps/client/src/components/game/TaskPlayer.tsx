@@ -5,8 +5,12 @@
  */
 import {
   DEFAULT_CONFIG,
+  type KeyAction,
+  type KeyFeedback,
   type LockAction,
   type LockFeedback,
+  type TaskActionAck,
+  type TaskActionBody,
   type TaskAnswerBody,
   type TaskCard,
   type TaskOpenAck,
@@ -23,6 +27,11 @@ import { cardLabel } from './taskGeo';
 // Each game loads only when a task of that type opens (ARCHITECTURE §11).
 const Wires = lazy(() => import('../minigames/Wires'));
 const LockBreaker = lazy(() => import('../minigames/LockBreaker'));
+const SlidingPuzzle = lazy(() => import('../minigames/SlidingPuzzle'));
+const MiniCrossword = lazy(() => import('../minigames/MiniCrossword'));
+const PatternMemory = lazy(() => import('../minigames/PatternMemory'));
+const SignalDecode = lazy(() => import('../minigames/SignalDecode'));
+const KeyFetch = lazy(() => import('../minigames/KeyFetch'));
 
 const MS_PER_S = 1000;
 const RESULT_SHOWN_MS = 1400;
@@ -30,12 +39,24 @@ const RESULT_SHOWN_MS = 1400;
 const FOOLED_DISMISS_MS = 2000;
 const LOCKOUT_TICK_MS = 250;
 
-const GAME_NAMES = { wires: 'Wire Connect', lock: 'Lock Breaker' } as const;
+const GAME_NAMES = {
+  wires: 'Wire Connect',
+  lock: 'Lock Breaker',
+  pattern: 'Pattern Memory',
+  signal: 'Signal Decode',
+  slide: 'Sliding Puzzle',
+  crossword: 'Mini Crossword',
+  keyfetch: 'Key Fetch',
+} as const;
+
+/** How long "Key picked up" stays up before the sheet closes and the card shows Point 2. */
+const KEY_SHOWN_MS = 1800;
 
 type Step =
   | { kind: 'safe'; error?: string }
   | { kind: 'opening' }
   | { kind: 'play'; ack: TaskOpenAck }
+  | { kind: 'key' }
   | { kind: 'done'; result: 'success' | 'fooled'; points: number };
 
 export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: () => void }) {
@@ -58,13 +79,13 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
 
   // The server dropped the minigame (a `task.reset` event, already toasted): close.
   useEffect(() => {
-    if (resetSeq !== startedAt.current && step.kind !== 'done') onClose();
+    if (resetSeq !== startedAt.current && step.kind !== 'done' && step.kind !== 'key') onClose();
   }, [resetSeq, step.kind, onClose]);
 
   // The card is gone from the view (swapped out): nothing left to play. While a submit is in
   // flight the card can vanish just before the ack arrives (it was completed): wait for the ack.
   useEffect(() => {
-    if (!live && step.kind !== 'done' && !busy) onClose();
+    if (!live && step.kind !== 'done' && step.kind !== 'key' && !busy) onClose();
   }, [live, step.kind, busy, onClose]);
 
   // A completed task closes itself; the fooled overlay waits to be dismissed (after a short beat).
@@ -78,6 +99,12 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
     );
     return () => clearTimeout(t);
   }, [step.kind, fooled, onClose]);
+
+  useEffect(() => {
+    if (step.kind !== 'key') return;
+    const t = setTimeout(onClose, KEY_SHOWN_MS);
+    return () => clearTimeout(t);
+  }, [step.kind, onClose]);
 
   useEffect(() => {
     if (lockedUntil <= Date.now()) return;
@@ -121,13 +148,19 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
     setStep({ kind: 'done', result: res.data.result, points: res.data.points });
   };
 
-  const act = async (action: LockAction): Promise<LockFeedback | undefined> => {
+  const act = async (action: TaskActionBody): Promise<TaskActionAck['feedback'] | undefined> => {
     const res = await taskAction(card.id, action);
     if (!res.ok) {
       setMessage(messageFor(res.code));
       return undefined;
     }
-    return res.data.feedback;
+    const feedback = res.data.feedback;
+    // Key Fetch: the server moved the card to Point 2 and closed the game. Say so, then leave.
+    if ('picked' in feedback && feedback.picked) {
+      setMessage(undefined);
+      setStep({ kind: 'key' });
+    }
+    return feedback;
   };
 
   const locked = now < lockedUntil;
@@ -200,7 +233,47 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
                   puzzle={step.ack.puzzle}
                   disabled={disabled}
                   onSubmit={(a) => void submit(a)}
-                  onAction={act}
+                  onAction={(a: LockAction) => act(a) as Promise<LockFeedback | undefined>}
+                />
+              )}
+              {step.ack.type === 'slide' && (
+                <SlidingPuzzle
+                  puzzle={step.ack.puzzle}
+                  disabled={disabled}
+                  onSubmit={(a) => void submit(a)}
+                  onAction={() => Promise.resolve(undefined)}
+                />
+              )}
+              {step.ack.type === 'crossword' && (
+                <MiniCrossword
+                  puzzle={step.ack.puzzle}
+                  disabled={disabled}
+                  onSubmit={(a) => void submit(a)}
+                  onAction={() => Promise.resolve(undefined)}
+                />
+              )}
+              {step.ack.type === 'pattern' && (
+                <PatternMemory
+                  puzzle={step.ack.puzzle}
+                  disabled={disabled}
+                  onSubmit={(a) => void submit(a)}
+                  onAction={() => Promise.resolve(undefined)}
+                />
+              )}
+              {step.ack.type === 'signal' && (
+                <SignalDecode
+                  puzzle={step.ack.puzzle}
+                  disabled={disabled}
+                  onSubmit={(a) => void submit(a)}
+                  onAction={() => Promise.resolve(undefined)}
+                />
+              )}
+              {step.ack.type === 'keyfetch' && (
+                <KeyFetch
+                  puzzle={step.ack.puzzle}
+                  disabled={disabled}
+                  onSubmit={(a) => void submit(a)}
+                  onAction={(a: KeyAction) => act(a) as Promise<KeyFeedback | undefined>}
                 />
               )}
             </Suspense>
@@ -216,6 +289,17 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
             <Button variant="ghost" className="mt-4 w-full" data-testid="task-back" onClick={back}>
               Back out
             </Button>
+          </section>
+        )}
+
+        {step.kind === 'key' && (
+          <section
+            role="status"
+            data-testid="key-picked"
+            className="flex flex-1 flex-col items-center justify-center gap-2 text-center"
+          >
+            <p className="font-display text-4xl font-bold text-accent">Key picked up</p>
+            <p className="text-lg">Find the second spot to use it.</p>
           </section>
         )}
 

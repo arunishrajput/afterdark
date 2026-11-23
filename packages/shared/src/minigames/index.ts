@@ -29,9 +29,9 @@ export { lock, rollCode, scoreGuess } from './lock';
 export type { PatternPuzzle } from './pattern';
 export { pattern } from './pattern';
 export type { SignalPuzzle } from './signal';
-export { SIGNAL_GLYPH_COUNT, signal } from './signal';
+export { signal, SIGNAL_GLYPH_COUNT } from './signal';
 export type { SlidePuzzle, SlideSolution } from './slide';
-export { slide } from './slide';
+export { applyMoves as applySlideMoves, isSolved as isSlideSolved, slide } from './slide';
 export type {
   CheckResult,
   Difficulty,

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config/defaults';
 import { createRng } from '../rng';
-import { eraseMinigame } from './types';
-import { keyfetch, type KeyFeedback, type KeyState } from './keyfetch';
+import { type KeyFeedback, keyfetch, type KeyState } from './keyfetch';
 import type { TaskContext } from './types';
+import { eraseMinigame } from './types';
 
 const at = (gameMs: number, keyHeld = false): TaskContext => ({ gameMs, keyHeld });
 const rng = createRng(1);
@@ -68,24 +68,17 @@ describe('keyfetch (Key Fetch)', () => {
       at(0, true),
     );
     expect(grab?.feedback).toEqual({ picked: false });
-    expect((grab?.state as KeyState | undefined)?.grabbedAtMs).toBeUndefined();
+    expect(grab?.state?.grabbedAtMs).toBeUndefined();
   });
 
   it('a new grab restarts the hold', () => {
     const { puzzle, solution } = keyfetch.generate(createRng(3), 1, DEFAULT_CONFIG, at(0));
     const first = keyfetch.act?.(puzzle, solution, undefined, { step: 'grab' }, rng, at(0));
-    const second = keyfetch.act?.(
-      puzzle,
-      solution,
-      first?.state as KeyState,
-      { step: 'grab' },
-      rng,
-      at(2_000),
-    );
+    const second = keyfetch.act?.(puzzle, solution, first?.state, { step: 'grab' }, rng, at(2_000));
     const early = keyfetch.act?.(
       puzzle,
       solution,
-      second?.state as KeyState,
+      second?.state,
       { step: 'pickup' },
       rng,
       at(holdMs),

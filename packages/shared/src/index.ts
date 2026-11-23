@@ -107,10 +107,12 @@ export type {
   WireSymbol,
 } from './minigames';
 export {
+  applySlideMoves,
   coopPinAnswerSchema,
   crossword,
   eraseMinigame,
   generateCoopPins,
+  isSlideSolved,
   keyfetch,
   lock,
   MINIGAME_TYPES,
@@ -121,8 +123,8 @@ export {
   puzzleFor,
   rollCode,
   scoreGuess,
-  SIGNAL_GLYPH_COUNT,
   signal,
+  SIGNAL_GLYPH_COUNT,
   slide,
   SOLO_MINIGAME_TYPES,
   verifyCoopPin,
