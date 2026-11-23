@@ -1,33 +1,6 @@
-import { type Browser, expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
-/** One isolated browser context per player (separate localStorage = separate device). */
-async function newPlayer(browser: Browser): Promise<Page> {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  return ctx.newPage();
-}
-
-async function fillEntry(page: Page, name: string, submit: string) {
-  await page.getByLabel('Your name').fill(name);
-  await page.getByRole('checkbox').check();
-  await page.getByRole('button', { name: submit }).click();
-}
-
-async function createLobby(page: Page, name: string): Promise<string> {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Create game' }).click();
-  await fillEntry(page, name, 'Create lobby');
-  const code = (await page.getByTestId('lobby-code').textContent()) ?? '';
-  expect(code).toMatch(/^[A-Z2-9]{6}$/);
-  return code;
-}
-
-async function joinLobby(page: Page, code: string, name: string) {
-  await page.goto(`/?code=${code}`);
-  await expect(page.getByLabel('Lobby code')).toHaveValue(code); // ?code= pre-fills Join
-  await page.getByRole('button', { name: 'Join game' }).click();
-  await fillEntry(page, name, 'Join lobby');
-  await expect(page.getByTestId('lobby-code')).toHaveText(code);
-}
+import { createLobby, drawCircle, enableTestMode, joinLobby, newPlayer } from './helpers';
 
 test('players create, join by code, ready up and see the countdown; reload keeps the player', async ({
   browser,
@@ -38,10 +11,15 @@ test('players create, join by code, ready up and see the countdown; reload keeps
   const [host, ...guests] = pages as [Page, ...Page[]];
 
   const code = await createLobby(host, 'Ann');
+  await enableTestMode(host); // simulated GPS for everyone, so each phone has a good fix
   for (const [i, page] of guests.entries()) await joinLobby(page, code, names[i + 1] ?? '');
 
   for (const page of pages) await expect(page.getByTestId('roster-row')).toHaveCount(4);
   await expect(host.getByTestId('roster-row').first()).toContainText('Ann');
+
+  await drawCircle(host); // the countdown also needs a boundary
+  for (const page of pages) await expect(page.getByTestId('boundary-status')).toHaveText(/^Area /);
+  for (const page of pages) await expect(page.getByTestId('location-ok')).toBeVisible();
 
   for (const page of pages) await page.getByTestId('ready-button').click();
   for (const page of pages) await expect(page.getByTestId('countdown')).toBeVisible();
