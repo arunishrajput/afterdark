@@ -21,7 +21,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: REMOTE_URL
-    ? undefined
+    ? []
     : [
         {
           command: 'pnpm --filter @afterdark/server dev',
