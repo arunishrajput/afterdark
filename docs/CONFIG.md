@@ -1,6 +1,6 @@
 # Game Configuration: Every Tunable Value
 
-This file lists **every number in the game**. The code copy lives in `packages/shared/src/config/defaults.ts`, with ranges validated by zod in `packages/shared/src/config/schema.ts`. **Change both together.** Other docs refer to these values by key, for example `infectionRadiusM`. Where they quote a number, it must match this file.
+This file lists **every number in the game**. Keys are exactly the property names in code (`points.wires` is `config.points.wires`). The code copy lives in `packages/shared/src/config/defaults.ts`, with ranges validated by zod in `packages/shared/src/config/schema.ts`. **Change both together.** Other docs refer to these values by key, for example `infectionRadiusM`. Where they quote a number, it must match this file.
 
 How to read the **Host** column:
 - ✅ means the host can change the value in lobby settings.
@@ -14,9 +14,12 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 |---|---|---|---|---|
 | `playTimeMin` | 25 | 10–60 | ✅ | Game-time minutes. Pauses during meetings and host pauses. |
 | `targetScore` | 100 | 40–300 | ✅ | Team score needed for a crew win. The UI hint suggests `16 × crewCount`. |
+| `targetScoreHintPerCrew` | 16 | — | 🔒 | Multiplier for the UI hint `targetScoreHintPerCrew × crewCount`. |
 | `minPlayers` | 4 | — | 🔒 | Fewer than this cannot start. |
 | `maxPlayers` | 12 | — | 🔒 | Lobby is full at 12. |
 | `imposterCount` | `auto` | auto, 1–3 | ✅ | auto: 4–5 players → 1, 6–9 → 2, 10–12 → 3. At least 3 crew must remain. |
+| `imposterCountAuto` | `[{maxPlayers:5,count:1},{maxPlayers:9,count:2},{maxPlayers:12,count:3}]` | — | 🔒 | The `auto` rule above, as data: the first entry whose `maxPlayers` ≥ player count wins. |
+| `minCrewRemaining` | 3 | — | 🔒 | A manual imposter count that would leave fewer crew than this is invalid. |
 | `imposterAbilityMode` | `classes` | classes, all | ✅ | `classes`: one secret class per imposter. `all`: every imposter has all 3 abilities. |
 | `playerVisibility` | `nearby` | nearby, regions, all | ✅ | See [MAP_AND_REGIONS.md](MAP_AND_REGIONS.md#6-visibility-modes). |
 | `testMode` | false | bool | ✅ | Enables simulated GPS and bots. Shown to everyone as a badge. |
@@ -25,6 +28,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | Key | Default | Range | Host | Notes |
 |---|---|---|---|---|
 | `lobbyCodeLength` | 6 | — | 🔒 | Alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, which leaves out confusable characters. |
+| `lobbyCodeAlphabet` | `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` | — | 🔒 | 32 symbols (no 0/O, 1/I), so codes are drawn without modulo bias. |
 | `usernameMinLen` / `usernameMaxLen` | 2 / 16 | — | 🔒 | Unique per lobby, case-insensitive. |
 | `startCountdownS` | 5 | — | 🔒 | Starts when everyone is ready and the config is valid. Cancelled if anyone un-readies. |
 | `spawnTimeoutS` | 300 | 60–600 | ⚙️ | Roles are assigned even if not everyone has reached their spawn. |
@@ -38,6 +42,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `minBoundaryAreaM2` | 15000 | — | 🔒 | Roughly a circle of 70 m radius. |
 | `maxBoundaryAreaM2` | 3000000 | — | 🔒 | 3 km². |
 | `regionCount` | `auto` | auto, 2–6 | ✅ | auto by boundary area: under 40k m² → 2, under 150k → 3, under 400k → 4, under 1M → 5, otherwise 6. |
+| `regionCountAutoMaxAreaM2` | `[40000, 150000, 400000, 1000000]` | — | 🔒 | The `auto` rule above, as data: region count = 2 + number of thresholds the area meets or exceeds. |
 | `sectionCentreRatio` | 0.35 | — | 🔒 | The Centre section is the inner 35% of the region's radius. |
 | `minSectionAreaM2` | 400 | — | 🔒 | Smaller sections get no tasks. |
 | `taskPointsPerSection` | 3 | — | 🔒 | Target number of auto-generated candidate points per section. |
@@ -45,7 +50,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `baseRadiusM` | 30 | — | 🔒 | A player within this distance of the Base counts as gathered. |
 | `nearbyRadiusM` | 40 | 20–100 | ⚙️ | Used by visibility mode `nearby`. |
 | `regionCountRefreshS` | 30 | — | 🔒 | Region population counts are bucketed and refreshed this often. |
-| `regionCountBuckets` | `0`, `1`, `2–3`, `4+` | — | 🔒 | |
+| `regionCountBuckets` | `0`, `1`, `2–3`, `4+` | — | 🔒 | Stored as `[{min, label}]`: a count gets the label of the last bucket whose `min` it reaches. |
 | `dotAliasRotateS` | 300 | — | 🔒 | Anonymous dot IDs change this often. |
 
 ## Location quality
@@ -54,6 +59,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `maxAccuracyM` | 30 | — | 🔒 | A fix less accurate than this cannot reveal, reach, infect or gather. |
 | `staleAfterS` | 10 | — | 🔒 | A fix older than this makes the player *stale*. |
 | `maxSpeedMps` | 12 | — | 🔒 | A faster jump is rejected. The player re-anchors after 3 consistent fixes. |
+| `reanchorFixes` | 3 | — | 🔒 | Consistent fixes needed to re-anchor after a rejected jump. |
 | `locationSendIntervalMs` | 1000 | — | 🔒 | Most frequent rate the client sends updates. |
 | `locationMinMoveM` | 3 | — | 🔒 | The client also sends an update when it has moved this far. |
 | `stationarySendIntervalMs` | 5000 | — | 🔒 | Battery saver used while the player is not moving (Phase 13). |
@@ -93,6 +99,7 @@ Rules: [SCORING.md](SCORING.md).
 | `points.keyfetch` | 12 | Key Fetch (two points) |
 | `points.coop_pin` | 12 | Co-op PIN Relay. Full 12 goes to the team; personal credit is 6 each. |
 | `points.fake` | 0 | Phantom fake task |
+| `coopPersonalPoints` | 6 | Personal credit for each co-op participant. The team always gets `points.coop_pin`. |
 
 ## Infection
 | Key | Default | Range | Host | Notes |
