@@ -5,6 +5,7 @@ const isCI = Boolean(process.env.CI);
 const CLIENT_URL = 'http://127.0.0.1:5173';
 const SERVER_HEALTH_URL = 'http://127.0.0.1:3000/health';
 const WEB_SERVER_TIMEOUT_MS = 120_000;
+const E2E_ROOM_SALT = 'e2e-a';
 
 export default defineConfig({
   testDir: './e2e',
@@ -20,6 +21,9 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @afterdark/server dev',
+      // A pinned room salt makes spawns and roles reproducible: with this salt, a human who hosts a
+      // lobby of 8 is crew and a human who hosts a lobby of 5 is an imposter (e2e/game.spec.ts).
+      env: { TEST_ROOM_SALT: E2E_ROOM_SALT },
       url: SERVER_HEALTH_URL,
       reuseExistingServer: !isCI,
       timeout: WEB_SERVER_TIMEOUT_MS,

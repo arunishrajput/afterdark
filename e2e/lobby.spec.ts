@@ -32,10 +32,10 @@ test('players create, join by code, ready up and see the countdown; reload keeps
   await expect(bea.getByTestId('roster-row').filter({ hasText: 'Bea' })).toContainText('you');
   await expect(host.getByTestId('countdown')).toBeHidden();
 
-  // Ready again → countdown → placeholder "starting" screen.
+  // Ready again → countdown → everyone walks to their spawn.
   await bea.getByTestId('ready-button').click();
   for (const page of pages)
-    await expect(page.getByTestId('starting')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('spawn-title')).toBeVisible({ timeout: 10_000 });
 
   for (const page of pages) await page.context().close();
 });

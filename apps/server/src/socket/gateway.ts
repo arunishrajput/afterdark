@@ -26,6 +26,7 @@ export interface GatewayDeps {
   now: () => number;
   allowTestMode: boolean;
   codeSource?: CodeSource;
+  saltSource?: () => string;
 }
 
 export interface Gateway {
@@ -49,6 +50,7 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
     now,
     allowTestMode: deps.allowTestMode,
     ...(deps.codeSource ? { codeSource: deps.codeSource } : {}),
+    ...(deps.saltSource ? { saltSource: deps.saltSource } : {}),
     onCreate: (room) => attachRoom(ctx, room, now),
     onDelete: (code) => {
       emitters.get(code)?.dispose();

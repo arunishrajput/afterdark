@@ -107,10 +107,39 @@ function MapEffects({
     return () => clearTimeout(t);
   }, [map, resizeKey]);
 
+  // The box can be laid out after Leaflet measured it (lazy chunk, flex-1 box, expand/collapse).
+  // Re-measure on every resize, and keep the boundary fitted until the player moves the map themselves.
+  const ringRef = useRef(ring);
+  useEffect(() => {
+    ringRef.current = ring;
+  }, [ring]);
+  useEffect(() => {
+    const el = map.getContainer();
+    let autoFit = true;
+    const stopAutoFit = () => {
+      autoFit = false;
+    };
+    el.addEventListener('pointerdown', stopAutoFit);
+    el.addEventListener('wheel', stopAutoFit, { passive: true });
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize({ animate: false });
+      const r = ringRef.current;
+      if (autoFit && r) map.fitBounds(boundsOf(r), { padding: FIT_PADDING, animate: false });
+    });
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      el.removeEventListener('pointerdown', stopAutoFit);
+      el.removeEventListener('wheel', stopAutoFit);
+    };
+  }, [map]);
+
   // Fit the first boundary we see; later changes only on the Fit button.
   useEffect(() => {
     if (!ring || fitted.current) return;
     fitted.current = true;
+    // The container may have been laid out after Leaflet measured it (lazy chunk, full-height flex box).
+    map.invalidateSize({ animate: false });
     map.fitBounds(boundsOf(ring), { padding: FIT_PADDING, animate: false });
   }, [map, ring]);
 

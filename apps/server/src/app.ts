@@ -21,6 +21,8 @@ export interface ServerDeps {
   allowTestMode: boolean;
   /** Tests inject a seeded source for reproducible lobby codes. */
   codeSource?: CodeSource;
+  /** Secret salt per new room (tests and the e2e server pin it to make roles reproducible). */
+  saltSource?: () => string;
 }
 
 export interface GameServer {
@@ -49,6 +51,7 @@ export function createServer(deps: ServerDeps): GameServer {
     now,
     allowTestMode: deps.allowTestMode,
     ...(deps.codeSource ? { codeSource: deps.codeSource } : {}),
+    ...(deps.saltSource ? { saltSource: deps.saltSource } : {}),
   });
 
   return {

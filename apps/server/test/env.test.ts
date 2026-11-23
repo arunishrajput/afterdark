@@ -19,6 +19,17 @@ describe('parseEnv', () => {
     );
   });
 
+  it('TEST_ROOM_SALT is honoured only when test mode is allowed', () => {
+    expect(parseEnv({ TEST_ROOM_SALT: 'abc' }).TEST_ROOM_SALT).toBe('abc');
+    expect(parseEnv({ NODE_ENV: 'production', TEST_ROOM_SALT: 'abc' }).TEST_ROOM_SALT).toBe(
+      undefined,
+    );
+    expect(
+      parseEnv({ NODE_ENV: 'production', ALLOW_TEST_MODE: 'true', TEST_ROOM_SALT: 'abc' })
+        .TEST_ROOM_SALT,
+    ).toBe('abc');
+  });
+
   it('coerces PORT and rejects garbage', () => {
     expect(parseEnv({ PORT: '8080' }).PORT).toBe(8080);
     expect(() => parseEnv({ PORT: 'abc' })).toThrow();

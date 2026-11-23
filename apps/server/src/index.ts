@@ -11,11 +11,17 @@ const server = createServer({
   now: Date.now,
   version: { sha: resolveSha(process.env) },
   allowTestMode: env.ALLOW_TEST_MODE,
+  ...(env.TEST_ROOM_SALT === undefined ? {} : { saltSource: () => env.TEST_ROOM_SALT as string }),
 });
 
 server.httpServer.listen(env.PORT, () => {
   logger.info(
-    { port: env.PORT, env: env.NODE_ENV, allowTestMode: env.ALLOW_TEST_MODE },
+    {
+      port: env.PORT,
+      env: env.NODE_ENV,
+      allowTestMode: env.ALLOW_TEST_MODE,
+      pinnedRoomSalt: env.TEST_ROOM_SALT !== undefined,
+    },
     'AfterDark server listening',
   );
 });

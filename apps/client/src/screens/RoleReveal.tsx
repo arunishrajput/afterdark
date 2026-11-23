@@ -52,7 +52,8 @@ function RoleCard({ view }: { view: PlayerView }) {
     <div
       data-theme={imposter ? 'imposter' : 'crew'}
       data-testid="role-card"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-bg px-6 text-center text-text"
+      // pointer-events-none: the card covers the hold button, which must keep receiving the pointer.
+      className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-bg px-6 text-center text-text"
       style={{
         backgroundImage: 'radial-gradient(120% 70% at 50% 0%, var(--accent-glow), transparent 65%)',
       }}
@@ -134,7 +135,10 @@ export function RoleReveal({ view }: { view: PlayerView }) {
       <button
         type="button"
         data-testid="reveal-hold"
-        onPointerDown={hold}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          hold();
+        }}
         onPointerUp={release}
         onPointerLeave={release}
         onPointerCancel={release}
