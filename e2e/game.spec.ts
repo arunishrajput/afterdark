@@ -1,6 +1,14 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { createLobby, drawCircle, enableTestMode, newPlayer } from './helpers';
+import {
+  createLobby,
+  drawCircle,
+  enableTestMode,
+  longPress,
+  mapPoint,
+  newPlayer,
+  zoomTo,
+} from './helpers';
 
 /**
  * Phase 4: one browser plus bots, through spawn → reveal → play → pause → abort.
@@ -79,6 +87,17 @@ test('1 human + 7 bots: spawn → crew reveal → HUD → pause → abort', asyn
   await expect(page.getByTestId('map')).toBeVisible();
   await page.waitForTimeout(2000); // let the map tiles load before the screenshot
   await page.screenshot({ path: `${SHOT}-crew-hud.png` });
+
+  // Walk out of the zone (the simulator's long-press): banner and red edge glow; back in, they clear.
+  await expect(page.getByTestId('status-banner')).toBeHidden();
+  await zoomTo(page, 16);
+  await longPress(page, await mapPoint(page, 0.003, 0));
+  await expect(page.getByTestId('status-banner')).toContainText('Return to the zone');
+  await expect(page.getByTestId('zone-glow')).toBeVisible();
+  await page.screenshot({ path: `${SHOT}-out-of-bounds.png` });
+  await longPress(page, await mapPoint(page, 0, 0));
+  await expect(page.getByTestId('status-banner')).toBeHidden();
+  await expect(page.getByTestId('zone-glow')).toHaveCount(0);
 
   // Pause freezes the timer; resume restarts it.
   await page.getByTestId('game-menu').click();

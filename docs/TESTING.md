@@ -49,8 +49,12 @@ Put these in `apps/server/src/views/leak.test.ts`. Extend them in every phase th
   Walking sends normal `loc:update` events, so the server path is the same as real GPS. A long-press or marker drag teleports with `dev:teleport` (the bots use it too), because a big jump would otherwise fail the speed check (ADR-042). The simulator is active only while the lobby is in `testMode` and the player has it switched on; `?sim=1` pre-selects it.
 - **URL helpers for Playwright:** `?sim=1&lat=..&lng=..` starts the simulator at a position. In dev (or with `?sim=…`) `window.__afterdarkMap` is the Leaflet map, so tests can convert lat/lng to pixels and drive the real Geoman tools (`e2e/helpers.ts`).
 - In production, the `ALLOW_TEST_MODE` env var can turn test mode off entirely.
+- **Reproducible roles:** the env var `TEST_ROOM_SALT` gives every new room that secret salt, so spawns and roles repeat. It is ignored unless test mode is allowed. The e2e server uses `e2e-a`: the host of an 8-player lobby is crew and the host of a 5-player lobby is an imposter (`e2e/game.spec.ts` relies on this; if you reuse a dev server that was started without the salt, those specs fail on the role).
 
 ## 5. Bots (`tools/bots`)
+Two ways to get bots (ADR-056), both driven by the same shared `BotWalker`:
+- **In-process, one click:** the host switches on test mode, then taps **Add 7 bots** in the lobby (`dev:addBots`). The bots ready up on their own; one human plus 7 bots is a full lobby. They are ordinary players in the room state, driven by the same commands a socket would cause.
+- **Separate processes over real sockets:** `pnpm bots -- --code ABC123 --count 7 [--url http://localhost:3000] [--speed 1] [--seed 1]`. `--speed` multiplies the walking speed (the server still rejects jumps above `maxSpeedMps`, so keep it ≤ 8).
 - `pnpm bots -- --url http://localhost:3000 --code ABC123 --count 7`
 - Each bot:
   - joins with a name like `bot-3`

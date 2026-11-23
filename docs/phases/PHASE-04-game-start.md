@@ -20,15 +20,15 @@
 - **Out:** tasks (5), infection (7), meetings (8), abilities (9–10), the full results screen (12).
 
 ## Tasks
-- [ ] **04.1 `GameClock`** (`engine/clock.ts`): game time, pause and resume, conversion of game-time deadlines to wall-clock time for views. Tests cover nested pause reasons (host pause and, later, meetings).
-- [ ] **04.2 State machine.** When the countdown ends, enter `spawning`. Then:
+- [x] **04.1 `GameClock`** (`engine/clock.ts`): game time, pause and resume, conversion of game-time deadlines to wall-clock time for views. Tests cover nested pause reasons (host pause and, later, meetings).
+- [x] **04.2 State machine.** When the countdown ends, enter `spawning`. Then:
   - `reveal` happens when everyone has reached their spawn, or after the spawn timeout, or on host force start
   - after `roleRevealS`, `playing`
   - on a win or abort, `ended`
 
   Write tests for every transition and every illegal command per phase (`WRONG_PHASE`).
-- [ ] **04.3 Spawn system:** best-candidate spawns (≥ 40 m, maximised), greedy assignment, reach detection (good fix within `reachRadiusM`), the timeout, E3 relaxation and the invalid-setup error. Tests use a fake clock.
-- [ ] **04.4 Roles** (`engine/systems/roles.ts`):
+- [x] **04.3 Spawn system:** best-candidate spawns (≥ 40 m, maximised), greedy assignment, reach detection (good fix within `reachRadiusM`), the timeout, E3 relaxation and the invalid-setup error. Tests use a fake clock.
+- [x] **04.4 Roles** (`engine/systems/roles.ts`):
   - imposter count rule (auto table, keeping at least 3 crew)
   - seeded shuffle
   - tags from `shared/tags.ts`: a themed word list of ≥ 40 words, unique per game, `WORD-NN`
@@ -36,23 +36,23 @@
   - fix `originalCrewCount` and the threshold
 
   Tests: distribution, uniqueness, a fixed seed gives a fixed result.
-- [ ] **04.5 View projection for roles.**
+- [x] **04.5 View projection for roles.**
   - `me.tag`, `me.role`, and `me.imposter {classes, allies}` go to imposters only
   - `game.{clock, teamScore, targetScore, compromised, threshold, crewCount, regionCounts, meetingsLeft}`
   - **Leak tests:** crew views have no `imposter` key and contain no other player's tag; the host's view has the same shape as a non-host's; healthy and infected crew views have the same keys (infected can be faked in a fixture now)
-- [ ] **04.6 Zone system:** out of bounds = outside the boundary or inside a no-go zone (good fixes only). Grace, then personal penalties at intervals. A `locked` flag blocks tasks and abilities. The `oob` dot flag. Events `zone.warning` and `zone.penalty`. Penalties pause while the game clock is paused. Tests cover RULES §9.
-- [ ] **04.7 Host controls:** `game:pause` / `game:resume` (the clock freezes; every action except location is rejected with `PAUSED`), `game:forceStart` (spawning phase only), `game:abort` (→ ended, no winner). Host hand-over during the game (E31).
-- [ ] **04.8 Victory scaffolding** (`engine/systems/victory.ts`): `checkVictory(state)`, called after every reducer run and tick. It implements V4 with exact rational comparison, V5 forfeit (180 s of a side fully disconnected) and V6. V1–V3 are stubbed with TODOs naming the phase that adds each. Tests.
-- [ ] **04.9 Client screens:**
+- [x] **04.6 Zone system:** out of bounds = outside the boundary or inside a no-go zone (good fixes only). Grace, then personal penalties at intervals. A `locked` flag blocks tasks and abilities. The `oob` dot flag. Events `zone.warning` and `zone.penalty`. Penalties pause while the game clock is paused. Tests cover RULES §9.
+- [x] **04.7 Host controls:** `game:pause` / `game:resume` (the clock freezes; every action except location is rejected with `PAUSED`), `game:forceStart` (spawning phase only), `game:abort` (→ ended, no winner). Host hand-over during the game (E31).
+- [x] **04.8 Victory scaffolding** (`engine/systems/victory.ts`): `checkVictory(state)`, called after every reducer run and tick. It implements V4 with exact rational comparison, V5 forfeit (180 s of a side fully disconnected) and V6. V1–V3 are stubbed with TODOs naming the phase that adds each. Tests.
+- [x] **04.9 Client screens:**
   - **Spawn:** your pin, distance, arrow, "x/y in position", host Force start
   - **Role reveal:** press-and-hold, crew blue with a shield / imposter red with a mask, tag, class cards, allies
   - **Game HUD skeleton:** timer (from the server clock, shows PAUSED), infection boxes (`crewCount` boxes with a threshold notch), team score bar, map, zone banner and edge glow, host menu (pause, abort)
   - **Ended (minimal):** winner and reason
   - The theme switches through `data-theme`
-- [ ] **04.10 Bot CLI v1** (`tools/bots`): `pnpm bots -- --url --code --count`. Bots join with a simulated fix near the Base, ready up, walk to their spawn at 1.4 m/s with jitter, then wander inside the boundary. Add `dev:addBots` (testMode, host) so the server can spawn in-process bots for demos. Choose and document the approach: in-process bots reuse the same command path.
-- [ ] **04.11 Integration test:** 8 socket clients: lobby → spawn → reveal → playing. Assert exactly 2 imposters (8 players), unique tags, and that imposters see each other while crew see no roles. Then a full scripted game to time-up (accelerated fake clock in the engine test), checking V4.
-- [ ] **04.12 E2E:** 1 browser context + 7 bots through to the playing HUD. Screenshot both a crew reveal and an imposter reveal (force the role with a test seed).
-- [ ] **04.13 Wrap up.** Update the docs. Commit, tag, push.
+- [x] **04.10 Bot CLI v1** (`tools/bots`): `pnpm bots -- --url --code --count`. Bots join with a simulated fix near the Base, ready up, walk to their spawn at 1.4 m/s with jitter, then wander inside the boundary. Add `dev:addBots` (testMode, host) so the server can spawn in-process bots for demos. Choose and document the approach: in-process bots reuse the same command path.
+- [x] **04.11 Integration test:** 8 socket clients: lobby → spawn → reveal → playing. Assert exactly 2 imposters (8 players), unique tags, and that imposters see each other while crew see no roles. Then a full scripted game to time-up (accelerated fake clock in the engine test), checking V4.
+- [x] **04.12 E2E:** 1 browser context + 7 bots through to the playing HUD. Screenshot both a crew reveal and an imposter reveal (force the role with a test seed).
+- [x] **04.13 Wrap up.** Update the docs. Commit, tag, push.
 
 ## Acceptance criteria
 - 1 human + 7 bots reach `playing`. Each client sees only its own role. Imposters see their allies.

@@ -4,7 +4,7 @@
 
 Numbers appear as `configKey` (default). All values live in [CONFIG.md](CONFIG.md). Roles and visibility are in [ROLES.md](ROLES.md), points in [SCORING.md](SCORING.md), meetings in [MEETINGS.md](MEETINGS.md), and the map system in [MAP_AND_REGIONS.md](MAP_AND_REGIONS.md).
 
-Rules version: **1.1** (2026-11-23: §3.8 host hand-over on disconnect, §3.10 lobby disconnects un-ready, ADR-036)
+Rules version: **1.2** (2026-11-23: §3.8 host hand-over on disconnect, §3.10 lobby disconnects un-ready, ADR-036; Phase 4 clarifications to §4.3, §10.6, E1, E3 and E31, ADR-050–057)
 
 ---
 
@@ -48,7 +48,7 @@ Rules version: **1.1** (2026-11-23: §3.8 host hand-over on disconnect, §3.10 l
 ## 4. Spawn phase
 1. When the countdown ends, the server gives every player their own **spawn point** inside the boundary and outside no-go zones. Spawns are spread as far apart as possible, never closer than `spawnMinSeparationM` (40 m), and assigned so total walking is low.
 2. Each phone shows only **its own** spawn: a pin, the distance and a direction arrow. Nobody has a role yet.
-3. A player has **reached** their spawn when a good fix places them within `reachRadiusM` (15 m).
+3. A player has **reached** their spawn when a good fix places them within `reachRadiusM` (15 m). Reaching is permanent for the spawn phase: walking away afterwards does not undo it (ADR-052).
 4. Roles are assigned when **everyone has reached their spawn**, or `spawnTimeoutS` (300 s) has passed, or the **host forces the start**, whichever comes first. A player who hasn't reached their spawn still gets a role.
 5. Spawns are spread apart so nobody can see another person's screen when roles are revealed.
 
@@ -137,7 +137,7 @@ Full rules are in [MEETINGS.md](MEETINGS.md). In summary:
 3. Fixes with accuracy worse than `maxAccuracyM` (30 m) are kept for display but ignored by game rules. The UI shows "Weak GPS".
 4. A fix that implies a speed above `maxSpeedMps` (12 m/s) is rejected. After 3 consecutive fixes that agree with each other, the player is re-anchored to the new location.
 5. **Reconnect:** each player has a session token stored on the device. Reconnecting at any point restores the same player, role and tasks. Players are never removed for disconnecting.
-6. **Forfeit:** if every active imposter, or every active crew member, has been disconnected for `forfeitAfterS` (180 s), the other side wins.
+6. **Forfeit:** if every active imposter, or every active crew member, has been disconnected for `forfeitAfterS` (180 s), the other side wins. A player who left the game counts as permanently disconnected. The 180 s count starts no earlier than the moment roles are assigned. If both sides are gone, the game is a draw (ADR-055).
 
 ## 11. Host controls
 - **Before the game:** settings, map setup, kick.
@@ -166,7 +166,7 @@ The server checks win conditions after **every** state change, in strict process
 |---|---|---|
 | E1 | Player never reaches their spawn | The spawn timeout or host force start assigns roles anyway. |
 | E2 | Player disconnects during spawn | Same as E1. They reconnect into the reveal or the game. |
-| E3 | Boundary too small to separate spawns | The generator relaxes separation down to 40 m. If that still fails, the lobby setup is invalid and the host is told to enlarge the area. |
+| E3 | Boundary too small to separate spawns | The generator never needs more than the 40 m floor and keeps the widest of `spawnAttempts` layouts. If it still cannot place everyone, the game does not start: everyone is un-readied back in the lobby and told to ask the host to enlarge the area (ADR-052). |
 | E4 | Task point turns out to be unreachable | Reroll it (cooldown) or report it as unsafe (no cooldown). |
 | E5 | Weak GPS (>30 m) near a pin | Can't reveal or open until accuracy improves. The UI explains why. |
 | E6 | Two imposters channel on the same target | The first channel to complete exposes the target. The other is cancelled and its imposter goes on no cooldown. |
@@ -194,7 +194,7 @@ The server checks win conditions after **every** state change, in strict process
 | E28 | Ejection pushes compromised to the threshold | Imposters win immediately (V3). |
 | E29 | Team target and infection threshold reached by different events at almost the same time | Whichever event the server processes first wins. Order is strict. |
 | E30 | Both progress ratios equal at time-up | Draw. |
-| E31 | Host disconnects mid-game | The game continues. Host controls pass to the earliest-joined connected player. |
+| E31 | Host disconnects mid-game | The game continues. After `hostDisconnectGraceS` (30 s), or at once if the host leaves, host controls pass to the earliest-joined connected player (never a bot while a human is connected). |
 | E32 | Player out of bounds when a meeting is called | Zone penalties pause during the meeting. Gathering at the Base is inside the area by construction. |
 | E33 | GPS teleport or spoof jump | The fix is rejected (speed check). The player re-anchors after 3 consistent fixes. Repeated jumps are logged. |
 | E34 | Late joiner tries to join mid-game | Rejected with "Game in progress". |

@@ -68,6 +68,8 @@ For a region R:
 ## 5. Spawn points
 Best-candidate sampling over the whole boundary (outside no-go zones), with one spawn per player, maximising the minimum distance between spawns (never less than 40 m). Spawns are then assigned to players greedily by distance from their current position, to keep total walking low. Players don't see each other's spawns.
 
+Implementation (ADR-050, ADR-052): the server draws `spawnAttempts` best-candidate layouts (each spaced ≥ `spawnMinSeparationM`) from a secret room seed and keeps the one whose closest pair is furthest apart. Assignment repeatedly takes the closest (player, spawn) pair; a player with no fix counts from the Base. A player has reached a spawn when a good fix has been within `reachRadiusM` of it, and that stays true. If no layout fits everyone, the game does not start and everyone is told to ask the host to enlarge the area.
+
 ## 6. Visibility modes
 Set by `playerVisibility`. **Dots never carry a username or tag in any mode.**
 

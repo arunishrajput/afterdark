@@ -37,7 +37,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `roleRevealS` | 10 | — | 🔒 | Length of the hold-to-reveal screen before play begins. |
 | `lobbyIdleTimeoutMin` | 30 | — | 🔒 | A lobby with no connected players is deleted after this. |
 | `lobbyIdleSweepS` | 60 | — | 🔒 | How often the server looks for idle lobbies to delete. |
-| `hostDisconnectGraceS` | 30 | — | 🔒 | In the lobby, a host disconnected this long hands host status to the earliest-joined connected player (ADR-036). |
+| `hostDisconnectGraceS` | 30 | — | 🔒 | In the lobby and in a running game (E31), a host disconnected this long hands host status to the earliest-joined connected human (ADR-036, ADR-057). |
 
 ## Map, regions and visibility
 | Key | Default | Range | Host | Notes |
