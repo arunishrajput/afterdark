@@ -1,8 +1,8 @@
 # AfterDark trailer
 
-A 60-second, 1080p, 30 fps trailer built with [Remotion](https://www.remotion.dev). Standalone project: it is not part of the pnpm workspace and is ignored by ESLint and Prettier.
+A 60-second, 1080p, 30 fps trailer built with [Remotion](https://www.remotion.dev). **Published:** <https://www.youtube.com/watch?v=jajMJy-C4BI>. Standalone project: it is not part of the pnpm workspace and is ignored by ESLint and Prettier.
 
-**Final video:** `out/afterdark-trailer.mp4` (git-ignored; re-render to regenerate).
+**Final video:** `out/afterdark-trailer.mp4` and **thumbnail:** `out/afterdark-thumbnail.jpg` (both git-ignored; re-render to regenerate). Upload copy is in [YOUTUBE.md](YOUTUBE.md).
 
 ## How it is built
 - `src/Trailer.tsx` is the timeline. Scene boundaries sit on 2 s bar lines of the 120 BPM soundtrack.
@@ -17,5 +17,6 @@ A 60-second, 1080p, 30 fps trailer built with [Remotion](https://www.remotion.de
 npm install --ignore-workspace
 npx remotion studio src/index.ts          # live preview
 npx remotion render src/index.ts Trailer out/afterdark-trailer.mp4 --codec=h264 --crf=16 --audio-codec=aac --audio-bitrate=320k
+npx remotion still src/index.ts Thumbnail out/afterdark-thumbnail.jpg --image-format=jpeg --jpeg-quality=95 --scale=0.66667
 ```
 If Remotion's own browser download fails, add `--browser-executable=<path to a chrome-headless-shell>` (Playwright's works). A full render takes about 20 minutes.

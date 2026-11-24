@@ -12,7 +12,7 @@ No accounts and no app store: share a 6-letter code and play. **Live:** <https:/
 
 > Built for the CodeNMode hackathon at SIT, written entirely with Claude Code, one phase per session ([build plan](docs/BUILD_PLAN.md), [progress](PROGRESS.md)).
 
-[![CI](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml/badge.svg)](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml)
+[![Trailer](https://img.shields.io/badge/trailer-YouTube-red?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=jajMJy-C4BI) [![CI](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml/badge.svg)](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml)
 
 <table>
   <tr>
@@ -27,6 +27,11 @@ No accounts and no app store: share a 6-letter code and play. **Live:** <https:/
     <td>Lobby and area</td><td>Secret role</td><td>Crew tasks</td><td>Task Stop</td><td>Meeting vote</td><td>Results</td>
   </tr>
 </table>
+
+## Trailer
+[![Watch the AfterDark trailer on YouTube](docs/screenshots/trailer-thumbnail.jpg)](https://www.youtube.com/watch?v=jajMJy-C4BI)
+
+A 60-second trailer, made with Remotion: [watch it on YouTube](https://www.youtube.com/watch?v=jajMJy-C4BI). Its source is in [`trailer/`](trailer/README.md).
 
 ## How to play
 1. **Gather** 4 to 12 people somewhere open and safe. The host creates a game, draws the play area on the map (and any no-go zones), and shares the code. Everyone joins, allows location and taps **Ready**.
@@ -96,7 +101,7 @@ The server decides everything: every rule, timer, random roll and win check live
 ## Docs
 | | |
 |---|---|
-| Product | [PRD](docs/PRD.md) · [Original concept](docs/CONCEPT.md) · [INFILTR8 notes](docs/reference/INFILTR8_NOTES.md) · [Demo script](docs/DEMO.md) |
+| Product | [Trailer](https://www.youtube.com/watch?v=jajMJy-C4BI) · [PRD](docs/PRD.md) · [Original concept](docs/CONCEPT.md) · [INFILTR8 notes](docs/reference/INFILTR8_NOTES.md) · [Demo script](docs/DEMO.md) |
 | Game design | [Rules](docs/RULES.md) · [Roles & visibility](docs/ROLES.md) · [Scoring](docs/SCORING.md) · [Config](docs/CONFIG.md) · [Map & regions](docs/MAP_AND_REGIONS.md) · [Tasks](docs/TASKS.md) · [Meetings](docs/MEETINGS.md) |
 | Engineering | [Architecture](docs/ARCHITECTURE.md) · [Protocol](docs/PROTOCOL.md) · [UI/UX](docs/UI_UX.md) · [Testing](docs/TESTING.md) · [Decisions](docs/DECISIONS.md) · [Changelog](CHANGELOG.md) |
 | Process | [CLAUDE.md](CLAUDE.md) · [Build plan](docs/BUILD_PLAN.md) · [Manual setup](docs/MANUAL_SETUP.md) · [Progress](PROGRESS.md) |

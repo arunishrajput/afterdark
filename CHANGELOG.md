@@ -3,6 +3,7 @@
 AfterDark was built in 15 phases, one Claude Code session each ([docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)). Every phase ended with a `phase-NN-done` tag; the full story of each is in [PROGRESS.md](PROGRESS.md) › Session log, and every design choice in [docs/DECISIONS.md](docs/DECISIONS.md). Versions follow [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
+- **Trailer:** a 60-second YouTube trailer, [published](https://www.youtube.com/watch?v=jajMJy-C4BI), with its Remotion source in [`trailer/`](trailer/README.md): a 3D night-city map, animated minigames, an original synthesized soundtrack and a logo-first thumbnail. Standalone, so it is not part of `pnpm verify`.
 - **Logo:** the creator's AfterDark logo replaces the crescent-and-eye everywhere: app icons, favicon, the Home hero and the lobby header, all rendered from one master by `pnpm icons` (ADR-111).
 - **Home:** a hero page with the logo, a one-line pitch and the game's facts, the live night map beside it on laptops, and "How a game goes" below the fold (ADR-110). The How to play infection picture shows its infected dot again.
 

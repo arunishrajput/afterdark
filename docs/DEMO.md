@@ -43,9 +43,10 @@ Roles are secret and random, so plan for it:
 | No network at all | The local server needs none once installed. Without the map tiles the area is drawn on a dark background: keep going. |
 | Neither window is the imposter | Present the crew side; for the infection beat, show window C's timeline ("Host became infected") instead. |
 | The bots are slow to reach the Base | Narrate over the meeting map; skip straight to the results in window C. |
-| A long dead moment | Have a 30-second screen recording of a full game ready to play (record it during the dry run with the OS screen recorder). |
+| A long dead moment | Play the 60-second trailer (<https://www.youtube.com/watch?v=jajMJy-C4BI>), or a 30-second screen recording of a full game from the dry run (record it with the OS screen recorder). |
 
 ## Useful facts if judges ask
+- **Trailer:** a 60-second trailer is on YouTube (<https://www.youtube.com/watch?v=jajMJy-C4BI>). Play it before the demo, or as the fallback if the live game fails.
 - **Server-authoritative:** every rule, timer, roll and win check runs on the server. The client only draws and sends intents. Each phone gets its own view built from an allow-list, so a crew phone never receives who is infected, not even in the raw network traffic (tested on every build).
 - **Safety:** "Stop somewhere safe" before every puzzle, never "run" in the copy (a test enforces it), no-go zones, and players can report an unsafe spot.
 - **Privacy:** positions live in server memory only, are never logged, and vanish with the lobby. No accounts.
