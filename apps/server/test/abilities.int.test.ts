@@ -18,6 +18,7 @@ import { checkFakeTask } from '../src/engine/systems/fakeTask';
 import {
   errorCode,
   HOME,
+  nudgeInward,
   openClient,
   spotInSection,
   startTestServer,
@@ -103,9 +104,9 @@ describe('abilities over sockets', () => {
     return { lat: loc?.lat ?? HOME.lat, lng: loc?.lng ?? HOME.lng };
   };
 
-  /** A different position each call (a hundredth of a metre apart), so `locate` waits for the server to take the fix instead of seeing the old one. */
+  /** A different position each call (centimetres apart, toward the middle), so `locate` waits for the server to take the fix instead of seeing the old one. */
   let nudges = 0;
-  const nudged = (at: LatLng): LatLng => ({ lat: at.lat + ++nudges * 1e-7, lng: at.lng });
+  const nudged = (at: LatLng): LatLng => nudgeInward(at, ++nudges);
 
   /** Every member sends a fresh fix from where they stand (or `at`), so nobody is stale after a long tick. */
   async function relocate(everyone: Member[], at: Map<string, LatLng> = new Map()) {

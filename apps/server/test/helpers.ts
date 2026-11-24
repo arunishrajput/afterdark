@@ -31,6 +31,24 @@ export type ClientSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export const T0 = 1_700_000_000_000;
 export const HOME = { lat: 28.6139, lng: 77.209 };
+const NUDGE_DEG = 1e-7; // about a centimetre
+
+/**
+ * A fix `n` centimetres from `at`, toward HOME (the centre of every test boundary), so each
+ * re-send is a new position that `locate` waits for. It moves inward, never in a fixed direction:
+ * task points can sit within millimetres of the boundary's edge (best-candidate sampling favours
+ * edges), and a fixed-direction nudge could step outside and lock the player's tasks. Between a
+ * point inside a convex area and its centre, every point is inside too.
+ */
+export function nudgeInward(at: LatLng, n: number): LatLng {
+  const step = n * NUDGE_DEG;
+  const dLat = HOME.lat - at.lat;
+  const dLng = HOME.lng - at.lng;
+  const d = Math.hypot(dLat, dLng);
+  if (d <= step) return { lat: at.lat + step, lng: at.lng }; // already at the centre
+  return { lat: at.lat + (dLat / d) * step, lng: at.lng + (dLng / d) * step };
+}
+
 const ACK_TIMEOUT_MS = 2000;
 const WAIT_TIMEOUT_MS = 3000;
 const POLL_MS = 5;

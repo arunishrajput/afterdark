@@ -12,6 +12,7 @@ import type { CoopSession, RoomState } from '../src/engine/state';
 import {
   errorCode,
   HOME,
+  nudgeInward,
   openClient,
   startTestServer,
   type TestClient,
@@ -45,7 +46,7 @@ describe('co-op over sockets', () => {
   };
   const roleOf = (m: Member) => m.client.view?.me.role;
   let nudges = 0;
-  const nudged = (at: LatLng): LatLng => ({ lat: at.lat + ++nudges * 1e-7, lng: at.lng });
+  const nudged = (at: LatLng): LatLng => nudgeInward(at, ++nudges);
 
   async function toPlaying(n: number, config: Record<string, unknown> = {}) {
     const host = await openClient(ts.url);
