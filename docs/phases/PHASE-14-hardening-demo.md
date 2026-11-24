@@ -37,11 +37,11 @@
   - extend the raw-frame leak scan to the full game
 - [ ] **14.4 Load test:** `pnpm bots:load --lobbies 20 --players 8` against a local production build, then (briefly, if the free plan allows) against Render. Measure tick time (≤ 5 ms per room), memory, and the 95th-percentile view latency. Record the results in PROGRESS and fix hotspots.
 - [ ] **14.5 Field-test fixes:** go through every PROGRESS field-test note. Fix 🔴 and 🟠 items. Tune `infectionRadiusM`, `reachRadiusM`, `sectionEntryHoldS`, the meeting durations and similar values from real data, with an ADR for each.
-- [ ] **14.6 Code quality pass:** run `code-review-and-quality` and `code-simplification` across the engine and views. Remove dead code. Make sure every system file is under about 400 lines (split if not).
+- [x] **14.6 Code quality pass:** run `code-review-and-quality` and `code-simplification` across the engine and views. Remove dead code. Make sure every system file is under about 400 lines (split if not).
 - [ ] **14.7 Docs:**
   - README: pitch, screenshots, how to play, run locally, test, deploy, architecture diagram link, credits (OSM/CARTO), licence choice (ask the human)
   - check that every doc in `docs/` matches the final code (CONFIG and PROTOCOL especially)
-- [ ] **14.8 Demo script** (`docs/DEMO.md`): a 3-minute judge demo.
+- [x] **14.8 Demo script** (`docs/DEMO.md`): a 3-minute judge demo.
   1. The pitch (20 s).
   2. The host draws an area around the venue on a phone (30 s).
   3. Test mode + 6 bots (`dev:addBots`), with the projector showing one crew phone and one imposter phone (laptop browsers in sim mode).

@@ -81,27 +81,36 @@ async function tapBareMap(page: Page) {
  */
 async function tapNearestPoint(page: Page) {
   await page.getByTestId('map-frame').scrollIntoViewIfNeeded();
-  const at = await page.evaluate(
-    ({ CLEAR_OF_SELF_PX, EDGE_PX }) => {
-      const frame = document.querySelector('[data-testid="map-frame"]')?.getBoundingClientRect();
-      if (!frame) throw new Error('no map frame');
-      const cx = frame.left + frame.width / 2;
-      const cy = frame.top + frame.height / 2;
-      let best: { x: number; y: number; d: number } | undefined;
-      for (const el of document.querySelectorAll('.point-marker')) {
-        const r = el.getBoundingClientRect();
-        const x = r.left + r.width / 2;
-        const y = r.top + r.height / 2;
-        const d = Math.hypot(x - cx, y - cy);
-        const clear = d > CLEAR_OF_SELF_PX && x > frame.left + EDGE_PX && x < frame.right - EDGE_PX;
-        const inside = y > frame.top + EDGE_PX && y < frame.bottom - EDGE_PX;
-        if (clear && inside && (!best || d < best.d)) best = { x, y, d };
-      }
-      if (!best) throw new Error('no task point on the map');
-      return best;
-    },
-    { CLEAR_OF_SELF_PX: 36, EDGE_PX: 56 },
-  );
+  const find = () =>
+    page.evaluate(
+      ({ CLEAR_OF_SELF_PX, EDGE_PX }) => {
+        const frame = document.querySelector('[data-testid="map-frame"]')?.getBoundingClientRect();
+        if (!frame) throw new Error('no map frame');
+        const cx = frame.left + frame.width / 2;
+        const cy = frame.top + frame.height / 2;
+        let best: { x: number; y: number; d: number } | undefined;
+        for (const el of document.querySelectorAll('.point-marker')) {
+          const r = el.getBoundingClientRect();
+          const x = r.left + r.width / 2;
+          const y = r.top + r.height / 2;
+          const d = Math.hypot(x - cx, y - cy);
+          const clear =
+            d > CLEAR_OF_SELF_PX && x > frame.left + EDGE_PX && x < frame.right - EDGE_PX;
+          const inside = y > frame.top + EDGE_PX && y < frame.bottom - EDGE_PX;
+          // A toast ("Map changed…"), a map control or the frame's edge can cover a marker: only aim at
+          // one the click reaches. Late in the loop the points left are often near the edges.
+          const hit = document.elementFromPoint(x, y);
+          const reachable = hit !== null && el.contains(hit);
+          if (clear && inside && reachable && (!best || d < best.d)) best = { x, y, d };
+        }
+        return best ?? null;
+      },
+      { CLEAR_OF_SELF_PX: 36, EDGE_PX: 12 },
+    );
+  // Toasts fade after a few seconds: wait for a point the click can reach.
+  await expect.poll(find, { timeout: 8000, message: 'a reachable task point' }).not.toBeNull();
+  const at = await find();
+  if (!at) throw new Error('no task point on the map');
   await page.mouse.click(at.x, at.y);
 }
 
@@ -206,8 +215,16 @@ test('too few task points block the countdown and say exactly what is missing', 
   const total = await points(host).count();
   for (let i = 0; i < total - 12; i++) {
     const n = await points(host).count();
-    await tapNearestPoint(host);
-    await expect(points(host)).toHaveCount(n - 1);
+    // One retry: the markers are re-created after each delete, so a tap can land mid-update.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await tapNearestPoint(host);
+      try {
+        await expect(points(host)).toHaveCount(n - 1, { timeout: 4000 });
+        break;
+      } catch (error) {
+        if (attempt === 1) throw error;
+      }
+    }
   }
   const checklist = host.getByRole('region', { name: 'Before we start' });
   await expect(

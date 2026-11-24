@@ -136,6 +136,8 @@ export async function drawCircle(host: Page, radiusDegLng = 0.001) {
       ),
     )
     .toBeGreaterThanOrEqual(MIN_STREET_ZOOM);
+  // A fly-to can still be running at street zoom: corners computed mid-flight miss.
+  await waitForMapStill(host);
   await host.locator('.leaflet-pm-icon-circle').click();
   const centre = await mapPoint(host);
   const edge = await mapPoint(host, radiusDegLng);
