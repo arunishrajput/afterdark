@@ -8,8 +8,11 @@ const TILE_MAX_ENTRIES = 500;
 const TILE_MAX_AGE_S = 7 * 24 * 60 * 60;
 const BG = '#07080A';
 
-/** Where `pnpm dev` runs the game server (apps/server env PORT default). */
-const SERVER_URL = 'http://localhost:3000';
+/**
+ * Where `pnpm dev` runs the game server (apps/server env PORT default). Override with
+ * `AFTERDARK_SERVER_URL` when another app holds port 3000 (Playwright does this from `E2E_SERVER_PORT`).
+ */
+const SERVER_URL = process.env.AFTERDARK_SERVER_URL ?? 'http://localhost:3000';
 
 export default defineConfig({
   plugins: [
