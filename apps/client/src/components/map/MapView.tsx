@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css';
 
 import type { AnonDot, BoundaryInput, FakeView, LatLng, Position } from '@afterdark/shared';
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Circle,
   MapContainer,
@@ -22,13 +22,17 @@ import { BoundaryEditor } from './BoundaryEditor';
 import { CenterReporter, FakeMarkers } from './FakeLayers';
 import { ringToLatLngs, toLeaflet, WORLD_RING } from './geo';
 import { dotIcon, selfIcon, spawnIcon } from './icons';
+import { fitOptions, type MapInsets, MapInsetsContext, NO_INSETS, visibleCenter } from './insets';
+import { MapControls } from './MapControls';
 import { NoGoEditor } from './NoGoEditor';
 import { type MapTool, SetupLayers, type SetupOverlay } from './SetupLayers';
 import { BOUNDARY_STYLE, OUTSIDE_STYLE, TILE_ATTRIBUTION, TILE_URL } from './style';
 import { TaskLayers, type TaskOverlay } from './TaskLayers';
 
-const FIT_PADDING: [number, number] = [28, 28];
 const START_ZOOM = 17;
+/** "Locate me" zooms in to at least this. */
+const LOCATE_ZOOM = 18;
+
 const WORLD_ZOOM = 2;
 const MAX_ZOOM = 20;
 const LONG_PRESS_MS = 650;
@@ -68,6 +72,11 @@ export interface MapViewProps {
   fakes?: readonly FakeView[] | undefined;
   /** A Phantom placing a fake: a crosshair at the centre, tinted by `valid`, and the centre reported on every move. */
   placing?: { onCenter: (at: LatLng) => void; valid: boolean } | undefined;
+  /**
+   * A full-screen map with overlays on top (the game HUD and sheet): fits and focus use the band
+   * between them, and the map buttons and attribution sit just above the bottom overlay.
+   */
+  insets?: MapInsets | undefined;
 }
 
 /** Forwards taps on the bare map to the parent. */
@@ -94,9 +103,22 @@ function MapEffects({
   self,
   resizeKey,
   fitSignal,
+  locateSignal,
+  insets,
   onSimMove,
-}: Pick<MapViewProps, 'ring' | 'self' | 'resizeKey' | 'onSimMove'> & { fitSignal: number }) {
+}: Pick<MapViewProps, 'ring' | 'self' | 'resizeKey' | 'onSimMove'> & {
+  fitSignal: number;
+  locateSignal: number;
+  insets: MapInsets;
+}) {
   const map = useMap();
+  // Read by the resize observer and the fits, which must not restart on every new inset.
+  const insetsRef = useRef(insets);
+  const autoFit = useRef(true);
+  const selfRef = useRef(self);
+  useEffect(() => {
+    selfRef.current = self;
+  }, [self]);
   const fitted = useRef(false);
   const centred = useRef(false);
   // The parent re-renders on every fix; the long-press timer must outlive that.
@@ -123,16 +145,15 @@ function MapEffects({
   }, [ring]);
   useEffect(() => {
     const el = map.getContainer();
-    let autoFit = true;
     const stopAutoFit = () => {
-      autoFit = false;
+      autoFit.current = false;
     };
     el.addEventListener('pointerdown', stopAutoFit);
     el.addEventListener('wheel', stopAutoFit, { passive: true });
     const observer = new ResizeObserver(() => {
       map.invalidateSize({ animate: false });
       const r = ringRef.current;
-      if (autoFit && r) map.fitBounds(boundsOf(r), { padding: FIT_PADDING, animate: false });
+      if (autoFit.current && r) map.fitBounds(boundsOf(r), fitOptions(insetsRef.current, false));
     });
     observer.observe(el);
     return () => {
@@ -142,20 +163,38 @@ function MapEffects({
     };
   }, [map]);
 
+  // The overlays changed height (the sheet opened or closed): keep the area fitted in the band
+  // between them until the player has moved the map themselves.
+  useEffect(() => {
+    insetsRef.current = insets;
+    const r = ringRef.current;
+    if (fitted.current && autoFit.current && r) map.fitBounds(boundsOf(r), fitOptions(insets));
+  }, [map, insets]);
+
   // Fit the first boundary we see; later changes only on the Fit button.
   useEffect(() => {
     if (!ring || fitted.current) return;
     fitted.current = true;
     // The container may have been laid out after Leaflet measured it (lazy chunk, full-height flex box).
     map.invalidateSize({ animate: false });
-    map.fitBounds(boundsOf(ring), { padding: FIT_PADDING, animate: false });
+    map.fitBounds(boundsOf(ring), fitOptions(insetsRef.current, false));
   }, [map, ring]);
 
   useEffect(() => {
-    if (fitSignal > 0 && ring) map.fitBounds(boundsOf(ring), { padding: FIT_PADDING });
+    if (fitSignal > 0 && ring) map.fitBounds(boundsOf(ring), fitOptions(insetsRef.current));
     // Only the button (fitSignal) should trigger this, not every ring change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitSignal, map]);
+
+  useEffect(() => {
+    const me = selfRef.current;
+    if (locateSignal === 0 || !me) return;
+    autoFit.current = false;
+    const zoom = Math.max(map.getZoom(), LOCATE_ZOOM);
+    map.flyTo(visibleCenter(map, { lat: me.lat, lng: me.lng }, zoom, insetsRef.current), zoom, {
+      duration: 0.6,
+    });
+  }, [locateSignal, map]);
 
   // No boundary yet: centre once on the player.
   useEffect(() => {
@@ -266,10 +305,18 @@ export default function MapView({
   tasks,
   fakes,
   placing,
+  insets,
 }: MapViewProps) {
   const [fitSignal, setFitSignal] = useState(0);
+  const [locateSignal, setLocateSignal] = useState(0);
+  const pad = insets ?? NO_INSETS;
+  // Leaflet's corners (attribution, Geoman's toolbar) move inside the overlays; see index.css.
+  const cornerVars = {
+    '--map-inset-top': `${pad.top}px`,
+    '--map-inset-bottom': `${pad.bottom}px`,
+  } as CSSProperties;
   return (
-    <div className="relative size-full" data-testid="map">
+    <div className="relative size-full" data-testid="map" style={cornerVars}>
       {/* Hatching for no-go zones: Leaflet paths pick it up through the `nogo-zone` class. */}
       <svg width="0" height="0" aria-hidden="true" className="absolute">
         <defs>
@@ -295,77 +342,77 @@ export default function MapView({
         pmIgnore={false}
         className="size-full"
       >
-        <TileLayer
-          url={TILE_URL}
-          attribution={TILE_ATTRIBUTION}
-          className="dark-tiles"
-          maxZoom={MAX_ZOOM}
-          maxNativeZoom={19}
-        />
-        {ring && (
-          <>
-            <Polygon positions={[WORLD_RING, ringToLatLngs(ring)]} pathOptions={OUTSIDE_STYLE} />
-            {!onBoundary && (
-              <Polygon
-                positions={ringToLatLngs(ring)}
-                pathOptions={BOUNDARY_STYLE}
-                interactive={false}
-              />
-            )}
-          </>
-        )}
-        {onBoundary && <BoundaryEditor ring={ring} onBoundary={onBoundary} />}
-        {onNoGoZone && <NoGoEditor onZone={onNoGoZone} />}
-        {overlay && <SetupLayers overlay={overlay} tool={tool} onPointTap={onPointTap} />}
-        {onMapTap && <MapTaps onTap={onMapTap} />}
-        {dots.map((d) => (
-          <Marker
-            key={d.alias}
-            position={[d.lat, d.lng]}
-            icon={dotIcon(d.flags)}
-            interactive={false}
-            keyboard={false}
+        <MapInsetsContext value={pad}>
+          <TileLayer
+            url={TILE_URL}
+            attribution={TILE_ATTRIBUTION}
+            className="dark-tiles"
+            maxZoom={MAX_ZOOM}
+            maxNativeZoom={19}
           />
-        ))}
-        {spawn && (
-          <Marker
-            position={toLeaflet(spawn)}
-            icon={spawnPin}
-            zIndexOffset={900}
-            interactive={false}
-            keyboard={false}
+          {ring && (
+            <>
+              <Polygon positions={[WORLD_RING, ringToLatLngs(ring)]} pathOptions={OUTSIDE_STYLE} />
+              {!onBoundary && (
+                <Polygon
+                  positions={ringToLatLngs(ring)}
+                  pathOptions={BOUNDARY_STYLE}
+                  interactive={false}
+                />
+              )}
+            </>
+          )}
+          {onBoundary && <BoundaryEditor ring={ring} onBoundary={onBoundary} />}
+          {onNoGoZone && <NoGoEditor onZone={onNoGoZone} />}
+          {overlay && <SetupLayers overlay={overlay} tool={tool} onPointTap={onPointTap} />}
+          {onMapTap && <MapTaps onTap={onMapTap} />}
+          {dots.map((d) => (
+            <Marker
+              key={d.alias}
+              position={[d.lat, d.lng]}
+              icon={dotIcon(d.flags)}
+              interactive={false}
+              keyboard={false}
+            />
+          ))}
+          {spawn && (
+            <Marker
+              position={toLeaflet(spawn)}
+              icon={spawnPin}
+              zIndexOffset={900}
+              interactive={false}
+              keyboard={false}
+            />
+          )}
+          {tasks && <TaskLayers overlay={tasks} />}
+          {fakes && <FakeMarkers fakes={fakes} />}
+          {placing && <CenterReporter onCenter={placing.onCenter} />}
+          {self && <SelfLayer self={self} onSimMove={onSimMove} />}
+          <MapEffects
+            ring={ring}
+            self={self}
+            resizeKey={resizeKey}
+            fitSignal={fitSignal}
+            locateSignal={locateSignal}
+            insets={pad}
+            onSimMove={onSimMove}
           />
-        )}
-        {tasks && <TaskLayers overlay={tasks} />}
-        {fakes && <FakeMarkers fakes={fakes} />}
-        {placing && <CenterReporter onCenter={placing.onCenter} />}
-        {self && <SelfLayer self={self} onSimMove={onSimMove} />}
-        <MapEffects
-          ring={ring}
-          self={self}
-          resizeKey={resizeKey}
-          fitSignal={fitSignal}
-          onSimMove={onSimMove}
-        />
+        </MapInsetsContext>
       </MapContainer>
       {placing && (
         <div
           data-testid="placer-cross"
           data-valid={placing.valid}
           className={`placer-cross ${placing.valid ? 'placer-cross--ok' : 'placer-cross--bad'}`}
+          // In the middle of the uncovered band, where CenterReporter reads the spot.
+          style={{ top: `calc(${pad.top}px + (100% - ${pad.top + pad.bottom}px) / 2)` }}
         />
       )}
-      {ring && (
-        <button
-          type="button"
-          data-testid="map-fit"
-          aria-label="Fit map to the playable area"
-          onClick={() => setFitSignal((n) => n + 1)}
-          className="absolute top-2 right-2 z-[1000] inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-white/20 bg-surface/90 px-3 text-sm font-semibold text-text backdrop-blur hover:border-white/40"
-        >
-          Fit
-        </button>
-      )}
+      <MapControls
+        insets={insets}
+        onFit={ring ? () => setFitSignal((n) => n + 1) : undefined}
+        onLocate={self ? () => setLocateSignal((n) => n + 1) : undefined}
+      />
     </div>
   );
 }

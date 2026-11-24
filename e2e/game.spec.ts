@@ -1,6 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-import { lobbyWithBots, longPress, mapPoint, newPlayer, startAndReveal, zoomTo } from './helpers';
+import {
+  HOME,
+  lobbyWithBots,
+  longPress,
+  mapPoint,
+  newPlayer,
+  pointOf,
+  startAndReveal,
+  zoomTo,
+} from './helpers';
 
 /**
  * Phase 4: one browser plus bots, through spawn → reveal → play → pause → abort.
@@ -51,7 +60,9 @@ test('1 human + 7 bots: spawn → crew reveal → HUD → pause → abort', asyn
   await expect(page.getByTestId('status-banner')).toContainText('Return to the zone');
   await expect(page.getByTestId('zone-glow')).toBeVisible();
   await page.screenshot({ path: `${SHOT}-out-of-bounds.png` });
-  await longPress(page, await mapPoint(page, 0, 0));
+  // Back to the middle of the area (drawn around HOME); the screen's centre may be off the area,
+  // since the full-screen map centres the area between the HUD and the sheet.
+  await longPress(page, await pointOf(page, HOME));
   await expect(page.getByTestId('status-banner')).toBeHidden();
   await expect(page.getByTestId('zone-glow')).toHaveCount(0);
 

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useServerNow } from '../../hooks/useServerNow';
 import { formatClock } from './format';
+import { GameMenu } from './HostMenu';
+import { LongPress } from './LongPress';
 
 const TIMER_REFRESH_MS = 250;
 const PERCENT = 100;
@@ -62,7 +64,7 @@ export function InfectionBoxes({
       role="img"
       data-testid="infection-boxes"
       aria-label={`Infection: ${compromised} of ${crewCount} crew compromised. Imposters win at ${threshold}.`}
-      className="flex items-center"
+      className="flex flex-wrap items-center gap-y-1"
     >
       {Array.from({ length: crewCount }, (_, i) => (
         <span key={i} className="flex items-center">
@@ -133,6 +135,38 @@ export function TeamScoreBar({ score, target }: { score: number; target: number 
         {score} / {target}
       </p>
     </div>
+  );
+}
+
+/**
+ * The floating top bar over the full-screen map (UI_UX §2–§3): timer, infection boxes, team score
+ * and the game menu. A disguised imposter reaches their real controls by long-pressing the timer.
+ */
+export function HudBar({
+  view,
+  onTimerLongPress,
+}: {
+  view: PlayerView;
+  onTimerLongPress?: (() => void) | undefined;
+}) {
+  const { game, me } = view;
+  const paused = game?.clock?.pausedAt !== undefined;
+  const timer = <MatchTimer clock={game?.clock} />;
+  return (
+    <header className="flex items-center gap-3 rounded-2xl border border-white/10 bg-surface/90 px-3 py-2 shadow-lg backdrop-blur-md">
+      {onTimerLongPress ? <LongPress onLong={onTimerLongPress}>{timer}</LongPress> : timer}
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {game?.crewCount !== undefined && game.threshold !== undefined && (
+          <InfectionBoxes
+            crewCount={game.crewCount}
+            compromised={game.compromised ?? 0}
+            threshold={game.threshold}
+          />
+        )}
+        <TeamScoreBar score={game?.teamScore ?? 0} target={game?.targetScore ?? 1} />
+      </div>
+      <GameMenu isHost={me.isHost} paused={paused} canPause />
+    </header>
   );
 }
 

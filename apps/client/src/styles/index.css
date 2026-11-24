@@ -199,6 +199,16 @@ textarea {
   transition: none;
 }
 
+/* A full-screen map has the HUD and the sheet floating over it (MapView sets the insets): Leaflet's
+   corner controls (attribution, Geoman's toolbar) stay in the uncovered band. */
+/* Two classes: leaflet.css loads later (with the map chunk) and sets `.leaflet-bottom { bottom: 0 }`. */
+.leaflet-container .leaflet-top {
+  top: var(--map-inset-top, 0px);
+}
+.leaflet-container .leaflet-bottom {
+  bottom: var(--map-inset-bottom, 0px);
+}
+
 /* Geoman toolbar on a dark map */
 .leaflet-pm-toolbar .leaflet-buttons-control-button {
   min-width: 36px;

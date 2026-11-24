@@ -115,6 +115,17 @@ export async function mapPoint(page: Page, dLng = 0, dLat = 0) {
   );
 }
 
+/** Page-pixel position of a place on the map (e.g. `HOME`, the middle of the drawn area). */
+export async function pointOf(page: Page, at: { lat: number; lng: number }) {
+  return page.evaluate((p) => {
+    const map = (window as unknown as { __afterdarkMap?: TestMap }).__afterdarkMap;
+    if (!map) throw new Error('map test hook missing');
+    const q = map.latLngToContainerPoint([p.lat, p.lng]);
+    const box = map.getContainer().getBoundingClientRect();
+    return { x: box.left + q.x, y: box.top + q.y };
+  }, at);
+}
+
 /** Host draws a circle with the real Geoman circle tool: click the centre, then click the edge. */
 export async function drawCircle(host: Page, radiusDegLng = 0.001) {
   // The map centres on the player (street level) once their first fix arrives; wait for that.

@@ -4,17 +4,20 @@
  * and the meeting button stay usable; the task buttons say why they are off.
  */
 import { useServerNow } from '../../hooks/useServerNow';
+import type { MapInsets } from '../map/insets';
 import { formatClock } from './format';
 
 const REFRESH_MS = 250;
 
-export function JamOverlay({ until }: { until: number }) {
+/** `insets`: over a full-screen map, the words sit in the band the HUD and the sheet leave free. */
+export function JamOverlay({ until, insets }: { until: number; insets?: MapInsets | undefined }) {
   const now = useServerNow(REFRESH_MS);
   return (
     <div
       role="alert"
       data-testid="jam-overlay"
       className="jam-overlay pointer-events-none absolute inset-0 z-[1000] grid place-items-center bg-bg/70 backdrop-blur-[2px]"
+      style={insets && { paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
       <div className="text-center">
         <p className="jam-glitch font-display text-3xl font-bold tracking-widest">SYSTEMS JAMMED</p>

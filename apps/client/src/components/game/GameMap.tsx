@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 import { useSelfPosition } from '../../hooks/useSelfPosition';
 import { simTeleport } from '../../net/actions';
 import { useGame } from '../../store';
+import type { MapInsets } from '../map/insets';
 import type { SetupOverlay } from '../map/SetupLayers';
 import type { TaskOverlay } from '../map/TaskLayers';
 
@@ -23,6 +24,7 @@ export function GameMap({
   fakes,
   placing,
   resizeKey,
+  insets,
 }: {
   view: PlayerView;
   simulated: boolean;
@@ -35,6 +37,8 @@ export function GameMap({
   /** A Phantom placing a fake task. */
   placing?: { onCenter: (at: LatLng) => void; valid: boolean } | undefined;
   resizeKey?: string;
+  /** A full-screen map under the HUD and the sheet (MapScreen). */
+  insets?: MapInsets | undefined;
 }) {
   const radar = useGame((s) => s.radar);
   const self = useSelfPosition(view);
@@ -66,6 +70,7 @@ export function GameMap({
         tool="none"
         onSimMove={simulated ? (to) => void simTeleport(to) : undefined}
         resizeKey={resizeKey}
+        insets={insets}
       />
     </Suspense>
   );

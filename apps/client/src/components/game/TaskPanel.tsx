@@ -14,6 +14,7 @@ import type { SelfPosition } from '../map/MapView';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
 import { formatClock, formatDistance } from './format';
+import { priorityCardId } from './sheetState';
 import { cardLabel, guidance, sectionAnchor } from './taskGeo';
 
 const CLOCK_REFRESH_MS = 1000;
@@ -41,6 +42,7 @@ export function TaskPanel({
   decoyIds,
   joinOffer,
   quiet = false,
+  collapsed = false,
 }: {
   view: PlayerView;
   self: SelfPosition | undefined;
@@ -54,6 +56,8 @@ export function TaskPanel({
   joinOffer?: { taskId: string } | undefined;
   /** No "waiting for your next task" line when there is nothing to show (an imposter's panel). */
   quiet?: boolean;
+  /** The game sheet is collapsed: only the most useful card (`priorityCardId`). */
+  collapsed?: boolean;
 }) {
   const cards = given ?? view.game?.tasks ?? [];
   const [menuFor, setMenuFor] = useState<string | undefined>();
@@ -104,6 +108,19 @@ export function TaskPanel({
     if (!res.ok) pushToast(messageFor(res.code));
   };
 
+  const guides = new Map(
+    cards.map((c) => {
+      const target = targets.get(c.id);
+      return [c.id, self && target ? guidance(self, target, self.heading) : undefined] as const;
+    }),
+  );
+  const shownId = collapsed
+    ? priorityCardId(cards, {
+        distances: new Map([...guides].map(([id, g]) => [id, g?.distanceM])),
+      })
+    : undefined;
+  const shown = collapsed ? cards.filter((c) => c.id === shownId) : cards;
+
   if (cards.length === 0 && !joinOffer) {
     if (quiet) return null;
     return (
@@ -115,10 +132,9 @@ export function TaskPanel({
 
   return (
     <section aria-label="Your tasks" className="flex flex-col gap-2" data-testid="task-panel">
-      {cards.map((card) => {
+      {shown.map((card) => {
         const stage = stageOf(card);
-        const target = targets.get(card.id);
-        const g = self && target ? guidance(self, target, self.heading) : undefined;
+        const g = guides.get(card.id);
         return (
           <article
             key={card.id}

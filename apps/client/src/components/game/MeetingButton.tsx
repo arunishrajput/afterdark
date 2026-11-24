@@ -24,7 +24,7 @@ export function MeetingButton({ left, paused }: { left: number; paused: boolean 
       <Button
         variant="secondary"
         data-testid="meeting-button"
-        className="min-h-11 px-3 text-sm"
+        className="min-h-11 shrink-0 px-3 text-sm whitespace-nowrap"
         disabled={left === 0 || paused}
         onClick={() => setOpen(true)}
       >

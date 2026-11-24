@@ -17,13 +17,13 @@ function ToastItem({ toast }: { toast: Toast }) {
   );
 }
 
-/** Polite live region above the bottom bar. */
+/** Polite live region above the bottom bar, or above the game's sheet (`--toast-bottom`, MapScreen). */
 export function Toasts() {
   const toasts = useGame((s) => s.toasts);
   return (
     <ol
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-4 bottom-[calc(7rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md flex-col gap-2"
+      className="pointer-events-none fixed inset-x-4 bottom-[var(--toast-bottom,calc(7rem+env(safe-area-inset-bottom)))] z-40 mx-auto flex max-w-md flex-col gap-2"
     >
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} />

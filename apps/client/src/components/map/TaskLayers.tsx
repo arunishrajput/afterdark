@@ -4,12 +4,13 @@
  * drawn, from the view; the task pool is never sent during play.
  */
 import { DEFAULT_CONFIG, type RegionPublic, sectionShapes, type TaskCard } from '@afterdark/shared';
-import { useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 import { Marker, Polygon, useMap } from 'react-leaflet';
 
 import { sectionAnchor } from '../game/taskGeo';
-import { areaToLatLngs, toLeaflet } from './geo';
+import { areaToLatLngs } from './geo';
 import { taskPinIcon } from './icons';
+import { MapInsetsContext, visibleCenter } from './insets';
 import { regionColor } from './style';
 
 export interface TaskOverlay {
@@ -58,6 +59,7 @@ function SectionHighlight({
 
 function FocusEffect({ overlay }: { overlay: TaskOverlay }) {
   const map = useMap();
+  const insets = useContext(MapInsetsContext);
   const { focusId, focusSeq, cards, regions } = overlay;
   useEffect(() => {
     if (!focusSeq || !focusId) return;
@@ -70,7 +72,10 @@ function FocusEffect({ overlay }: { overlay: TaskOverlay }) {
             regions.find((r) => r.id === card.regionId) ?? (regions[0] as RegionPublic),
             card.section,
           );
-    if (target) map.flyTo(toLeaflet(target), Math.max(map.getZoom(), 18), { duration: 0.6 });
+    if (!target) return;
+    // Centred in the band between the HUD and the sheet, not behind them.
+    const zoom = Math.max(map.getZoom(), 18);
+    map.flyTo(visibleCenter(map, target, zoom, insets), zoom, { duration: 0.6 });
     // Only a tap (focusSeq) should move the map, not every new view.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusSeq]);
