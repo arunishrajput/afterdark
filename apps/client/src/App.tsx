@@ -57,6 +57,9 @@ function themeOf(view: PlayerView | undefined, now: number): 'crew' | 'imposter'
 
 const THEME_REFRESH_MS = 500;
 
+/** The browser or status bar colour follows the theme's background (tokens.css `--bg`). */
+const THEME_COLOR = { crew: '#05070d', imposter: '#0d0505', neutral: '#07080a' } as const;
+
 function Screen() {
   const view = useGame((s) => s.view);
   const notice = useGame((s) => s.notice);
@@ -82,6 +85,7 @@ export function App() {
   const theme = themeOf(view, now);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme]);
   }, [theme]);
   const inLobby = useGame((s) => s.view !== undefined);
   const testMode = useGame((s) => s.view?.lobby.testMode === true);

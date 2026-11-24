@@ -35,6 +35,10 @@
 }
 
 html {
+  /* No pull-to-refresh or rubber-band while playing: a stray swipe would reload the game. */
+  overscroll-behavior: none;
+  /* Keep text at the size the player set; iOS inflates it in landscape otherwise. */
+  -webkit-text-size-adjust: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -51,6 +55,25 @@ body {
   background:
     radial-gradient(120% 60% at 50% -10%, var(--accent-glow), transparent 60%) no-repeat,
     var(--bg);
+}
+
+/* Controls act on the first tap (no double-tap-zoom delay), never select their label on a long press
+   and never open iOS's callout. Text fields stay selectable. */
+button,
+[role='button'],
+a,
+summary,
+label,
+select {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The map owns its gestures (pan, pinch) and the page must not scroll under it. */
+.leaflet-container {
+  touch-action: none;
 }
 
 /* 16 px inputs stop iOS from zooming on focus. */
