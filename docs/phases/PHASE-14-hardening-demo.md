@@ -19,7 +19,7 @@
 - **Out:** new features. Anything new goes into the PROGRESS backlog for after the hackathon.
 
 ## Tasks
-- [ ] **14.1 Security review:** walk the OWASP-style checklist against this codebase:
+- [x] **14.1 Security review:** walk the OWASP-style checklist against this codebase:
   - input validation on every handler (zod; fuzz a few with junk payloads)
   - username sanitising
   - helmet and CSP

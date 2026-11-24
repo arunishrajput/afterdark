@@ -208,6 +208,8 @@ export const gameConfigSchema = z.strictObject({
   tickIntervalMs: positiveInt(),
   socketEventsPerSecond: positiveInt(),
   locEventsPerSecond: positiveInt(),
+  lobbyCreatePerIpPerMin: positiveInt(),
+  maxLobbies: positiveInt(),
   shutdownNoticeMs: positiveInt(),
   slowCommandMs: positiveInt(),
 

@@ -16,6 +16,7 @@ import {
   sendViewNow,
 } from '../context';
 import { HandlerError, validated } from '../handler';
+import { clientAddress } from '../lobbyLimits';
 import type { GameSocket } from '../types';
 
 export function registerSessionHandlers(ctx: GatewayContext, socket: GameSocket): void {
@@ -25,6 +26,13 @@ export function registerSessionHandlers(ctx: GatewayContext, socket: GameSocket)
     'lobby:create',
     validated('lobby:create', lobbyCreateSchema, logger, ({ username }) => {
       requireUnbound(socket);
+      // The address is used for this check only and never logged.
+      const verdict = ctx.createGuard.admit(clientAddress(socket.handshake), rooms.size);
+      if (verdict !== 'ok') {
+        logger.warn({ verdict }, 'lobby create refused');
+        if (verdict === 'full') throw new HandlerError('SERVER_BUSY', 'The server is full');
+        throw new HandlerError('RATE_LIMITED', 'Too many new lobbies from this network');
+      }
       const playerId = randomId();
       const room = rooms.create({ playerId, username });
       const token = sessions.issue(room.code, playerId);

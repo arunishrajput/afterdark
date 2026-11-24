@@ -188,6 +188,8 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `tickIntervalMs` | 1000 | — | 🔒 | Server room tick (countdowns, timers, win checks). |
 | `socketEventsPerSecond` | 10 | — | 🔒 | Basic per-socket rate limit for client → server events; extra events get `RATE_LIMITED`. |
 | `locEventsPerSecond` | 2 | — | 🔒 | Separate per-socket limit for `loc:update` (which has no ack): extra fixes are dropped silently. It does not count against `socketEventsPerSecond`. |
+| `lobbyCreatePerIpPerMin` | 5 | — | 🔒 | New lobbies one IP address may create in any rolling minute; more get `RATE_LIMITED`. Joining is never limited. Loopback addresses (local dev, e2e, local load tests) are exempt (ADR-107). |
+| `maxLobbies` | 200 | — | 🔒 | The server holds at most this many lobbies; `lobby:create` beyond it gets `SERVER_BUSY`. With `lobbyIdleTimeoutMin` 30, one address alone (5 a minute) can hold at most 150 (ADR-107). |
 | `shutdownNoticeMs` | 1500 | — | 🔒 | On SIGTERM the server sends `server:shutdown` to every client and waits this long before closing, so phones can show "restarting" instead of an error. |
 | `slowCommandMs` | 50 | — | 🔒 | A command or room tick slower than this is logged at `warn` (with room code, command type and duration, never coordinates). |
 

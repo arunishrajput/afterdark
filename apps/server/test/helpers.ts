@@ -25,6 +25,7 @@ import { io as connect, type Socket } from 'socket.io-client';
 import { createServer, type GameServer } from '../src/app';
 import { createLogger } from '../src/logger';
 import { rngCodeSource } from '../src/rooms/lobbyCode';
+import type { LobbyLimits } from '../src/socket/lobbyLimits';
 
 export type ClientSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -44,7 +45,9 @@ export interface TestServer {
   close(): Promise<void>;
 }
 
-export async function startTestServer(opts: { allowTestMode?: boolean } = {}): Promise<TestServer> {
+export async function startTestServer(
+  opts: { allowTestMode?: boolean; lobbyLimits?: Partial<LobbyLimits> } = {},
+): Promise<TestServer> {
   const clock = { now: T0 };
   const server = createServer({
     logger: createLogger({ level: 'silent', pretty: false }),
@@ -52,6 +55,7 @@ export async function startTestServer(opts: { allowTestMode?: boolean } = {}): P
     version: { sha: 'test-sha' },
     allowTestMode: opts.allowTestMode ?? true,
     codeSource: rngCodeSource(createRng(42)),
+    ...(opts.lobbyLimits ? { lobbyLimits: opts.lobbyLimits } : {}),
   });
   await new Promise<void>((resolve) => server.httpServer.listen(0, resolve));
   const { port } = server.httpServer.address() as AddressInfo;
@@ -82,8 +86,13 @@ export class TestClient {
   /** Every server → client frame, serialised, for raw leak scans. */
   readonly frames: string[] = [];
 
-  constructor(url: string) {
-    this.socket = connect(url, { transports: ['websocket'], forceNew: true, reconnection: false });
+  constructor(url: string, headers?: Record<string, string>) {
+    this.socket = connect(url, {
+      transports: ['websocket'],
+      forceNew: true,
+      reconnection: false,
+      ...(headers ? { extraHeaders: headers } : {}),
+    });
     this.socket.on('view', (v) => {
       this.view = v;
       this.views.push(v);
@@ -147,8 +156,12 @@ export class TestClient {
   }
 }
 
-export async function openClient(url: string): Promise<TestClient> {
-  return new TestClient(url).connected();
+/** `headers` lets a test act as a client behind a proxy (`x-forwarded-for`). */
+export async function openClient(
+  url: string,
+  headers?: Record<string, string>,
+): Promise<TestClient> {
+  return new TestClient(url, headers).connected();
 }
 
 export const errorCode = (res: Ack<unknown>) => (res.ok ? 'OK' : res.error.code);

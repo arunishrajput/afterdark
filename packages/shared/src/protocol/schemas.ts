@@ -24,6 +24,7 @@ export const ERROR_CODES = [
   'MEETING_ACTIVE',
   'PAUSED',
   'RATE_LIMITED',
+  'SERVER_BUSY',
   'KICKED',
   'INTERNAL',
 ] as const;

@@ -182,6 +182,8 @@ export const DEFAULT_CONFIG = {
   tickIntervalMs: 1000,
   socketEventsPerSecond: 10,
   locEventsPerSecond: 2,
+  lobbyCreatePerIpPerMin: 5,
+  maxLobbies: 200,
   shutdownNoticeMs: 1500,
   slowCommandMs: 50,
 

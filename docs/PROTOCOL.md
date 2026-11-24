@@ -14,18 +14,18 @@ This file is the contract between `apps/client` and `apps/server`. The code copy
   ```
 - **Server → client events** never include data the recipient isn't entitled to (see [ROLES.md](ROLES.md#visibility-matrix)). There is **no** `io.to(room).emit(...)` carrying private data. Broadcasts are allowed only for payloads that are identical for every player and contain only public information.
 - **Times** are server epoch milliseconds. Clients estimate `offset` with `time:ping` and display countdowns from absolute deadlines (`endsAt`), never by counting ticks themselves.
-- **Rate limits** (Phase 14; basic versions earlier): `loc:update` ≤ 2/s, other events ≤ 10/s per socket. Payloads are capped at 16 KB. Since Phase 1, every socket is limited to `socketEventsPerSecond` (10) events in any rolling second; extra events are dropped and acked with `RATE_LIMITED`.
+- **Rate limits:** every socket is limited to `socketEventsPerSecond` (10) events in any rolling second (extra events are dropped and acked with `RATE_LIMITED`), and `loc:update` separately to `locEventsPerSecond` (2), dropped silently. A frame over 16 KB (Socket.IO `maxHttpBufferSize`) closes that connection. `lobby:create` is also limited per client address and server-wide (ADR-107). The client address is the socket peer, or, when the peer is a private-network proxy (Render's), the last `X-Forwarded-For` entry; it is used for this check only and never logged.
 - **IDs** are random, URL-safe, 12+ characters, and never sequential.
 
 ## Error codes
-`INVALID_PAYLOAD`, `NOT_FOUND`, `LOBBY_FULL`, `GAME_IN_PROGRESS`, `NAME_TAKEN`, `NOT_HOST`, `NOT_ALLOWED`, `WRONG_PHASE`, `COOLDOWN`, `OUT_OF_RANGE`, `WEAK_GPS`, `STALE`, `OUT_OF_BOUNDS`, `TASKS_LOCKED`, `MEETING_ACTIVE`, `PAUSED`, `RATE_LIMITED`, `KICKED`, `INTERNAL`.
+`INVALID_PAYLOAD`, `NOT_FOUND`, `LOBBY_FULL`, `GAME_IN_PROGRESS`, `NAME_TAKEN`, `NOT_HOST`, `NOT_ALLOWED`, `WRONG_PHASE`, `COOLDOWN`, `OUT_OF_RANGE`, `WEAK_GPS`, `STALE`, `OUT_OF_BOUNDS`, `TASKS_LOCKED`, `MEETING_ACTIVE`, `PAUSED`, `RATE_LIMITED`, `SERVER_BUSY` (the server holds `maxLobbies` lobbies; Phase 14), `KICKED`, `INTERNAL`.
 
 ## Client → server
 | Event | Payload | Ack data | Who / when | Phase |
 |---|---|---|---|---|
 | `time:ping` | `{clientTs}` | `{serverTs}` | anyone | 1 |
 | `session:resume` | `{token}` | `{playerId, code}` | on (re)connect. Errors: `NOT_FOUND` (session or lobby gone), `KICKED` (token banned), `NOT_ALLOWED` (socket already bound to another player) | 1 |
-| `lobby:create` | `{username, acceptedSafety: true}` | `{code, token, playerId}` | a socket not already in a lobby (`NOT_ALLOWED`) | 1 |
+| `lobby:create` | `{username, acceptedSafety: true}` | `{code, token, playerId}` | a socket not already in a lobby (`NOT_ALLOWED`). At most `lobbyCreatePerIpPerMin` (5) per client address in any rolling minute (`RATE_LIMITED`; loopback exempt) and `maxLobbies` (200) on the server (`SERVER_BUSY`) (ADR-107) | 1, 14 |
 | `lobby:join` | `{code, username, acceptedSafety: true}` | `{token, playerId}` | lobby phase only. Errors: `NOT_FOUND`, `GAME_IN_PROGRESS`, `LOBBY_FULL`, `NAME_TAKEN` | 1 |
 | `lobby:leave` | `{}` | — | any time; mid-game the player becomes a permanent disconnect | 1 |
 | `lobby:setReady` | `{ready}` | — | lobby; `ready: true` needs a good fresh fix: `WEAK_GPS` (none or inaccurate) or `STALE` (old) | 1 |

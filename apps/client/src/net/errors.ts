@@ -20,6 +20,7 @@ const MESSAGES: Partial<Record<ClientErrorCode, string>> = {
   PAUSED: 'The game is paused.',
   MEETING_ACTIVE: 'A meeting is in progress.',
   RATE_LIMITED: 'Slow down a little and try again.',
+  SERVER_BUSY: 'The server is full right now. Try again in a few minutes.',
   KICKED: 'You were removed from that lobby.',
   TIMEOUT: 'No answer from the server. Check your connection.',
 };

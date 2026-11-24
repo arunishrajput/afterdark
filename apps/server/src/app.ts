@@ -10,6 +10,7 @@ import type { Logger } from './logger';
 import type { CodeSource } from './rooms/lobbyCode';
 import type { RoomManager } from './rooms/RoomManager';
 import { createGateway } from './socket/gateway';
+import type { LobbyLimits } from './socket/lobbyLimits';
 import type { GameIo } from './socket/types';
 import { applyHardening, isSameOrigin, mountClient } from './web';
 
@@ -28,6 +29,8 @@ export interface ServerDeps {
   clientDir?: string;
   /** Secret salt per new room (tests and the e2e server pin it to make roles reproducible). */
   saltSource?: () => string;
+  /** Lobby creation limits (default: CONFIG, loopback exempt; ADR-107). */
+  lobbyLimits?: Partial<LobbyLimits>;
 }
 
 export interface GameServer {
@@ -91,6 +94,7 @@ export function createServer(deps: ServerDeps): GameServer {
     allowTestMode: deps.allowTestMode,
     ...(deps.codeSource ? { codeSource: deps.codeSource } : {}),
     ...(deps.saltSource ? { saltSource: deps.saltSource } : {}),
+    ...(deps.lobbyLimits ? { lobbyLimits: deps.lobbyLimits } : {}),
   });
 
   // Idempotent: a second close (or shutdown then close) waits for the first.

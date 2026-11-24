@@ -7,6 +7,7 @@ import type { RoomManager } from '../rooms/RoomManager';
 import type { SessionRegistry } from '../rooms/sessions';
 import type { ViewEmitter } from '../rooms/ViewEmitter';
 import { HandlerError } from './handler';
+import type { LobbyCreateGuard } from './lobbyLimits';
 import type { GameIo, GameSocket } from './types';
 
 export interface GatewayContext {
@@ -17,6 +18,8 @@ export interface GatewayContext {
   emitters: Map<string, ViewEmitter>;
   /** In-process test bots per room (`dev:addBots`). */
   bots: Map<string, BotDriver>;
+  /** Per-address and server-wide lobby creation limits (ADR-107). */
+  createGuard: LobbyCreateGuard;
 }
 
 export function socketById(

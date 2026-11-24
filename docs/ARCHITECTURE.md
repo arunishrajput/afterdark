@@ -121,7 +121,7 @@
   - server-verified minigames
   - speed and accuracy checks
   - zod on every input
-  - rate and size limits
+  - rate and size limits: 10 events a second per socket (2 fixes), 16 KB frames, 5 new lobbies a minute per client address and 200 lobbies per server (ADR-107)
   - the host has no hidden-information powers
   - React escaping, plus usernames NFC-normalised and limited to `[\p{L}\p{M}\p{N} _.-]` (ADR-034)
   - helmet headers

@@ -21,6 +21,7 @@ import { registerMeetingHandlers } from './handlers/meetings';
 import { registerSessionHandlers } from './handlers/session';
 import { registerSetupHandlers } from './handlers/setup';
 import { registerTaskHandlers } from './handlers/tasks';
+import { DEFAULT_LOBBY_LIMITS, LobbyCreateGuard, type LobbyLimits } from './lobbyLimits';
 import { createRateLimiter } from './rateLimit';
 import type { GameIo } from './types';
 import { attachRoom } from './wiring';
@@ -31,6 +32,7 @@ export interface GatewayDeps {
   allowTestMode: boolean;
   codeSource?: CodeSource;
   saltSource?: () => string;
+  lobbyLimits?: Partial<LobbyLimits>;
 }
 
 export interface Gateway {
@@ -65,7 +67,8 @@ export function createGateway(io: GameIo, deps: GatewayDeps): Gateway {
       logger.info({ code }, 'lobby deleted');
     },
   });
-  const ctx: GatewayContext = { io, logger, sessions, emitters, bots, rooms };
+  const createGuard = new LobbyCreateGuard({ ...DEFAULT_LOBBY_LIMITS, ...deps.lobbyLimits }, now);
+  const ctx: GatewayContext = { io, logger, sessions, emitters, bots, rooms, createGuard };
   const stopSweeper = rooms.startSweeper();
 
   io.on('connection', (socket) => {
