@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 const isCI = Boolean(process.env.CI);
 // 127.0.0.1, not localhost: another local dev server may hold [::1]:5173.
 const CLIENT_URL = 'http://127.0.0.1:5173';
+const PREVIEW_URL = 'http://127.0.0.1:4173';
 const SERVER_HEALTH_URL = 'http://127.0.0.1:3000/health';
 const WEB_SERVER_TIMEOUT_MS = 120_000;
 // Pointing at a deployed server (e2e/prod-smoke.spec.ts): no local servers.
@@ -19,7 +20,15 @@ export default defineConfig({
     baseURL: REMOTE_URL ?? CLIENT_URL,
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', testIgnore: /pwa\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    // The service worker only exists in the production build: this project uses `vite preview`.
+    {
+      name: 'pwa',
+      testMatch: /pwa\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: REMOTE_URL ?? PREVIEW_URL },
+    },
+  ],
   webServer: REMOTE_URL
     ? []
     : [
@@ -29,6 +38,13 @@ export default defineConfig({
           // lobby of 8 is crew and a human who hosts a lobby of 5 is an imposter (e2e/game.spec.ts).
           env: { TEST_ROOM_SALT: E2E_ROOM_SALT },
           url: SERVER_HEALTH_URL,
+          reuseExistingServer: !isCI,
+          timeout: WEB_SERVER_TIMEOUT_MS,
+        },
+        {
+          command:
+            'pnpm --filter @afterdark/client build && pnpm --filter @afterdark/client preview --host 127.0.0.1',
+          url: PREVIEW_URL,
           reuseExistingServer: !isCI,
           timeout: WEB_SERVER_TIMEOUT_MS,
         },

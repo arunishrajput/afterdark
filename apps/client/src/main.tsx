@@ -12,8 +12,8 @@ import {
   devUpdateConfig,
   simTeleport,
 } from './net/actions';
-import { startPwa } from './net/pwa';
-import { startConnection } from './net/socket';
+import { startPwa, usePwa } from './net/pwa';
+import { socket, startConnection } from './net/socket';
 import { useGame } from './store';
 
 const root = document.getElementById('root');
@@ -31,6 +31,10 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {
     devForceCoop,
     devUpdateConfig,
     simTeleport,
+    /** Pretends the service worker found a new build (the update banner's queue logic). */
+    pwaNeedRefresh: () => usePwa.setState({ updateReady: true }),
+    /** Drops the socket without auto-reconnect: the reconnect banner and its Retry button. */
+    dropConnection: () => void socket.disconnect(),
     /** Ids and tags of the players this view can name (public roster ids; the viewer's own tag). */
     myIds: () => {
       const v = useGame.getState().view;
