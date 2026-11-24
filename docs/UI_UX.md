@@ -17,7 +17,7 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 | `--danger` | #FF5A5A | #FFB020 | #FF5A5A |
 | `--infected` (imposter only) | — | #7CFF4F | — |
 
-- **Type:** a display face for titles (e.g. "Space Grotesk"), Inter for UI, JetBrains Mono for codes, tags and timers, all from Google Fonts. Minimum body size 16 px.
+- **Type:** a display face for titles (e.g. "Space Grotesk"), Inter for UI, JetBrains Mono for codes, tags and timers, all self-hosted variable fonts (Fontsource, latin subset), so they also work offline. Minimum body size 16 px.
 - **Contrast:** WCAG AA at minimum, AAA for HUD numbers. Tap targets ≥ 44 px. Never rely on colour alone: roles also have icons and text labels.
 - **Motion:** short and purposeful (150–250 ms), respecting `prefers-reduced-motion`. Haptics on Android through `navigator.vibrate`. iOS has no vibration, so use sound and visual pulses instead.
 

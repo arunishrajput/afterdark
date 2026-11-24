@@ -13,6 +13,9 @@
   },
   "dependencies": {
     "@afterdark/shared": "workspace:*",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
     "@geoman-io/leaflet-geoman-free": "^2.20.8",
     "leaflet": "^1.9.4",
     "react": "^19.3.1",

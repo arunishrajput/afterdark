@@ -45,14 +45,14 @@ describe('production web layer', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('serves index.html at / with no-cache and a CSP that allows OSM tiles and Google Fonts only', async () => {
+  it('serves index.html at / with no-cache and a CSP that allows OSM tiles and no third-party fonts or styles', async () => {
     const res = await fetch(url, { headers: { 'accept-encoding': 'identity' } });
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-cache');
     const csp = res.headers.get('content-security-policy') ?? '';
     expect(csp).toContain('https://tile.openstreetmap.org');
-    expect(csp).toContain('https://fonts.googleapis.com');
-    expect(csp).toContain('https://fonts.gstatic.com');
+    expect(csp).not.toContain('googleapis');
+    expect(csp).not.toContain('gstatic');
     expect(csp).toContain("script-src 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(res.headers.get('x-powered-by')).toBeNull();

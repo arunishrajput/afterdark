@@ -19,10 +19,8 @@ const NO_CACHE_FILE =
   /(^|[\\/])(index\.html|sw\.js|registerSW\.js|workbox-[^\\/]*\.js|manifest\.webmanifest)$/;
 
 export const TILE_HOST = 'https://tile.openstreetmap.org';
-const FONT_CSS_HOST = 'https://fonts.googleapis.com';
-const FONT_FILE_HOST = 'https://fonts.gstatic.com';
 
-/** Helmet with a CSP that allows only our own origin, OSM tiles and Google Fonts. */
+/** Helmet with a CSP that allows only our own origin and OSM tiles. */
 export function securityHeaders() {
   return helmet({
     contentSecurityPolicy: {
@@ -31,8 +29,8 @@ export function securityHeaders() {
         'default-src': ["'self'"],
         'script-src': ["'self'"],
         // React and Leaflet set inline style attributes; scripts stay locked down.
-        'style-src': ["'self'", "'unsafe-inline'", FONT_CSS_HOST],
-        'font-src': ["'self'", FONT_FILE_HOST],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'font-src': ["'self'"], // fonts are self-hosted (ADR-101)
         'img-src': ["'self'", 'data:', 'blob:', TILE_HOST],
         // 'self' covers the same-origin WebSocket in current browsers.
         'connect-src': ["'self'", TILE_HOST], // the service worker fetches tiles for its cache

@@ -1,22 +1,15 @@
 import type { PlayerView } from '@afterdark/shared';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import { playTheme } from './components/game/disguise';
 import { LocationProvider } from './components/LocationProvider';
-import { MeetingScreen } from './components/meeting/MeetingScreen';
 import { UpdateBanner } from './components/pwa/UpdateBanner';
 import { ReconnectBanner } from './components/ui/ReconnectBanner';
 import { Toasts } from './components/ui/Toasts';
 import { useServerNow } from './hooks/useServerNow';
 import { EntryForm } from './screens/EntryForm';
-import { Game } from './screens/Game';
 import { type Entry, Home } from './screens/Home';
-import { Lobby } from './screens/Lobby';
 import { NoticeScreen } from './screens/NoticeScreen';
-import { Results } from './screens/Results';
-import { RoleReveal } from './screens/RoleReveal';
-import { Spawn } from './screens/Spawn';
-import { Spectator } from './screens/Spectator';
 import { parseSimParams } from './sim/params';
 import { useGame } from './store';
 import { useLocation } from './store/location';
@@ -30,6 +23,27 @@ useLocation.getState().patchSim({
   on: simParams.enabled,
   ...(simParams.start ? { ...simParams.start, placed: true } : {}),
 });
+
+// The game screens load on demand: Home is all a first visit needs (the initial bundle budget, ARCHITECTURE §11).
+const Lobby = lazy(() => import('./screens/Lobby').then((m) => ({ default: m.Lobby })));
+const Spawn = lazy(() => import('./screens/Spawn').then((m) => ({ default: m.Spawn })));
+const RoleReveal = lazy(() =>
+  import('./screens/RoleReveal').then((m) => ({ default: m.RoleReveal })),
+);
+const Game = lazy(() => import('./screens/Game').then((m) => ({ default: m.Game })));
+const Spectator = lazy(() => import('./screens/Spectator').then((m) => ({ default: m.Spectator })));
+const Results = lazy(() => import('./screens/Results').then((m) => ({ default: m.Results })));
+const MeetingScreen = lazy(() =>
+  import('./components/meeting/MeetingScreen').then((m) => ({ default: m.MeetingScreen })),
+);
+
+function Loading() {
+  return (
+    <main className="flex min-h-dvh items-center justify-center text-muted" aria-busy="true">
+      Loading…
+    </main>
+  );
+}
 
 /** The in-game screen for each room phase (ARCHITECTURE §7). */
 function InGame({ view }: { view: PlayerView }) {
@@ -68,7 +82,13 @@ function Screen() {
   const [entry, setEntry] = useState<Entry>();
 
   if (notice) return <NoticeScreen notice={notice} />;
-  if (view) return <InGame view={view} />;
+  if (view) {
+    return (
+      <Suspense fallback={<Loading />}>
+        <InGame view={view} />
+      </Suspense>
+    );
+  }
   if (resuming) {
     return (
       <main className="flex min-h-dvh items-center justify-center text-muted" aria-busy="true">
