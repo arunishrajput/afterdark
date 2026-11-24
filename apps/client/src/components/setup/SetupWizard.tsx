@@ -126,7 +126,14 @@ export function SetupWizard({ view, step, onStep, previewRegionId, onPreview, ac
       data-testid="setup-wizard"
       className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-surface p-3"
     >
-      <div role="tablist" aria-label="Setup steps" className="flex gap-1 overflow-x-auto pb-1">
+      {/* `relative`: the steps' sr-only labels are absolutely positioned; without a positioned
+          ancestor here they escape the scroll strip and widen the whole page (Chrome Android then
+          zooms the lobby out). */}
+      <div
+        role="tablist"
+        aria-label="Setup steps"
+        className="relative flex gap-1 overflow-x-auto overscroll-x-contain pb-1"
+      >
         {STEPS.map((s, i) => (
           <button
             key={s.id}

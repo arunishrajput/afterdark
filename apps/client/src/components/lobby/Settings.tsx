@@ -44,23 +44,26 @@ function Stepper({
     onChange(Math.min(max, Math.max(min, Math.round(v * FLOAT_DIGITS) / FLOAT_DIGITS)));
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="font-medium">{field.label}</span>
-      <div className="flex items-center gap-1" role="group" aria-label={field.label}>
+      <span className="min-w-0 flex-1 font-medium">{field.label}</span>
+      <div className="flex shrink-0 items-center gap-1" role="group" aria-label={field.label}>
         <Button
           variant="secondary"
-          className="w-12 px-0"
+          className="w-11 px-0"
           aria-label={`Decrease ${field.label}`}
           disabled={value <= min}
           onClick={() => set(value - field.step)}
         >
           −
         </Button>
-        <output className="w-24 text-center font-mono text-lg" aria-live="polite">
+        <output
+          className="w-[5.25rem] text-center font-mono text-lg whitespace-nowrap"
+          aria-live="polite"
+        >
           {formatValue(field, value)}
         </output>
         <Button
           variant="secondary"
-          className="w-12 px-0"
+          className="w-11 px-0"
           aria-label={`Increase ${field.label}`}
           disabled={value >= max}
           onClick={() => set(value + field.step)}
