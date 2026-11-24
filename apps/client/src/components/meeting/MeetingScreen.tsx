@@ -17,6 +17,7 @@ import { formatClock, formatDistance } from '../game/format';
 import { GameMenu } from '../game/HostMenu';
 import { guidance } from '../game/taskGeo';
 import { Button } from '../ui/Button';
+import { MeetingMap } from './MeetingMap';
 import {
   candidates,
   remainingMs,
@@ -104,7 +105,7 @@ function RosterList({
           data-status={r.status}
           className={`flex min-h-14 items-center justify-between gap-2 rounded-2xl border border-white/10 bg-surface px-3 py-2 ${r.status === 'spectator' ? 'opacity-50' : ''}`}
         >
-          <span className="min-w-0 truncate text-lg font-semibold">
+          <span className="min-w-0 text-lg font-semibold break-words">
             {r.status === 'spectator' && <span aria-hidden="true">👻 </span>}
             {r.username}
           </span>
@@ -121,7 +122,15 @@ function RosterList({
   );
 }
 
-function Gather({ view, meeting }: { view: PlayerView; meeting: MeetingView }) {
+function Gather({
+  view,
+  meeting,
+  onShowMap,
+}: {
+  view: PlayerView;
+  meeting: MeetingView;
+  onShowMap: () => void;
+}) {
   const self = useSelfPosition(view);
   const base = view.lobby.map.base;
   const g = self && base ? guidance(self, base, self.heading) : undefined;
@@ -152,6 +161,15 @@ function Gather({ view, meeting }: { view: PlayerView; meeting: MeetingView }) {
         ) : (
           <p className="text-muted">Waiting for your location…</p>
         )}
+        {/* The way to the Base on the full-screen map, and one tap back (ADR-105). */}
+        <Button
+          variant="secondary"
+          data-testid="meeting-show-map"
+          className="mt-3 w-full"
+          onClick={onShowMap}
+        >
+          Show the map
+        </Button>
       </section>
       <p data-testid="arrivals" className="text-center text-muted">
         {meeting.progress.done} of {meeting.progress.total} at the Base
@@ -298,21 +316,54 @@ function Result({ meeting }: { meeting: MeetingView }) {
 
 export function MeetingScreen({ view, meeting }: { view: PlayerView; meeting: MeetingView }) {
   const spectator = view.me.status === 'spectator';
+  const [mapOpen, setMapOpen] = useState(false);
+  // The map only belongs to the walk to the Base: once everyone is there (Discuss), this screen is back.
+  // The alarm stays mounted across both, so switching views never brings a dismissed alarm back.
+  return (
+    <>
+      <Alarm />
+      {mapOpen && meeting.stage === 'gather' ? (
+        <MeetingMap view={view} meeting={meeting} onBack={() => setMapOpen(false)} />
+      ) : (
+        <MeetingStageScreen
+          view={view}
+          meeting={meeting}
+          spectator={spectator}
+          onShowMap={() => setMapOpen(true)}
+        />
+      )}
+    </>
+  );
+}
+
+function MeetingStageScreen({
+  view,
+  meeting,
+  spectator,
+  onShowMap,
+}: {
+  view: PlayerView;
+  meeting: MeetingView;
+  spectator: boolean;
+  onShowMap: () => void;
+}) {
   return (
     <main
       data-testid="meeting-screen"
       data-stage={meeting.stage}
-      className="relative mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+      className="relative mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
     >
-      <Alarm />
-      {/* Leave game is always reachable (UI_UX §5). */}
-      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3">
-        <GameMenu isHost={view.me.isHost} paused={false} canPause={false} />
-      </div>
       <header className="text-center">
-        <p className="text-xs font-semibold tracking-[0.3em] text-muted uppercase">
-          Emergency meeting · called by {meeting.calledBy}
-        </p>
+        <div className="flex items-start gap-2">
+          {/* A spacer as wide as the menu keeps the line centred; long names wrap instead of
+              running under the menu. */}
+          <span aria-hidden="true" className="w-11 shrink-0" />
+          <p className="min-w-0 flex-1 pt-3 text-xs font-semibold tracking-[0.3em] break-words text-muted uppercase">
+            Emergency meeting · called by {meeting.calledBy}
+          </p>
+          {/* Leave game is always reachable (UI_UX §5). */}
+          <GameMenu isHost={view.me.isHost} paused={false} canPause={false} />
+        </div>
         <h1 data-testid="meeting-stage" className="mt-1 font-display text-4xl font-bold">
           {STAGE_TITLE[meeting.stage]}
         </h1>
@@ -321,7 +372,7 @@ export function MeetingScreen({ view, meeting }: { view: PlayerView; meeting: Me
         </p>
       </header>
       {meeting.stage !== 'result' && <Countdown meeting={meeting} />}
-      {meeting.stage === 'gather' && <Gather view={view} meeting={meeting} />}
+      {meeting.stage === 'gather' && <Gather view={view} meeting={meeting} onShowMap={onShowMap} />}
       {meeting.stage === 'discuss' && <Discuss meeting={meeting} spectator={spectator} />}
       {meeting.stage === 'vote' && <Vote meeting={meeting} spectator={spectator} />}
       {meeting.stage === 'result' && <Result meeting={meeting} />}

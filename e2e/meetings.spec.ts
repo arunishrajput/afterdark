@@ -76,6 +76,21 @@ test('a meeting runs gather → discuss → vote → result, with the match time
   await expect(host.getByTestId('meeting-stage')).toHaveText('Go to the Base');
   await expect(host.getByTestId('base-distance')).toBeVisible();
   await host.screenshot({ path: `${SHOT}-gather.png` });
+
+  // The way to the Base on the full-screen map (ADR-105): still neutral, one tap back.
+  await host.getByTestId('meeting-show-map').click();
+  await expect(host.getByTestId('meeting-map')).toBeVisible();
+  await expect(host.getByTestId('meeting-map-timer')).toHaveText(/^\d{2}:\d{2}$/);
+  await expect(host.getByTestId('map')).toBeVisible();
+  expect(await host.evaluate(() => document.documentElement.dataset.theme)).toBe('neutral');
+  await host.waitForTimeout(1500); // tiles, for the screenshot
+  await host.screenshot({ path: `${SHOT}-gather-map.png` });
+  await host.getByTestId('meeting-back').click();
+  await expect(host.getByTestId('meeting-stage')).toHaveText('Go to the Base');
+  // Guest A keeps the map open: it closes by itself once Discuss starts.
+  await a.getByTestId('meeting-show-map').click();
+  await expect(a.getByTestId('meeting-map')).toBeVisible();
+
   for (const p of players) await simTeleportToBase(p);
   // The bots may already be at the Base (then Discuss is up at once), so the arrival check is only made while Gather lasts.
   const stage = host.getByTestId('meeting-stage');
@@ -87,6 +102,8 @@ test('a meeting runs gather → discuss → vote → result, with the match time
 
   // Discuss starts when everyone is at the Base (the bots walk there) or after 180 s.
   await expect(host.getByTestId('meeting-stage')).toHaveText('Discuss', { timeout: 200_000 });
+  await expect(a.getByTestId('meeting-stage')).toHaveText('Discuss');
+  await expect(a.getByTestId('meeting-map')).toHaveCount(0);
   await expect(host.getByTestId('roster-card')).toHaveCount(6);
   await host.screenshot({ path: `${SHOT}-discuss.png` });
   for (const p of players) await p.getByTestId('skip-to-vote').click();

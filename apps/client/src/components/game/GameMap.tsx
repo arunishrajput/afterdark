@@ -7,6 +7,7 @@ import { useGame } from '../../store';
 import type { MapInsets } from '../map/insets';
 import type { SetupOverlay } from '../map/SetupLayers';
 import type { TaskOverlay } from '../map/TaskLayers';
+import { publicDots } from '../meeting/meetingState';
 
 // Leaflet is heavy: fetched only once a lobby is open (same chunk as the lobby map).
 const MapView = lazy(() => import('../map/MapView'));
@@ -25,6 +26,7 @@ export function GameMap({
   placing,
   resizeKey,
   insets,
+  meeting,
 }: {
   view: PlayerView;
   simulated: boolean;
@@ -39,6 +41,8 @@ export function GameMap({
   resizeKey?: string;
   /** A full-screen map under the HUD and the sheet (MapScreen). */
   insets?: MapInsets | undefined;
+  /** A meeting's map (ADR-105): public dot marks only, and the Base's arrival ring. */
+  meeting?: { baseRadiusM: number } | undefined;
 }) {
   const radar = useGame((s) => s.radar);
   const self = useSelfPosition(view);
@@ -49,7 +53,9 @@ export function GameMap({
     noGo: map.noGo,
     base: map.base,
     counts: view.game?.regionCounts ?? [],
+    baseRadiusM: meeting?.baseRadiusM,
   };
+  const dots = radar?.dots ?? [];
   return (
     <Suspense
       fallback={
@@ -61,7 +67,7 @@ export function GameMap({
       <MapView
         ring={map.boundary?.ring}
         self={self}
-        dots={radar?.dots ?? []}
+        dots={meeting ? publicDots(dots) : dots}
         overlay={overlay}
         spawn={spawn}
         tasks={tasks}

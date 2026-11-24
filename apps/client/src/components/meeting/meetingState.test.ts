@@ -1,7 +1,7 @@
 import type { MeetingView } from '@afterdark/shared';
 import { describe, expect, it } from 'vitest';
 
-import { candidates, remainingMs, revealCopy, tallyRows } from './meetingState';
+import { candidates, publicDots, remainingMs, revealCopy, tallyRows } from './meetingState';
 
 const roster: MeetingView['roster'] = [
   { playerId: 'a', username: 'Asha', status: 'active', connected: true },
@@ -65,5 +65,17 @@ describe('tallyRows', () => {
 describe('candidates', () => {
   it('lists active players only', () => {
     expect(candidates({ roster }).map((r) => r.playerId)).toEqual(['a', 'b']);
+  });
+});
+
+describe('publicDots', () => {
+  it('keeps only the marks everyone may see on a meeting map (no ally or infection marks)', () => {
+    const dots = publicDots([
+      { alias: 'x', lat: 1, lng: 2, flags: ['ally', 'oob'] },
+      { alias: 'y', lat: 3, lng: 4, flags: ['infected', 'stale'] },
+      { alias: 'z', lat: 5, lng: 6, flags: ['exposed'] },
+    ]);
+    expect(dots.map((d) => d.flags)).toEqual([['oob'], ['stale'], []]);
+    expect(dots[0]).toMatchObject({ alias: 'x', lat: 1, lng: 2 });
   });
 });

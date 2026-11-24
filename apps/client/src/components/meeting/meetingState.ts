@@ -1,5 +1,12 @@
 /** Pure helpers for the meeting screens: copy, timers and tally rows (MEETINGS §3–§4). */
-import type { MeetingOutcome, MeetingStage, MeetingTally, MeetingView } from '@afterdark/shared';
+import type {
+  AnonDot,
+  DotFlag,
+  MeetingOutcome,
+  MeetingStage,
+  MeetingTally,
+  MeetingView,
+} from '@afterdark/shared';
 
 export const STAGE_TITLE: Record<MeetingStage, string> = {
   gather: 'Go to the Base',
@@ -60,3 +67,13 @@ export function tallyRows(m: Pick<MeetingView, 'tallies' | 'roster' | 'outcome'>
 /** Who a vote can go to: every active player in the meeting roster (the voter included, MEETINGS §3). */
 export const candidates = (m: Pick<MeetingView, 'roster'>) =>
   m.roster.filter((r) => r.status === 'active');
+
+/** The dot marks anyone may see: an imposter's ally and infection marks never show on a meeting map. */
+const PUBLIC_FLAGS: readonly DotFlag[] = ['oob', 'stale'];
+
+/**
+ * Radar dots for the map during a meeting (ADR-105): the meeting is neutral for everyone so a glance
+ * at a phone in the circle gives nothing away, and an imposter's map must not either.
+ */
+export const publicDots = (dots: readonly AnonDot[]): AnonDot[] =>
+  dots.map((d) => ({ ...d, flags: d.flags.filter((f) => PUBLIC_FLAGS.includes(f)) }));

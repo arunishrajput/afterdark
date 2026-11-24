@@ -14,7 +14,7 @@ import {
   type TaskPointPublic,
 } from '@afterdark/shared';
 import { useMemo } from 'react';
-import { Marker, Polygon, Tooltip } from 'react-leaflet';
+import { Circle, Marker, Polygon, Tooltip } from 'react-leaflet';
 
 import { areaToLatLngs, ringToLatLngs, toLeaflet } from './geo';
 import { baseIcon, pointIcon, regionLabelIcon } from './icons';
@@ -28,7 +28,18 @@ export interface SetupOverlay {
   counts: readonly RegionCount[];
   /** Draw the 9 sections of this region, with labels. */
   previewRegionId?: string | undefined;
+  /** A meeting: ring the Base with the radius that counts as arrived. */
+  baseRadiusM?: number | undefined;
 }
+
+/** The Base's arrival ring in a meeting: the Base flag's gold, dashed, a faint fill. */
+const BASE_RING_STYLE = {
+  color: '#ffd166',
+  weight: 2,
+  dashArray: '6 6',
+  fillColor: '#ffd166',
+  fillOpacity: 0.1,
+} as const;
 
 /** What a tap on the map does while the host edits (tapping a point deletes it). */
 export type MapTool = 'none' | 'points' | 'base' | 'nogo';
@@ -144,6 +155,14 @@ export function SetupLayers({
           zIndexOffset={500}
         />
       ))}
+      {base && overlay.baseRadiusM !== undefined && (
+        <Circle
+          center={toLeaflet(base)}
+          radius={overlay.baseRadiusM}
+          pathOptions={BASE_RING_STYLE}
+          interactive={false}
+        />
+      )}
       {base && (
         <Marker
           position={toLeaflet(base)}
