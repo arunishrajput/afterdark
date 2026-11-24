@@ -84,6 +84,13 @@ export function startWatch(): void {
   );
 }
 
+/** Restarts a running watch (after the page was in the background), keeping its accuracy mode. */
+export function refreshWatch(): void {
+  if (watchId === undefined) return;
+  stopWatch();
+  startWatch();
+}
+
 export function stopWatch(): void {
   if (watchId === undefined) return;
   navigator.geolocation.clearWatch(watchId);

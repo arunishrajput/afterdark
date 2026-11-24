@@ -1,12 +1,13 @@
 import { reloadForUpdate, updateBannerAllowed, usePwa } from '../../net/pwa';
-import { useGame } from '../../store';
+import { useConnection, useGame } from '../../store';
 import { Button } from '../ui/Button';
 
 /** "Update available" bar. Held back while a game is running; it appears in the lobby, on Home or on the results. */
 export function UpdateBanner() {
   const ready = usePwa((s) => s.updateReady);
   const phase = useGame((s) => s.view?.lobby.phase);
-  if (!ready || !updateBannerAllowed(phase)) return null;
+  const offline = useConnection((s) => s.downSince !== undefined);
+  if (!ready || offline || !updateBannerAllowed(phase)) return null;
   return (
     <div
       role="status"

@@ -12,11 +12,18 @@ import { toastFor, useConnection, useGame } from '../store';
 import { bestEstimate, type ClockSample, sampleFromPing } from './clock';
 import { playCue } from './cues';
 import type { ClientErrorCode } from './errors';
+import { startLifecycle } from './lifecycle';
 import { clearSession, loadSession } from './persist';
 
 export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
-export const socket: GameSocket = io({ autoConnect: false });
+export const socket: GameSocket = io({
+  autoConnect: false,
+  // A phone walking through patchy signal should be back within seconds, not after a long backoff.
+  reconnectionDelay: DEFAULT_CONFIG.reconnectDelayMs,
+  reconnectionDelayMax: DEFAULT_CONFIG.reconnectDelayMaxMs,
+  randomizationFactor: 0.3,
+});
 
 type AckData<E extends keyof ClientToServerEvents> =
   Parameters<ClientToServerEvents[E]>[1] extends AckCallback<infer T> ? T : never;
@@ -127,6 +134,25 @@ export function startConnection(): void {
       g.setNotice({ kind: 'replaced' });
     }
   });
+
+  startLifecycle(
+    {
+      reconnectNow: () => {
+        socket.disconnect().connect(); // skips the backoff timer
+      },
+      verifyLink: () => {
+        void (async () => {
+          const res = await request('time:ping', { clientTs: Date.now() });
+          if (res.ok) {
+            void syncClock();
+          } else if (res.code === 'TIMEOUT') {
+            socket.disconnect().connect(); // a half-dead link: start over, which resumes the session
+          }
+        })();
+      },
+    },
+    () => socket.connected,
+  );
 
   socket.connect();
 }

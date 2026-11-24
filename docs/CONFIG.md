@@ -182,6 +182,9 @@ Rules: [MEETINGS.md](MEETINGS.md).
 | `clockSyncSamples` | 5 | — | 🔒 | `time:ping` round trips per clock sync; the lowest-RTT sample sets the offset. |
 | `clockSyncIntervalMs` | 30000 | — | 🔒 | How often the client re-syncs its server-clock offset. |
 | `ackTimeoutMs` | 5000 | — | 🔒 | Client gives up waiting for an ack after this. |
+| `reconnectDelayMs` | 500 | — | 🔒 | Socket.IO's first reconnect delay; it backs off from here (with jitter). |
+| `reconnectDelayMaxMs` | 3000 | — | 🔒 | The longest the client waits between reconnect attempts, so a player back in signal is reconnected within seconds. |
+| `reconnectBannerAfterMs` | 2000 | — | 🔒 | The "Reconnecting…" banner appears only after the connection has been down this long (no flash on a blip). |
 | `tickIntervalMs` | 1000 | — | 🔒 | Server room tick (countdowns, timers, win checks). |
 | `socketEventsPerSecond` | 10 | — | 🔒 | Basic per-socket rate limit for client → server events; extra events get `RATE_LIMITED`. |
 | `locEventsPerSecond` | 2 | — | 🔒 | Separate per-socket limit for `loc:update` (which has no ack): extra fixes are dropped silently. It does not count against `socketEventsPerSecond`. |

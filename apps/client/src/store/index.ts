@@ -7,6 +7,8 @@ export type ConnectionStatus = 'connecting' | 'connected';
 
 interface ConnectionState {
   status: ConnectionStatus;
+  /** Browser ms when the connection dropped; undefined while connected (or before the first connect). */
+  downSince: number | undefined;
   rttMs: number | undefined;
   offsetMs: number;
   setStatus: (status: ConnectionStatus) => void;
@@ -15,9 +17,14 @@ interface ConnectionState {
 
 export const useConnection = create<ConnectionState>()((set) => ({
   status: 'connecting',
+  downSince: undefined,
   rttMs: undefined,
   offsetMs: 0,
-  setStatus: (status) => set({ status }),
+  setStatus: (status) =>
+    set((s) => ({
+      status,
+      downSince: status === 'connected' ? undefined : (s.downSince ?? Date.now()),
+    })),
   setClock: ({ rttMs, offsetMs }) => set({ rttMs, offsetMs }),
 }));
 
