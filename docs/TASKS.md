@@ -81,7 +81,7 @@ interface MinigameDef<P, S, A, Act = never, F = never> {
 1. **Generation:** when a crew member A's slot rolls co-op, pick partner B uniformly at random from active, connected players other than A, crew or imposter. B must not already hold a partner task, and must not be A's partner on another co-op task. If nobody is eligible, a solo task is generated instead.
 2. **The partner slot:** each player can hold **at most 1 partner co-op task**, in addition to their own slots. For crew this is a fourth card marked "Requested by a teammate". For imposters it is their only kind of task. The task occupies one of A's own 3 slots.
 3. **Cards:** A sees "Co-op: find **`<B's tag>`** · NE of Region B", and B sees the same with A's tag. Both get Stage 1 and Stage 2 reveals. Both must be AT_PIN.
-4. **Session:** the first player to tap "Start co-op" at the pin opens a **waiting** session that lasts until expiry. The second participant joins with `coop:join` when within `reachRadiusM` (15 m). The minigame starts once both have joined. Leaving the reach radius by more than 10 m resets the session to waiting.
+4. **Session:** the first player to tap "Start co-op" at the pin opens a **waiting** session that lasts until expiry (the client shows the wait on the task card, with Cancel, and keeps the map in view: ADR-104). The second participant joins with `coop:join` when within `reachRadiusM` (15 m). The minigame starts once both have joined. Leaving the reach radius by more than 10 m resets the session to waiting.
 5. **Who can join a waiting session:**
    - the assigned partner
    - **or** any camouflaged imposter (RULES §7.4) who is at the pin while the assigned partner has not joined

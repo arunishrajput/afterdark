@@ -25,7 +25,7 @@ CALLED → GATHER (≤ meetingGatherS 180 s) → DISCUSS (meetingDiscussS 90 s) 
 | Stage | What happens | Ends when |
 |---|---|---|
 | **Called** (instant) | Every phone shows a full-screen alarm with vibration: "**`<username>`** called a meeting. Go to the Base." Every minigame in progress resets, and every infection channel is cancelled. | Immediately becomes Gather |
-| **Gather** | Map shows the Base and the distance to it. The roster shows who has arrived (within `baseRadiusM`, 30 m). | Every active, connected player has arrived, **or** 180 s pass |
+| **Gather** | The screen shows the arrow and distance to the Base; **Show the map** switches to the full-screen map with the Base and its `baseRadiusM` ring (no tasks, no imposter-only marks; ADR-105). The roster shows who has arrived (within `baseRadiusM`, 30 m). | Every active, connected player has arrived, **or** 180 s pass |
 | **Discuss** | Countdown screen with the roster: usernames, connection state and spectator marks. No in-app interaction. | 90 s pass, **or** every active player taps "Skip to vote" |
 | **Vote** | Every active player picks one username or **Skip**, and confirms. A vote can't be changed once confirmed. A missing vote counts as Skip. Being at the Base is **not** required to vote, so GPS trouble never disenfranchises anyone. | 45 s pass, or everyone has voted |
 | **Result** | Tallies per username plus Skip. Never shows who voted for whom. Then the outcome (§4). | 8 s pass |
