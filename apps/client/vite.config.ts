@@ -44,7 +44,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'],
         // index.html is NetworkFirst below; keep it out of the precache so a deploy can't be hidden by it.
         globIgnores: ['**/index.html'],
         navigateFallback: null,
