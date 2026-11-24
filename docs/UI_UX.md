@@ -24,7 +24,7 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 ## 2. Screens
 | Screen | Key content | Notes |
 |---|---|---|
-| **Home** | Logo, "Create game", "Join game" (code input), How to play | `?code=` pre-fills Join |
+| **Home** | A hero (ADR-110): the live night map (players walking in a drawn area, task pins, the Base, the crescent-and-eye, one player tailed by an Imposter), the split-tone AfterDark wordmark, "Among Us, played on your feet.", a one-line pitch, the facts line (players and minutes, from the config and presets), "Create game", "Join game" (code input), Install, How to play, the connection pill. Below the fold, "How a game goes" (three beats with the How to play pictures, the win conditions, "Walk, never run", "Read the full rules"). Two columns on a laptop | `?code=` pre-fills Join. Create and Join stay above the fold on a 360 × 640 phone. The map stands still with reduced motion |
 | **Join / Create** | Username field and safety notice checkbox (required) | Validates in real time |
 | **Lobby** | Large code with share and QR buttons, player list (ready ✓, host 👑, connection dot), map preview, setup checklist, Ready button, Test-mode badge | Ready is disabled until location is granted and good |
 | **Host setup** (host only) | Steps: ① Boundary ② Regions ③ Task points ④ No-go zones ⑤ Base ⑥ Settings (presets Quick 15 / Standard 25 / Long 40, with advanced settings collapsed) | Each step shows ✓ when valid. Any edit un-readies everyone, with a toast. |
