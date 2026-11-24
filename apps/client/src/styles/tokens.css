@@ -2,6 +2,13 @@
  * Theme tokens (docs/UI_UX.md §1). The theme is chosen by `data-theme` on
  * <html>: `crew`, `imposter` or `neutral` (lobby, meetings, results).
  */
+/* The two team colours as fixed brand colours, for pictures that show both teams whatever the
+   theme (Home's night map). They equal the crew and imposter accents below. */
+:root {
+  --brand-crew: #2e8bff;
+  --brand-imposter: #ff3b3b;
+}
+
 :root,
 [data-theme='neutral'] {
   --bg: #07080a;

@@ -23,6 +23,20 @@ async function expectNoSidewaysScroll(page: Page, where: string) {
   ).toBeLessThanOrEqual(client);
 }
 
+test('Home fits a short 360 px phone: Create and Join show without scrolling', async ({ page }) => {
+  // 640 px is about what a 360 px Android phone shows with the browser's bars.
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'AfterDark' })).toBeVisible();
+  await expect(page.getByTestId('night-scene')).toBeVisible();
+  await expectNoSidewaysScroll(page, 'home');
+  for (const name of ['Create game', 'Join game']) {
+    const box = await page.getByRole('button', { name }).boundingBox();
+    expect(box && box.y + box.height, `${name} is above the fold`).toBeLessThanOrEqual(640);
+  }
+  await page.screenshot({ path: `${SHOT}/home-360.png` });
+});
+
 test('the lobby, its settings and How to play fit a 360 px phone', async ({ page }) => {
   await createLobby(page, 'Human');
   await expect(page.getByTestId('setup-wizard')).toBeVisible();
