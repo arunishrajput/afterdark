@@ -1,5 +1,6 @@
 import './styles/index.css';
 
+import { createRng, DEFAULT_CONFIG, pointInSection } from '@afterdark/shared';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -42,6 +43,21 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {
     },
     /** The viewer's own task cards. */
     cardsOf: () => useGame.getState().view?.game?.tasks ?? [],
+    /**
+     * A spot inside card `index`'s section, checked with the server's own rule (`pointInSection`,
+     * as the bots use): the drawn wedge and the rule can disagree by a sliver at a border (ADR-044).
+     */
+    spotInCard: (index: number) => {
+      const v = useGame.getState().view;
+      const card = v?.game?.tasks?.[index];
+      if (!v || !card) return undefined;
+      return pointInSection(
+        v.lobby.map.regions,
+        card,
+        DEFAULT_CONFIG.sectionCentreRatio,
+        createRng(index + 1),
+      );
+    },
     /** The Base's position (it is on everyone's map): where a test sends its simulated players for a meeting. */
     baseOf: () => useGame.getState().view?.lobby.map.base,
     /** A Phantom's own fakes (where a test sends the crew player who will be fooled). */

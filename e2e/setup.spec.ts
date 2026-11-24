@@ -1,12 +1,48 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { createLobby, drawCircle, enableTestMode, joinLobby, mapPoint, newPlayer } from './helpers';
+import {
+  createLobby,
+  drawCircle,
+  enableTestMode,
+  joinLobby,
+  newPlayer,
+  waitForMapStill,
+} from './helpers';
 
 // Four browser contexts and a drawn map: allow more than the 30 s default.
 test.describe.configure({ timeout: 90_000 });
 
 const label = (page: Page) => page.locator('.region-label');
 const points = (page: Page) => page.locator('.task-point');
+const RECT_HALF_PX = 20;
+
+/** Page position of the task point nearest the middle of the map frame, clear of the player's own marker and the edges. */
+async function pointNearMiddle(page: Page) {
+  return page.evaluate(() => {
+    const frame = document.querySelector('[data-testid="map-frame"]')?.getBoundingClientRect();
+    if (!frame) throw new Error('no map frame');
+    const cx = frame.left + frame.width / 2;
+    const cy = frame.top + frame.height / 2;
+    const margin = 50;
+    const spots = [...document.querySelectorAll('.task-point')]
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      })
+      .filter(
+        (p) =>
+          p.x > frame.left + margin &&
+          p.x < frame.right - margin &&
+          p.y > frame.top + margin &&
+          p.y < frame.bottom - margin &&
+          Math.hypot(p.x - cx, p.y - cy) > 40,
+      )
+      .sort((p, q) => Math.hypot(p.x - cx, p.y - cy) - Math.hypot(q.x - cx, q.y - cy));
+    const best = spots[0];
+    if (!best) throw new Error('no task point on screen');
+    return best;
+  });
+}
 
 /**
  * Taps bare map (real mouse click) at the spot within the drawn circle (about 55 px of the player's marker) that is furthest
@@ -208,12 +244,16 @@ test('a no-go zone drawn with the real tool removes the points inside it and can
   const before = await points(host).count();
   await expect(points(guest)).toHaveCount(before);
 
-  // ④ Draw a rectangle over the middle of the map with Geoman's rectangle tool (two corner clicks).
+  // ④ Draw a small rectangle around one task point with Geoman's rectangle tool (two corner clicks).
+  // Aim at a real point once the map is still: the middle of the map may hold no point for some
+  // layouts (they are seeded by the lobby code), and a map still settling moves the corners.
   await host.getByTestId('step-nogo').click();
   await host.getByTestId('map-frame').scrollIntoViewIfNeeded();
+  await waitForMapStill(host);
   await host.locator('.leaflet-pm-icon-rectangle').click();
-  const a = await mapPoint(host, -0.0003, 0.0003);
-  const b = await mapPoint(host, 0.0003, -0.0003);
+  const target = await pointNearMiddle(host);
+  const a = { x: target.x - RECT_HALF_PX, y: target.y - RECT_HALF_PX };
+  const b = { x: target.x + RECT_HALF_PX, y: target.y + RECT_HALF_PX };
   await host.mouse.move(a.x, a.y, { steps: 3 });
   await host.mouse.click(a.x, a.y);
   await host.mouse.move(b.x, b.y, { steps: 5 });

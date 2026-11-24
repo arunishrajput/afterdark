@@ -17,7 +17,7 @@ import {
   setMinigames,
   simTeleport,
   simTeleportToBase,
-  spotInHighlight,
+  spotInCard,
   startAndReveal,
 } from './helpers';
 
@@ -46,18 +46,11 @@ const metresEast = (m: number) => m / (M_PER_DEG_LAT * Math.cos((HOME.lat * Math
 const positionOf = (card: Locator) =>
   card.evaluate((el) => Array.from(el.parentElement?.children ?? []).indexOf(el));
 
-/** Stage 1 → 2 → at the pin for one card. */
+/** Stage 1 → 2 → at the pin for one card (the spot follows the server's section rule). */
 async function reachCardPin(page: Page, card: Locator) {
   const index = await positionOf(card);
-  for (let rank = 0; rank < 3; rank++) {
-    if ((await card.getAttribute('data-stage')) !== 'assigned') break;
-    await simTeleport(page, await spotInHighlight(page, index, rank));
-    try {
-      await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 10_000 });
-    } catch (error) {
-      if (rank === 2) throw error;
-    }
-  }
+  await simTeleport(page, await spotInCard(page, index));
+  await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 15_000 });
   await simTeleport(page, await pinPosition(page, index));
   await expect(card).toHaveAttribute('data-stage', 'atPin', { timeout: 15_000 });
 }

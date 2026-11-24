@@ -146,6 +146,25 @@ export async function drawCircle(host: Page, radiusDegLng = 0.001) {
   await host.mouse.click(edge.x, edge.y);
 }
 
+/** Waits until the map's centre and zoom stop changing (a fit or a fly-to has finished). */
+export async function waitForMapStill(page: Page) {
+  const STILL_MS = 400;
+  const view = () =>
+    page.evaluate(() => {
+      const map = (window as unknown as { __afterdarkMap?: TestMap }).__afterdarkMap;
+      if (!map) throw new Error('map test hook missing');
+      const c = map.getCenter();
+      return `${c.lat.toFixed(7)},${c.lng.toFixed(7)},${map.getZoom()}`;
+    });
+  await expect
+    .poll(async () => {
+      const first = await view();
+      await page.waitForTimeout(STILL_MS);
+      return first === (await view());
+    })
+    .toBe(true);
+}
+
 /** Zoom the map out so points well outside the boundary are on screen. */
 export async function zoomTo(page: Page, zoom: number) {
   await page.evaluate((z) => {
@@ -224,6 +243,17 @@ interface Actions {
   cardsOf(): (
     { id: string; stage: 'assigned' } | { id: string; stage: 'pin'; lat: number; lng: number }
   )[];
+  spotInCard(index: number): { lat: number; lng: number } | undefined;
+}
+
+/** A spot inside card `index`'s section by the server's own rule (the test hook uses `pointInSection`). */
+export async function spotInCard(page: Page, index = 0): Promise<{ lat: number; lng: number }> {
+  const spot = await page.evaluate(
+    (i) => (window as unknown as { __afterdarkActions: Actions }).__afterdarkActions.spotInCard(i),
+    index,
+  );
+  if (!spot) throw new Error(`no spot in card ${index}'s section`);
+  return spot;
 }
 
 /** Test hook (`window.__afterdarkActions`): host picks which minigames can be rolled, before the game starts. */
@@ -407,10 +437,14 @@ export async function reachPin(page: Page, shot = 'test-results/phase05') {
   await page.screenshot({ path: `${shot}-stage1-section.png` });
 
   // Stage 1 → 2: stand inside the highlighted section; the server reveals the pin after 3 s.
-  // A thin wedge can be hard to hit, so try the next-best spot if the pin does not appear.
+  // The first spot follows the server's own rule (a thin wedge's drawing and the rule can disagree
+  // at the border, ADR-044); the drawn highlight's best spots are the fallbacks.
   const REVEAL_TRIES = 3;
   for (let rank = 0; rank < REVEAL_TRIES; rank++) {
-    await simTeleport(page, await spotInHighlight(page, 0, rank));
+    await simTeleport(
+      page,
+      rank === 0 ? await spotInCard(page, 0) : await spotInHighlight(page, 0, rank),
+    );
     try {
       // The pin appears (the spot may already be within reach of it, so "at the pin" is fine too).
       await expect(card).not.toHaveAttribute('data-stage', 'assigned', { timeout: 10_000 });
