@@ -10,6 +10,7 @@ import { Roster } from '../components/lobby/Roster';
 import { SettingsSheet, SettingsSummary } from '../components/lobby/Settings';
 import { MapPanel } from '../components/MapPanel';
 import { Button } from '../components/ui/Button';
+import { SoundToggle } from '../components/ui/SoundToggle';
 import { VersionTag } from '../components/ui/VersionTag';
 import { leaveLobby, setReady } from '../net/actions';
 import { messageFor } from '../net/errors';
@@ -38,11 +39,14 @@ export function Lobby({ view }: { view: PlayerView }) {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <header className="flex items-center justify-between">
         <span className="font-display text-xl font-bold">AfterDark</span>
-        {lobby.testMode && (
-          <span className="rounded-md border border-danger/50 px-2 py-0.5 font-mono text-xs font-semibold tracking-widest text-danger">
-            TEST MODE
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {lobby.testMode && (
+            <span className="rounded-md border border-danger/50 px-2 py-0.5 font-mono text-xs font-semibold tracking-widest text-danger">
+              TEST MODE
+            </span>
+          )}
+          <SoundToggle />
+        </div>
       </header>
 
       <CodeCard code={lobby.code} />

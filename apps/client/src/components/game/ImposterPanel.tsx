@@ -9,7 +9,7 @@ import { useEffect, useRef } from 'react';
 
 import { useServerNow } from '../../hooks/useServerNow';
 import { cancelInfect, startInfect } from '../../net/actions';
-import { buzz } from '../../net/cues';
+import { haptic } from '../../net/cues';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { Button } from '../ui/Button';
@@ -21,8 +21,6 @@ import { ProgressRing } from './ProgressRing';
 
 const REFRESH_MS = 250;
 const MS_PER_S = 1000;
-const BUZZ_START_MS = [80];
-const BUZZ_GAP_MS = [60, 40, 60, 40, 60];
 
 const INFECT_ERRORS: Partial<Record<string, string>> = {
   OUT_OF_RANGE: 'No one is close enough.',
@@ -60,8 +58,8 @@ export function ImposterPanel({
   });
   useEffect(() => {
     const before = was.current;
-    if (channel && !before.channel) buzz(BUZZ_START_MS);
-    if (channel && before.inRange === true && inRange === false) buzz(BUZZ_GAP_MS);
+    if (channel && !before.channel) haptic('infectStart');
+    if (channel && before.inRange === true && inRange === false) haptic('infectGap');
     was.current = { channel: channel !== undefined, inRange };
   }, [channel, inRange]);
 

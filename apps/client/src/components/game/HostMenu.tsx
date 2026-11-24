@@ -5,6 +5,7 @@ import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
+import { SoundToggle } from '../ui/SoundToggle';
 
 /**
  * The game menu (UI_UX §5: "Leave game" is always reachable). The host also gets
@@ -51,6 +52,7 @@ export function GameMenu({
         }}
       >
         <div className="flex flex-col gap-3">
+          <SoundToggle className="self-start" />
           {isHost && canPause && (
             <Button
               data-testid={paused ? 'resume-game' : 'pause-game'}

@@ -18,6 +18,7 @@ import {
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { cancelTask, openTask, submitTask, taskAction } from '../../net/actions';
+import { playSound } from '../../net/cues';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { Button } from '../ui/Button';
@@ -142,9 +143,12 @@ export function TaskPlayer({ card, onClose: close }: { card: TaskCard; onClose: 
       setLockedUntil(Date.now() + DEFAULT_CONFIG.taskWrongLockoutS * MS_PER_S);
       setNow(Date.now());
       setShake((n) => n + 1);
+      playSound('fail');
       return;
     }
     setMessage(undefined);
+    // A real success is heard from the server's `task.completed`; a fake has no such event.
+    if (res.data.result === 'fooled') playSound('fooled');
     setStep({ kind: 'done', result: res.data.result, points: res.data.points });
   };
 

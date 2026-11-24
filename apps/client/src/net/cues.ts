@@ -1,93 +1,131 @@
 /**
- * Direction cues (UI_UX §3): so players don't stare at the screen while walking,
- * the pin reveal and the arrival at a pin buzz (Android: `navigator.vibrate`) and
- * chime. iOS has no vibration, so the chime and the toast are the fallback.
+ * Direction and event cues (UI_UX §3): so players don't stare at the screen while
+ * walking, events buzz (Android: `navigator.vibrate`) and sound. The kit is in
+ * `sounds.ts`; a mute toggle (remembered on the device) silences the sounds.
  */
 import type { GameEvent } from '@afterdark/shared';
+import { useState } from 'react';
+import { create } from 'zustand';
 
-const BUZZ_REVEAL_MS = [120, 60, 120];
-const BUZZ_ARRIVE_MS = [200, 80, 200, 80, 300];
-const BUZZ_COMPROMISED_MS = [60, 40, 60, 40, 220];
-const BUZZ_EXPOSED_MS = [250];
-const BUZZ_FAILED_MS = [100, 50, 100];
-const BUZZ_MEETING_MS = [400, 150, 400, 150, 600];
-const BUZZ_JAM_MS = [300, 80, 120, 80, 300];
-const CHIME_HZ = {
-  revealed: 660,
-  atPin: 880,
-  done: 1040,
-  glitch: 180,
-  exposed: 520,
-  alarm: 740,
-  jam: 140,
-} as const;
-const CHIME_S = 0.18;
-const CHIME_GAIN = 0.08;
+import { type HapticId, HAPTICS, type SoundId, SOUNDS } from './sounds';
+
+const MUTE_KEY = 'afterdark.muted';
+
+function readMuted(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(MUTE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+interface SoundState {
+  muted: boolean;
+  setMuted: (muted: boolean) => void;
+}
+
+export const useSound = create<SoundState>()((set) => ({
+  muted: readMuted(),
+  setMuted: (muted) => {
+    set({ muted });
+    try {
+      globalThis.localStorage?.setItem(MUTE_KEY, muted ? '1' : '0');
+    } catch {
+      // blocked storage: the choice lasts until the page closes
+    }
+  },
+}));
 
 let audio: AudioContext | undefined;
 
-function chime(hz: number, wave: OscillatorType = 'sine'): void {
+/** Plays one sound from the kit, unless muted. Quietly does nothing where audio is blocked. */
+export function playSound(id: SoundId): void {
+  if (useSound.getState().muted) return;
   try {
     audio ??= new AudioContext();
     const ctx = audio;
     if (ctx.state === 'suspended') void ctx.resume();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = wave;
-    osc.frequency.value = hz;
-    gain.gain.setValueAtTime(CHIME_GAIN, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + CHIME_S);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + CHIME_S);
+    const t0 = ctx.currentTime;
+    for (const n of SOUNDS[id]) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = n.wave;
+      osc.frequency.value = n.hz;
+      gain.gain.setValueAtTime(n.gain, t0 + n.at);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + n.at + n.dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0 + n.at);
+      osc.stop(t0 + n.at + n.dur);
+    }
   } catch {
     // No audio (blocked by the browser or unsupported): the toast is the cue.
   }
 }
 
-export function buzz(pattern: number[]): void {
+export function buzz(pattern: readonly number[]): void {
   try {
-    navigator.vibrate?.(pattern);
+    navigator.vibrate?.([...pattern]);
   } catch {
     // Not supported (iOS): ignore.
   }
+}
+
+export function haptic(id: HapticId): void {
+  buzz(HAPTICS[id]);
+}
+
+export function vibrationSupported(): boolean {
+  return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+}
+
+/** Vibration for components: `haptic(id)` plus whether this device can vibrate at all (iOS cannot). */
+export function useHaptics(): { supported: boolean; haptic: typeof haptic } {
+  const [supported] = useState(vibrationSupported);
+  return { supported, haptic };
+}
+
+/** Sound state for the mute toggle. */
+export function useMuted(): [boolean, (muted: boolean) => void] {
+  const muted = useSound((s) => s.muted);
+  const setMuted = useSound((s) => s.setMuted);
+  return [muted, setMuted];
 }
 
 /** Plays the cue for a server event, if it has one. */
 export function playCue(event: GameEvent): void {
   switch (event.type) {
     case 'task.revealed':
-      buzz(BUZZ_REVEAL_MS);
-      chime(CHIME_HZ.revealed);
+      haptic('revealed');
+      playSound('revealed');
       break;
     case 'task.atPin':
-      buzz(BUZZ_ARRIVE_MS);
-      chime(CHIME_HZ.atPin);
+      haptic('atPin');
+      playSound('atPin');
       break;
     case 'task.completed':
-      chime(CHIME_HZ.done);
+      playSound('success');
       break;
     case 'game.compromised':
       // Everyone hears it (the boxes are public), and nothing says who.
-      buzz(BUZZ_COMPROMISED_MS);
-      chime(CHIME_HZ.glitch, 'sawtooth');
+      haptic('compromised');
+      playSound('compromised');
       break;
     case 'infect.completed':
-      buzz(BUZZ_EXPOSED_MS);
-      chime(CHIME_HZ.exposed, 'triangle');
+      haptic('exposed');
+      playSound('exposed');
       break;
     case 'infect.failed':
-      buzz(BUZZ_FAILED_MS);
+      haptic('fail');
       break;
     case 'sabotage.started':
       // Everyone hears it (the lock is public), and nothing says who.
-      buzz(BUZZ_JAM_MS);
-      chime(CHIME_HZ.jam, 'square');
+      haptic('jammed');
+      playSound('jammed');
       break;
     case 'meeting.called':
       // Everyone, imposters included, gets the same alarm (MEETINGS §3).
-      buzz(BUZZ_MEETING_MS);
-      chime(CHIME_HZ.alarm, 'square');
+      haptic('meeting');
+      playSound('meeting');
       break;
     default:
       break;
