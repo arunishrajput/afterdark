@@ -12,6 +12,7 @@ import {
   devUpdateConfig,
   simTeleport,
 } from './net/actions';
+import { startPwa } from './net/pwa';
 import { startConnection } from './net/socket';
 import { useGame } from './store';
 
@@ -19,6 +20,7 @@ const root = document.getElementById('root');
 if (!root) throw new Error('#root missing from index.html');
 
 startConnection();
+startPwa();
 
 // Test hook (like `window.__afterdarkMap`): lets Playwright pick the minigame under test and hop to a place. Dev builds and `?sim` pages only.
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('sim')) {

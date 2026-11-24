@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { playTheme } from './components/game/disguise';
 import { LocationProvider } from './components/LocationProvider';
 import { MeetingScreen } from './components/meeting/MeetingScreen';
+import { UpdateBanner } from './components/pwa/UpdateBanner';
 import { Toasts } from './components/ui/Toasts';
 import { useServerNow } from './hooks/useServerNow';
 import { EntryForm } from './screens/EntryForm';
@@ -89,6 +90,7 @@ export function App() {
     <>
       {inLobby && <LocationProvider simulated={testMode && simOn} />}
       <Screen />
+      <UpdateBanner />
       <Toasts />
     </>
   );

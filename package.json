@@ -21,7 +21,8 @@
     "e2e": "playwright test",
     "tunnel": "cloudflared tunnel --url http://localhost:5173",
     "bots": "pnpm --filter @afterdark/bots start",
-    "bots:simulate": "pnpm --filter @afterdark/server simulate"
+    "bots:simulate": "pnpm --filter @afterdark/server simulate",
+    "icons": "node tools/render-icons.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

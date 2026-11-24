@@ -1,6 +1,7 @@
 import { lobbyCodeSchema } from '@afterdark/shared';
 import { type FormEvent, useState } from 'react';
 
+import { InstallCard } from '../components/pwa/InstallCard';
 import { Button } from '../components/ui/Button';
 import { ConnectionPill } from '../components/ui/ConnectionPill';
 import { Sheet } from '../components/ui/Sheet';
@@ -64,6 +65,8 @@ export function Home({
             Join game
           </Button>
         </form>
+
+        <InstallCard />
 
         <div className="mt-2 flex items-center justify-between">
           <Button variant="ghost" className="-ml-2" onClick={() => setHowTo(true)}>

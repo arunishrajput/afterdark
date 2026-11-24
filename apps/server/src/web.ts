@@ -35,7 +35,7 @@ export function securityHeaders() {
         'font-src': ["'self'", FONT_FILE_HOST],
         'img-src': ["'self'", 'data:', 'blob:', TILE_HOST],
         // 'self' covers the same-origin WebSocket in current browsers.
-        'connect-src': ["'self'"],
+        'connect-src': ["'self'", TILE_HOST], // the service worker fetches tiles for its cache
         'worker-src': ["'self'"],
         'manifest-src': ["'self'"],
         'object-src': ["'none'"],
