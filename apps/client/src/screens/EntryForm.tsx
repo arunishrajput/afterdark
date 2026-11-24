@@ -8,7 +8,7 @@ import type { Entry } from './Home';
 
 /** RULES §3.2 / PRD §8: the notice every player must accept to join. */
 export const SAFETY_NOTICE =
-  'I will play in safe public places, watch for traffic, stop before using my phone, and never trespass.';
+  'I will play in safe public places, walk and never run, watch for traffic, stop before using my phone, and never trespass.';
 
 export function EntryForm({ entry, onBack }: { entry: Entry; onBack: () => void }) {
   const [name, setName] = useState('');

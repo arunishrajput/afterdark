@@ -14,6 +14,7 @@ import { castVote, skipDiscussion } from '../../net/actions';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import { formatClock, formatDistance } from '../game/format';
+import { GameMenu } from '../game/HostMenu';
 import { guidance } from '../game/taskGeo';
 import { Button } from '../ui/Button';
 import {
@@ -301,9 +302,13 @@ export function MeetingScreen({ view, meeting }: { view: PlayerView; meeting: Me
     <main
       data-testid="meeting-screen"
       data-stage={meeting.stage}
-      className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+      className="relative mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
     >
       <Alarm />
+      {/* Leave game is always reachable (UI_UX §5). */}
+      <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3">
+        <GameMenu isHost={view.me.isHost} paused={false} canPause={false} />
+      </div>
       <header className="text-center">
         <p className="text-xs font-semibold tracking-[0.3em] text-muted uppercase">
           Emergency meeting · called by {meeting.calledBy}

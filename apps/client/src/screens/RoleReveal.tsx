@@ -2,6 +2,7 @@ import type { ImposterClass, PlayerView } from '@afterdark/shared';
 import { useCallback, useState } from 'react';
 
 import { formatClock } from '../components/game/format';
+import { GameMenu } from '../components/game/HostMenu';
 import { useServerNow } from '../hooks/useServerNow';
 
 const REFRESH_MS = 250;
@@ -131,6 +132,9 @@ export function RoleReveal({ view }: { view: PlayerView }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="fixed top-[max(0.75rem,env(safe-area-inset-top))] right-3">
+        <GameMenu isHost={view.me.isHost} paused={false} canPause={false} />
+      </div>
       <p className="text-xs font-semibold tracking-[0.3em] text-muted uppercase">Roles are set</p>
       <button
         type="button"
