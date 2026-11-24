@@ -23,38 +23,40 @@
           packages/shared ← used by both (types, schemas, config, geo, rng, minigames)
 ```
 
-## 2. Monorepo layout (created in Phase 0, grows by phase)
+## 2. Monorepo layout (as built, Phase 14)
 ```
 /
-├─ CLAUDE.md  PROGRESS.md  README.md  docs/
-├─ package.json            # root scripts: dev, build, test, lint, typecheck, verify, e2e, bots, tunnel
-├─ pnpm-workspace.yaml     tsconfig.base.json  eslint.config.js  .prettierrc  .nvmrc  render.yaml (Phase 6)
+├─ CLAUDE.md  PROGRESS.md  README.md  CHANGELOG.md  LICENSE  docs/ (DEMO.md, screenshots/)
+├─ package.json            # root scripts: dev, build, test, lint, typecheck, verify, e2e, bots, bots:simulate, bots:load, tunnel, icons
+├─ pnpm-workspace.yaml     tsconfig.base.json  eslint.config.js  .prettierrc  .nvmrc  render.yaml  playwright.config.ts
 ├─ packages/shared/src/
-│   ├─ config/   defaults.ts  schema.ts           # GameConfig inferred from zod ranges (ADR-032)
-│   ├─ protocol/ events.ts  schemas.ts            # mirrors docs/PROTOCOL.md
-│   ├─ types/    domain.ts  view.ts
-│   ├─ geo/      distance.ts  boundary.ts  regions.ts  sections.ts  sampling.ts  index.ts
-│   ├─ minigames/ index.ts  wires.ts  lock.ts  …  data/crosswords.ts
-│   ├─ rules/    start.ts                         # startBlockers(): shared by engine and lobby checklist
-│   ├─ rng.ts    tags.ts   ids.ts
+│   ├─ config/     defaults.ts  schema.ts           # GameConfig inferred from zod ranges (ADR-032)
+│   ├─ protocol/   events.ts  schemas.ts            # mirrors docs/PROTOCOL.md
+│   ├─ types/      view.ts  …                       # PlayerView and its parts
+│   ├─ geo/        distance boundary plane sampling regions sections pool zones polylabel
+│   ├─ minigames/  wires lock pattern signal slide crossword keyfetch coopPin  index.ts  data/
+│   ├─ rules/      start.ts  setup.ts  buckets.ts  meeting.ts  victory.ts   # shared by engine and client
+│   └─ rng.ts  ids.ts  tags.ts  bots.ts (BotWalker, ChaseBrain)
 ├─ apps/server/src/
-│   ├─ index.ts  app.ts  env.ts  logger.ts  version.ts
-│   ├─ socket/   gateway.ts  handler.ts (validated())  context.ts  wiring.ts  types.ts  handlers/*.ts  rateLimit.ts
-│   ├─ rooms/    RoomManager.ts  Room.ts  sessions.ts  ViewEmitter.ts  lobbyCode.ts
-│   ├─ engine/   state.ts  reduce.ts  tick.ts  clock.ts
-│   │            systems/ lobby.ts location.ts spawn.ts roles.ts tasks.ts infection.ts abilities.ts
-│   │                     meetings.ts zone.ts victory.ts log.ts rematch.ts end.ts
-│   └─ views/    projectView.ts  radar.ts  projectResults.ts
+│   ├─ index.ts  app.ts  web.ts (helmet, static)  env.ts  logger.ts  version.ts
+│   ├─ socket/     gateway.ts  handler.ts (validated())  context.ts  wiring.ts  rateLimit.ts  lobbyLimits.ts  handlers/*.ts
+│   ├─ rooms/      RoomManager.ts  Room.ts  sessions.ts  ViewEmitter.ts  lobbyCode.ts  bots.ts (in-process bots)
+│   ├─ engine/     state.ts  reduce.ts  tick.ts  clock.ts  types.ts  testkit.ts  coopKit.ts
+│   │   systems/   lobby location map setup layout regionCounts spawn roles game zone victory control end
+│   │              tasks taskRng taskPlay abilities taskStop fakeTask camouflage coop coopPairing coopUpkeep
+│   │              infection meetings ejection log rematch players
+│   ├─ views/      projectView projectGame projectTasks projectMeeting projectCamouflage projectResults radar leakHarness
+│   └─ sim/        runGame.ts  summary.ts  cli.ts       # pnpm bots:simulate (balance)
 ├─ apps/client/src/
-│   ├─ main.tsx  App.tsx  styles/ (tokens.css, themes.css)
-│   ├─ net/ socket.ts  clock.ts      store/ index.ts
-│   ├─ hooks/ useGeolocation.ts useWakeLock.ts useServerNow.ts useHaptics.ts
-│   ├─ sim/ GpsSimulator.tsx         # testMode
-│   ├─ screens/ Home Join Lobby HostSetup Spawn RoleReveal Game Meeting Results Spectator HowToPlay
-│   └─ components/ map/ hud/ minigames/ ui/
-├─ apps/server/test/ # integration tests (socket.io-client vs in-process server)
-├─ tools/bots/      # bot CLI (socket.io-client): join, ready, walk, do tasks, imposter behaviour
-└─ e2e/             # Playwright specs (multi-context, testMode)
+│   ├─ main.tsx  App.tsx  styles/ (index.css, fonts.css)
+│   ├─ net/        socket actions clock errors geolocation locationGate lifecycle cues sounds pwa persist version
+│   ├─ store/      index.ts  location.ts           hooks/ useServerNow useWakeLock useElementHeight useSelfPosition
+│   ├─ sim/        SimPanel.tsx  useSimLoop.ts  walk.ts  params.ts      # GPS simulator (test mode)
+│   ├─ screens/    Home EntryForm Lobby Spawn RoleReveal Game Spectator Results NoticeScreen
+│   └─ components/ game/ map/ meeting/ minigames/ lobby/ setup/ results/ howto/ pwa/ ui/
+├─ apps/server/test/       # integration tests (socket.io-client against an in-process server), fuzz, limits, config-doc sync
+├─ tools/bots/src/         # bot CLI (bot.ts, cli.ts) and the load test (load.ts, loadStats.ts)
+└─ e2e/                    # Playwright specs (multi-context, test mode), fullgame.spec.ts is the regression game
 ```
 
 ## 3. The engine (server, pure)

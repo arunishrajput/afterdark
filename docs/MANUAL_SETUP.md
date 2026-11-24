@@ -53,6 +53,8 @@ Phone browsers only allow GPS on **HTTPS** pages. A tunnel gives your laptop's d
 Follow the checklist in [TESTING.md §6](TESTING.md#6-field-test-checklist-the-human-runs-this-from-phase-6) with at least 2 phones outdoors. Paste your notes into PROGRESS.md → **Field-test notes**. Mark anything that blocks play with 🔴. The next session fixes 🔴 items first.
 
 ## Phase 14: demo day
-1. Warm the Render service 2 minutes before the demo.
-2. For an indoor demo: create the lobby with **Test mode** on, run `! pnpm bots -- --url <render-url> --code <CODE> --count 6`, and present from one phone plus a projector (laptop browser).
+The full script, timings, fallbacks and checklist are in [DEMO.md](DEMO.md). In short:
+1. Warm the Render service 2 minutes before the demo, and do one dry run; keep its results screen open as the fallback ending.
+2. For an indoor demo: two laptop windows in the GPS simulator (one crew, one imposter), **Test mode** on, **Add 7 bots** (kick one so there are 8), present on a projector. For guaranteed roles run locally with `TEST_ROOM_SALT=e2e-a pnpm dev`: the creator is crew and the first to join before the bots is an imposter.
 3. For a live outdoor demo: do a 5-minute dry run in the area first, and draw the boundary around open, safe ground.
+4. Do not push to `main` during the demo or a playtest: every push redeploys and ends running lobbies.
