@@ -1,6 +1,7 @@
 {
   "name": "@afterdark/bots",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "AfterDark bot players: join a lobby over Socket.IO, ready up, walk to the spawn, then wander.",

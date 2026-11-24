@@ -14,14 +14,15 @@ No accounts and no app store: share a 6-letter code and play. **Live:** <https:/
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/lobby.png" width="180" alt="The lobby: the host's area split into regions, the roster and the checklist"></td>
-    <td><img src="docs/screenshots/game.png" width="180" alt="A crew player's game screen: the map with regions, three task cards with directions and distances"></td>
-    <td><img src="docs/screenshots/jammed.png" width="180" alt="Systems jammed: an imposter's Task Stop locks every task for 30 seconds"></td>
-    <td><img src="docs/screenshots/meeting.png" width="180" alt="A meeting's result: the vote tallies and No one was ejected"></td>
-    <td><img src="docs/screenshots/results.png" width="180" alt="The results: Imposters win, and who was who"></td>
+    <td><img src="docs/screenshots/lobby.png" width="150" alt="The lobby: the host's drawn area split into three coloured regions dotted with task points, and the setup steps"></td>
+    <td><img src="docs/screenshots/reveal.png" width="150" alt="The secret role reveal, held down: CREW, with the player's tag ONYX-43"></td>
+    <td><img src="docs/screenshots/game.png" width="150" alt="A crew player's game screen: the map with regions, three task cards with directions and distances"></td>
+    <td><img src="docs/screenshots/jammed.png" width="150" alt="Systems jammed: an imposter's Task Stop locks every task for 30 seconds"></td>
+    <td><img src="docs/screenshots/meeting.png" width="150" alt="A meeting's result: the vote tallies and No one was ejected"></td>
+    <td><img src="docs/screenshots/results.png" width="150" alt="The results: Imposters win, and who was who"></td>
   </tr>
   <tr>
-    <td>Lobby and area</td><td>Crew tasks</td><td>Task Stop</td><td>Meeting vote</td><td>Results</td>
+    <td>Lobby and area</td><td>Secret role</td><td>Crew tasks</td><td>Task Stop</td><td>Meeting vote</td><td>Results</td>
   </tr>
 </table>
 

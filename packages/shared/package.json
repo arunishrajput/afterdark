@@ -1,6 +1,7 @@
 {
   "name": "@afterdark/shared",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "Shared types, zod schemas, config, geo, RNG and minigames for AfterDark.",

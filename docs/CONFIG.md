@@ -17,7 +17,7 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `targetScoreHintPerCrew` | 22 | — | 🔒 | Multiplier for the UI hint `targetScoreHintPerCrew × crewCount`. |
 | `minPlayers` | 4 | — | 🔒 | Fewer than this cannot start. |
 | `maxPlayers` | 12 | — | 🔒 | Lobby is full at 12. |
-| `imposterCount` | `auto` | auto, 1–3 | ✅ | auto: 4–5 players → 1, 6–9 → 2, 10–12 → 3. At least 3 crew must remain. |
+| `imposterCount` | `auto` | auto, 1–3 | ✅ | auto: 4–5 players → 1, 6–9 → 2, 10–12 → 3. At least 3 crew must remain. For 10 players the bot simulation favours imposters with the defaults (73.5%); hosts get close to even with **2 imposters and `targetScore` 260** (47%, median 22 min; ADR-109). |
 | `imposterCountAuto` | `[{maxPlayers:5,count:1},{maxPlayers:9,count:2},{maxPlayers:12,count:3}]` | — | 🔒 | The `auto` rule above, as data: the first entry whose `maxPlayers` ≥ player count wins. |
 | `minCrewRemaining` | 3 | — | 🔒 | A manual imposter count that would leave fewer crew than this is invalid. |
 | `imposterAbilityMode` | `classes` | classes, all | ✅ | `classes`: one secret class per imposter. `all`: every imposter has all 3 abilities. |

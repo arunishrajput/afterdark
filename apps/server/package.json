@@ -1,6 +1,7 @@
 {
   "name": "@afterdark/server",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "AfterDark authoritative game server (Express + Socket.IO).",
