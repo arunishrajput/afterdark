@@ -58,7 +58,22 @@ export interface BotOptions {
   imposterBehaviour?: BotImposterBehaviour;
   meetings?: BotMeetingMode;
   log: (line: string) => void;
+  /** Load test: called with the ms from sending a fix to seeing it in this bot's own view. */
+  onLatency?: (ms: number) => void;
+  /** Load test host: force-start a spawn phase that lasts longer than this (the host must be this bot). */
+  forceStartAfterS?: number;
 }
+
+/** What a hosting bot sets up (`Bot.host`). */
+export interface HostSetup {
+  config: Record<string, unknown>;
+  center: LatLng;
+  radiusM: number;
+}
+
+const fixKey = (p: LatLng) => `${p.lat.toFixed(7)},${p.lng.toFixed(7)}`;
+/** Sent fixes older than this are forgotten (a refused or superseded fix never shows). */
+const LATENCY_FORGET_MS = 10_000;
 
 export class Bot {
   private readonly socket: BotSocket;
@@ -82,6 +97,10 @@ export class Bot {
     { taskId: string; spot: LatLng | undefined; opened?: boolean; doneAt?: number } | undefined;
   /** Real ms when this bot types its co-op PIN, once the puzzle is out. */
   private coopDoneAt: number | undefined;
+  /** Fixes sent and not yet seen in the own view (load test latency), by position. */
+  private readonly sentFixes = new Map<string, number>();
+  /** Real ms when the spawn phase was first seen (host force-start). */
+  private spawningSince: number | undefined;
 
   constructor(private readonly o: BotOptions) {
     this.rng = createRng(hashSeed(`${o.seed}|${o.name}`));
@@ -113,8 +132,8 @@ export class Bot {
     }
   }
 
-  /** Connects, syncs the clock, joins the lobby and starts the walking loop. */
-  async start(): Promise<boolean> {
+  /** Connects and syncs the clock. */
+  private async connect(): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       this.socket.once('connect', resolve);
       this.socket.once('connect_error', reject);
@@ -125,6 +144,45 @@ export class Bot {
       const serverTs = (ping.data as { serverTs: number }).serverTs;
       this.offsetMs = serverTs - (sentAt + (Date.now() - sentAt) / 2);
     }
+  }
+
+  /** Load test: creates a lobby, switches on test mode with `setup.config`, draws a circle, then plays. Returns the code. */
+  async host(setup: HostSetup): Promise<string | undefined> {
+    await this.connect();
+    const created = await this.call('lobby:create', {
+      username: this.o.name,
+      acceptedSafety: true,
+    });
+    if (!created.ok) {
+      this.o.log(`${this.o.name}: could not create a lobby (${created.message})`);
+      this.stop();
+      return undefined;
+    }
+    const { code } = created.data as { code: string };
+    const steps = [
+      await this.call('lobby:updateConfig', { patch: { testMode: true, ...setup.config } }),
+      await this.call('lobby:setBoundary', {
+        boundary: { type: 'circle', center: setup.center, radiusM: setup.radiusM },
+      }),
+    ];
+    const failed = steps.find((s) => !s.ok);
+    if (failed) {
+      this.o.log(`${this.o.name}: could not set up ${code} (${failed.message})`);
+      this.stop();
+      return undefined;
+    }
+    this.timer = setInterval(() => void this.step(), DEFAULT_CONFIG.botStepS * MS_PER_S);
+    return code;
+  }
+
+  /** The phase this bot last saw (load test progress). */
+  get phase(): string | undefined {
+    return this.lastPhase;
+  }
+
+  /** Connects, syncs the clock, joins the lobby and starts the walking loop. */
+  async start(): Promise<boolean> {
+    await this.connect();
     const joined = await this.call('lobby:join', {
       code: this.o.code,
       username: this.o.name,
@@ -147,6 +205,17 @@ export class Bot {
 
   private onView(view: PlayerView): void {
     this.view = view;
+    const seen = view.me.location;
+    if (this.o.onLatency && seen) {
+      const sentAt = this.sentFixes.get(fixKey(seen));
+      if (sentAt !== undefined) this.o.onLatency(Date.now() - sentAt);
+      // That fix and everything sent before it are settled.
+      for (const [key, at] of this.sentFixes) {
+        if (sentAt === undefined ? Date.now() - at > LATENCY_FORGET_MS : at <= sentAt) {
+          this.sentFixes.delete(key);
+        }
+      }
+    }
     if (view.lobby.phase !== this.lastPhase) {
       this.lastPhase = view.lobby.phase;
       const role = view.me.role ? ` as ${view.me.role}` : '';
@@ -355,6 +424,20 @@ export class Bot {
     return undefined;
   }
 
+  /** Load test host: a spawn phase that drags on (a bot stuck behind a no-go edge) is force-started. */
+  private async maybeForceStart(view: PlayerView): Promise<void> {
+    const after = this.o.forceStartAfterS;
+    if (after === undefined || view.lobby.phase !== 'spawning') {
+      this.spawningSince = undefined;
+      return;
+    }
+    this.spawningSince ??= Date.now();
+    if (view.lobby.hostId === view.me.id && Date.now() - this.spawningSince > after * MS_PER_S) {
+      await this.call('game:forceStart', {});
+      this.spawningSince = Date.now();
+    }
+  }
+
   /** One tick: move, report the position, ready up in the lobby, and work on a task. */
   private async step(): Promise<void> {
     const view = this.view;
@@ -378,7 +461,9 @@ export class Bot {
     else {
       walker.step(view.lobby.phase === 'spawning' && spawn && !spawn.reached ? spawn : work?.goal);
     }
+    await this.maybeForceStart(view);
     const at = walker.fix();
+    if (this.o.onLatency) this.sentFixes.set(fixKey(at), Date.now());
     this.socket.emit('loc:update', {
       lat: at.lat,
       lng: at.lng,

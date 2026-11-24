@@ -13,6 +13,8 @@ import { tick } from '../engine/tick';
 import type { Command, Effect, ReduceResult } from '../engine/types';
 import type { Logger } from '../logger';
 
+const MS_HUNDREDTHS = 100;
+
 export type RoomListener = (state: RoomState, effects: readonly Effect[]) => void;
 /** Runs after every tick commit, with the tick's `now` (used for the 1 Hz radar). */
 export type TickListener = (state: RoomState, now: number) => void;
@@ -105,7 +107,8 @@ export class Room {
   private logDuration(kind: 'command' | 'tick', event: string, startedAt: number): void {
     const logger = this.deps.logger;
     if (!logger) return;
-    const ms = Math.round(this.perfNow() - startedAt);
+    // Hundredths of a millisecond: the load test checks a tick budget of a few ms (ARCHITECTURE §11).
+    const ms = Math.round((this.perfNow() - startedAt) * MS_HUNDREDTHS) / MS_HUNDREDTHS;
     const fields = { code: this.code, kind, event, ms };
     if (ms >= DEFAULT_CONFIG.slowCommandMs) logger.warn(fields, 'slow room operation');
     else logger.debug(fields, 'room operation');

@@ -25,8 +25,8 @@ import {
 import { gameNow } from '../clock';
 import type { PlayerState, RoomState, TaskState } from '../state';
 import { type Effect, RuleError } from '../types';
-import { expireCoopById, expireCoopsAtPoint } from './coop';
 import { heldTasks } from './coopPairing';
+import { expireCoopById, expireCoopsAtPoint } from './coopUpkeep';
 import { requireGoodFix } from './location';
 import { logEvent } from './log';
 import { findPlayer } from './players';

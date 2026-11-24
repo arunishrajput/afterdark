@@ -7,7 +7,7 @@
 import { gameNow, wallTimeOf } from '../clock';
 import type { PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
-import { resetCoops } from './coop';
+import { resetCoops } from './coopUpkeep';
 import { resetAllOpen } from './tasks';
 
 const MS_PER_S = 1000;

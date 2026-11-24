@@ -4,7 +4,6 @@
  * `sounds.ts`; a mute toggle (remembered on the device) silences the sounds.
  */
 import type { GameEvent } from '@afterdark/shared';
-import { useState } from 'react';
 import { create } from 'zustand';
 
 import { type HapticId, HAPTICS, type SoundId, SOUNDS } from './sounds';
@@ -72,16 +71,6 @@ export function buzz(pattern: readonly number[]): void {
 
 export function haptic(id: HapticId): void {
   buzz(HAPTICS[id]);
-}
-
-export function vibrationSupported(): boolean {
-  return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-}
-
-/** Vibration for components: `haptic(id)` plus whether this device can vibrate at all (iOS cannot). */
-export function useHaptics(): { supported: boolean; haptic: typeof haptic } {
-  const [supported] = useState(vibrationSupported);
-  return { supported, haptic };
 }
 
 /** Sound state for the mute toggle. */

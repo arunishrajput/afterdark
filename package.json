@@ -21,6 +21,7 @@
     "e2e": "playwright test",
     "tunnel": "cloudflared tunnel --url http://localhost:5173",
     "bots": "pnpm --filter @afterdark/bots start",
+    "bots:load": "pnpm --filter @afterdark/bots load",
     "bots:simulate": "pnpm --filter @afterdark/server simulate",
     "icons": "node apps/client/scripts/render-icons.mjs"
   },

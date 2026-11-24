@@ -18,8 +18,8 @@ import {
 import { gameNow } from '../clock';
 import type { PlayerState, RoomState, TaskState } from '../state';
 import type { Effect } from '../types';
-import { updateCoops } from './coop';
 import { eligiblePartners, heldTasks, makeCoop } from './coopPairing';
+import { updateCoops } from './coopUpkeep';
 import { fixQuality } from './location';
 import { activePlayers } from './players';
 import { newTaskId, taskRng } from './taskRng';

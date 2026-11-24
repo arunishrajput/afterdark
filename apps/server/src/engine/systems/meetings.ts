@@ -13,7 +13,7 @@ import type { MeetingState, PlayerState, RoomState } from '../state';
 import { type Effect, RuleError } from '../types';
 import { applyPostMeetingGrace } from './abilities';
 import { endAllCamouflage } from './camouflage';
-import { resetCoops } from './coop';
+import { resetCoops } from './coopUpkeep';
 import { countVotes, eject, SKIP } from './ejection';
 import { cancelAllChannels } from './infection';
 import { fixQuality } from './location';
@@ -22,9 +22,6 @@ import { activePlayers, findPlayer } from './players';
 import { resetAllOpen } from './tasks';
 
 const MS_PER_S = 1000;
-
-/** True from the call to the end of the result: game time is stopped and task actions, Infect and abilities are off. */
-export const isMeetingActive = (state: RoomState): boolean => state.game?.meeting !== undefined;
 
 /** Meetings the player may still call (MEETINGS §2). */
 export const meetingsLeft = (state: RoomState, p: PlayerState): number =>

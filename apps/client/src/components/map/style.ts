@@ -42,4 +42,3 @@ export const regionColor = (index: number): string =>
   REGION_COLORS[index % REGION_COLORS.length] ?? REGION_COLORS[0];
 
 export const NOGO_COLOR = '#ff5a5a';
-export const BASE_COLOR = '#ffd166';
