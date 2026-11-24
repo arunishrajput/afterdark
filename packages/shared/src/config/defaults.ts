@@ -69,6 +69,7 @@ export const DEFAULT_CONFIG = {
   staleAfterS: 10,
   maxSpeedMps: 12,
   reanchorFixes: 3,
+  gpsReanchorWarnAt: 3,
   futureFixToleranceS: 5,
   speedCheckMinDtS: 1,
   teleportAccuracyM: 5,

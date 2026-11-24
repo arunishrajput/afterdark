@@ -147,6 +147,66 @@ describe('speed check and re-anchor (RULES §10.4)', () => {
     const s1 = send(s0, fix(2, 3), T0 + 5 * S).state; // older ts, 2 m away
     expect(loc(s1)?.ts).toBe(T0 + 3 * S);
   });
+
+  it('a forged old timestamp cannot stretch the gap: the server clock bounds it (Phase 14)', () => {
+    // The spoof: re-send where you are, stamped in 1970, then jump 500 m "a lifetime later".
+    const s0 = send(room(), fix(0, 0)).state;
+    const s1 = send(s0, { ...fix(0, 0), ts: 0 }, T0 + S).state;
+    const s2 = send(s1, fix(500, 2), T0 + 2 * S).state;
+    expect(loc(s2)).toMatchObject({ ts: 0 }); // the jump was refused
+    expect(pending(s2)).toHaveLength(1);
+  });
+
+  it('an honest fix that arrives late still passes (the client gap is used when it is the smaller)', () => {
+    const s0 = send(room(), fix(0, 0)).state;
+    // 20 m in 2 s of device time is 10 m/s; the server saw 2.5 s.
+    const s1 = send(s0, fix(20, 2), T0 + 2.5 * S).state;
+    expect(loc(s1)?.ts).toBe(T0 + 2 * S);
+  });
+
+  it('a long real gap still allows a long move', () => {
+    const s0 = send(room(), fix(0, 0)).state;
+    const s1 = send(s0, fix(600, 60)).state; // 10 m/s over a minute with the screen off
+    expect(loc(s1)?.ts).toBe(T0 + 60 * S);
+  });
+
+  it('counts re-anchors per player and reports each as an audit with the count only', () => {
+    let s = send(room(), fix(0, 0)).state;
+    const reanchor = (from: number, atS: number) => {
+      let res: OkResult | undefined;
+      for (let i = 0; i < DEFAULT_CONFIG.reanchorFixes; i++) {
+        res = send(s, fix(from + i, atS + i));
+        s = res.state;
+      }
+      return res?.effects ?? [];
+    };
+    const first = reanchor(500, 1);
+    expect(s.players[0]?.gpsReanchors).toBe(1);
+    expect(first).toContainEqual({
+      kind: 'audit',
+      what: 'gpsReanchor',
+      playerId: 'host',
+      count: 1,
+    });
+    const second = reanchor(-500, 10);
+    expect(s.players[0]?.gpsReanchors).toBe(2);
+    expect(second).toContainEqual({
+      kind: 'audit',
+      what: 'gpsReanchor',
+      playerId: 'host',
+      count: 2,
+    });
+    // The audit never carries a position.
+    expect(JSON.stringify(second)).not.toMatch(/lat|lng/);
+  });
+
+  it('a test-mode teleport is not counted', () => {
+    const s0 = send(room(true), fix(0, 0)).state;
+    const s1 = ok(
+      reduce(s0, { type: 'teleport', playerId: 'host', ...offsetByMeters(HOME, 900, 0) }, T0 + S),
+    ).state;
+    expect(s1.players[0]?.gpsReanchors).toBeUndefined();
+  });
 });
 
 describe('ready needs a good, fresh fix (RULES §3.5)', () => {

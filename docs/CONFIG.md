@@ -69,8 +69,9 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `staleAfterS` | 10 | — | 🔒 | A fix older than this makes the player *stale*. |
 | `maxSpeedMps` | 12 | — | 🔒 | A faster jump is rejected. The player re-anchors after 3 consistent fixes. |
 | `reanchorFixes` | 3 | — | 🔒 | Consistent fixes needed to re-anchor after a rejected jump. |
+| `gpsReanchorWarnAt` | 3 | — | 🔒 | A player's re-anchors are counted (never their positions); from this count on, each one is logged at `warn` as "repeated GPS jumps" (ADR-108). |
 | `futureFixToleranceS` | 5 | — | 🔒 | A fix timestamped further ahead of the server clock than this is rejected. |
-| `speedCheckMinDtS` | 1 | — | 🔒 | The speed check divides by at least this many seconds, so two fixes a few ms apart can't fake a huge speed. |
+| `speedCheckMinDtS` | 1 | — | 🔒 | The speed check divides by at least this many seconds, so two fixes a few ms apart can't fake a huge speed. It is also the slack on the server-time bound: the gap used is never more than the server saw pass plus this (ADR-108). |
 | `teleportAccuracyM` | 5 | — | 🔒 | Accuracy given to a `dev:teleport` fix (test mode only). |
 | `locationSendIntervalMs` | 1000 | — | 🔒 | Most frequent rate the client sends updates. |
 | `locationMinMoveM` | 3 | — | 🔒 | A player who has moved less than this over `stationaryWindowS` counts as stationary. |

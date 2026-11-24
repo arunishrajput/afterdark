@@ -115,6 +115,7 @@ export const gameConfigSchema = z.strictObject({
   staleAfterS: positive(),
   maxSpeedMps: positive(),
   reanchorFixes: positiveInt(),
+  gpsReanchorWarnAt: positiveInt(),
   futureFixToleranceS: positive(),
   speedCheckMinDtS: positive(),
   teleportAccuracyM: positive(),

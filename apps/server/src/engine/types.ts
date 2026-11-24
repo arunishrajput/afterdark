@@ -92,7 +92,9 @@ export type Effect =
   /** The answer to the command's own caller. The socket layer returns it in the ack and sends it nowhere else. */
   | { kind: 'reply'; playerId: string; reply: CommandReply }
   /** Something to log without player data (Invariant 8): a point id, never a position or a name. */
-  | { kind: 'audit'; what: 'unsafePoint'; pointId: string };
+  | { kind: 'audit'; what: 'unsafePoint'; pointId: string }
+  /** A player's position re-anchored after refused jumps: their running count, never a position (ADR-108). */
+  | { kind: 'audit'; what: 'gpsReanchor'; playerId: string; count: number };
 
 export type ReduceResult =
   | { ok: true; state: RoomState; effects: Effect[] }

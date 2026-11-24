@@ -45,6 +45,8 @@ export interface PendingFix {
   lat: number;
   lng: number;
   ts: number;
+  /** Server ms when it arrived: bounds the gap a forged `ts` could claim (ADR-108). */
+  receivedAt: number;
 }
 
 /** A player's own spawn point (RULES §4). `reached` is sticky once a good fix was within `reachRadiusM`. */
@@ -240,6 +242,8 @@ export interface PlayerState {
   walkedM?: number;
   /** The last spot that counted toward `walkedM`. */
   walkFrom?: { lat: number; lng: number };
+  /** Times the server re-anchored this player after refused jumps (ADR-108). Server-only, logged as a count. */
+  gpsReanchors?: number;
 }
 
 /** A region with its compass frame and the area of each of its 9 sections (computed once per layout). */

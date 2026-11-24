@@ -151,7 +151,7 @@ Full rules are in [MEETINGS.md](MEETINGS.md). In summary:
 1. The app asks for a **Screen Wake Lock** and tells players to keep it open. Browsers stop GPS when the screen locks.
 2. A player whose last fix is older than `staleAfterS` (10 s) is **stale**. They can't reveal, reach, open or submit tasks, Infect or be infected. Their dot is shown as a faded "signal lost" marker.
 3. Fixes with accuracy worse than `maxAccuracyM` (30 m) are kept for display but ignored by game rules. The UI shows "Weak GPS".
-4. A fix that implies a speed above `maxSpeedMps` (12 m/s) is rejected. After 3 consecutive fixes that agree with each other, the player is re-anchored to the new location.
+4. A fix that implies a speed above `maxSpeedMps` (12 m/s) is rejected. The time between two fixes is the phone's, but never more than the server saw pass (plus 1 s), so a forged timestamp cannot make a jump look slow (ADR-108). After 3 consecutive fixes that agree with each other, the player is re-anchored to the new location; re-anchors are counted per player and logged (counts only).
 5. **Reconnect:** each player has a session token stored on the device. Reconnecting at any point restores the same player, role and tasks. Players are never removed for disconnecting.
 6. **Forfeit:** if every active imposter, or every active crew member, has been disconnected for `forfeitAfterS` (180 s), the other side wins. A player who left the game counts as permanently disconnected. The 180 s count starts no earlier than the moment roles are assigned. If both sides are gone, the game is a draw (ADR-055).
 
@@ -213,7 +213,7 @@ The server checks win conditions after **every** state change, in strict process
 | E30 | Both progress ratios equal at time-up | Draw. |
 | E31 | Host disconnects mid-game | The game continues. After `hostDisconnectGraceS` (30 s), or at once if the host leaves, host controls pass to the earliest-joined connected player (never a bot while a human is connected). |
 | E32 | Player out of bounds when a meeting is called | Zone penalties pause during the meeting. Gathering at the Base is inside the area by construction. |
-| E33 | GPS teleport or spoof jump | The fix is rejected (speed check). The player re-anchors after 3 consistent fixes. Repeated jumps are logged. |
+| E33 | GPS teleport or spoof jump | The fix is rejected (speed check, bounded by server time). The player re-anchors after 3 consistent fixes. Each re-anchor is counted; from the 3rd on it is logged at `warn` with the room code, player id and count, never a position (ADR-108). Nothing is shown to players. |
 | E34 | Late joiner tries to join mid-game | Rejected with "Game in progress". |
 | E35 | Duplicate username | Rejected with a message. |
 | E36 | Phone locks or browser goes to background | The player becomes stale. They can't act or be infected until they return. The app re-acquires the wake lock. |

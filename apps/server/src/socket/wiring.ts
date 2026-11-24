@@ -3,7 +3,7 @@
  * players) and pushes changed views. Every send is per player: no room
  * broadcasts (PROTOCOL › Conventions).
  */
-import { randomId } from '@afterdark/shared';
+import { DEFAULT_CONFIG, randomId } from '@afterdark/shared';
 
 import { BotDriver } from '../rooms/bots';
 import type { Room } from '../rooms/Room';
@@ -64,11 +64,18 @@ export function attachRoom(ctx: GatewayContext, room: Room, now: () => number): 
       }
       if (effect.kind === 'reply') continue; // answered in the caller's ack, never sent as a frame
       if (effect.kind === 'audit') {
-        // Point ids only: never a position, a name or a role (Invariant 8).
-        ctx.logger.info(
-          { code: state.code, pointId: effect.pointId },
-          'unsafe task point reported',
-        );
+        // Ids and counts only: never a position, a name or a role (Invariant 8).
+        if (effect.what === 'unsafePoint') {
+          ctx.logger.info(
+            { code: state.code, pointId: effect.pointId },
+            'unsafe task point reported',
+          );
+        } else {
+          const fields = { code: state.code, playerId: effect.playerId, reanchors: effect.count };
+          if (effect.count >= DEFAULT_CONFIG.gpsReanchorWarnAt) {
+            ctx.logger.warn(fields, 'repeated GPS jumps');
+          } else ctx.logger.debug(fields, 'GPS re-anchored');
+        }
         continue;
       }
       // A player left or was kicked: end their session and release their socket.

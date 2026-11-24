@@ -30,7 +30,7 @@
   - DoS: Socket.IO `maxHttpBufferSize` 16 KB, per-socket rate limits (`loc:update` 2/s, others 10/s), lobby creation limit per IP (5/min), and a cap on total lobbies (200)
 
   Fix what you find and add tests.
-- [ ] **14.2 Anti-spoof review:** check the speed gate, the re-anchor logic and accuracy gating. Log repeated teleports per player, privacy-safely (counts only). Consider a "suspicious GPS" indicator for the host only, but only if it can't leak roles; otherwise leave it out and record an ADR.
+- [x] **14.2 Anti-spoof review:** check the speed gate, the re-anchor logic and accuracy gating. Log repeated teleports per player, privacy-safely (counts only). Consider a "suspicious GPS" indicator for the host only, but only if it can't leak roles; otherwise leave it out and record an ADR.
 - [ ] **14.3 Regression:**
   - e2e suite: a full 8-player game (1–2 browser contexts + bots) covering lobby → setup → spawn → reveal → tasks → infection → meeting → abilities → co-op → results → play again
   - run it 3 times to catch flakiness, and fix any flaky test

@@ -60,7 +60,7 @@ export function reduce(state: RoomState, cmd: Command, now: number): ReduceResul
         play.resetOnDisconnect(draft, cmd.playerId, effects);
         break;
       case 'locUpdate':
-        location.locUpdate(draft, cmd.playerId, cmd.fix, now);
+        location.locUpdate(draft, cmd.playerId, cmd.fix, now, effects);
         break;
       case 'setBoundary':
         map.setBoundary(draft, cmd.playerId, cmd.boundary, effects);

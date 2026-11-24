@@ -11,7 +11,7 @@ import {
 } from '@afterdark/shared';
 
 import type { PendingFix, PlayerState, RoomState, StoredFix } from '../state';
-import { RuleError } from '../types';
+import { type Effect, RuleError } from '../types';
 import { findPlayer } from './players';
 
 const MS_PER_S = 1000;
@@ -40,13 +40,24 @@ export function requireGoodFix(p: PlayerState, config: QualityConfig, now: numbe
     throw new RuleError('WEAK_GPS', 'GPS accuracy is too weak. Move into the open.');
 }
 
-/** Implied speed in m/s; the time gap is floored so near-simultaneous stamps cannot spike it. */
-function impliedSpeed(
-  from: { lat: number; lng: number; ts: number },
-  to: { lat: number; lng: number; ts: number },
-  minDtS: number,
-): number {
-  const dtS = Math.max((to.ts - from.ts) / MS_PER_S, minDtS);
+interface TimedFix {
+  lat: number;
+  lng: number;
+  /** Device time (server-aligned): the honest gap between two fixes. */
+  ts: number;
+  /** Server receive time: what really elapsed, give or take network bunching. */
+  receivedAt: number;
+}
+
+/**
+ * Implied speed in m/s. The gap is the device-time gap, but never more than the
+ * server saw pass plus `minDtS` (a forged old `ts` cannot stretch it, ADR-108), and
+ * never less than `minDtS` (near-simultaneous or out-of-order stamps cannot spike it, ADR-040).
+ */
+function impliedSpeed(from: TimedFix, to: TimedFix, minDtS: number): number {
+  const deviceS = (to.ts - from.ts) / MS_PER_S;
+  const serverS = (to.receivedAt - from.receivedAt) / MS_PER_S + minDtS;
+  const dtS = Math.max(Math.min(deviceS, serverS), minDtS);
   return distanceM(from, to) / dtS;
 }
 
@@ -79,13 +90,15 @@ export function locUpdate(
   playerId: string,
   fix: LocUpdatePayload,
   now: number,
+  effects: Effect[],
 ): void {
   const { config } = state;
   const p = findPlayer(state, playerId);
   if (fix.ts > now + config.futureFixToleranceS * MS_PER_S) {
     throw new RuleError('INVALID_PAYLOAD', 'Fix timestamp is in the future');
   }
-  if (!p.loc || impliedSpeed(p.loc, fix, config.speedCheckMinDtS) <= config.maxSpeedMps) {
+  const incoming = { lat: fix.lat, lng: fix.lng, ts: fix.ts, receivedAt: now };
+  if (!p.loc || impliedSpeed(p.loc, incoming, config.speedCheckMinDtS) <= config.maxSpeedMps) {
     addWalk(state, p, fix);
     store(p, fix, now);
     return;
@@ -93,13 +106,17 @@ export function locUpdate(
   // Implausible jump: keep the old position, but remember fixes that agree with
   // each other. After `reanchorFixes` of them the player really is somewhere new.
   const last: PendingFix | undefined = p.locPending?.at(-1);
-  const consistent = last && impliedSpeed(last, fix, config.speedCheckMinDtS) <= config.maxSpeedMps;
+  const consistent =
+    last && impliedSpeed(last, incoming, config.speedCheckMinDtS) <= config.maxSpeedMps;
   const run = consistent ? [...(p.locPending ?? [])] : [];
-  run.push({ lat: fix.lat, lng: fix.lng, ts: fix.ts });
+  run.push(incoming);
   if (run.length >= config.reanchorFixes) {
     // A jump the speed check refused is not walking: the count starts again from the new spot.
     delete p.walkFrom;
     store(p, fix, now);
+    // Rare with real GPS (a stored outlier), routine for a spoofer: the count is logged (ADR-108).
+    p.gpsReanchors = (p.gpsReanchors ?? 0) + 1;
+    effects.push({ kind: 'audit', what: 'gpsReanchor', playerId, count: p.gpsReanchors });
   } else p.locPending = run;
 }
 
