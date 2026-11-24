@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 14, Hardening & demo** → [docs/phases/PHASE-14-hardening-demo.md](docs/phases/PHASE-14-hardening-demo.md)
+**◐ IN PROGRESS: Phase 14, Hardening & demo** (started 2026-11-24) → [docs/phases/PHASE-14-hardening-demo.md](docs/phases/PHASE-14-hardening-demo.md)
 
 **Live URL:** <https://afterdark-24gx.onrender.com> (Render free, Singapore; sleeps after ~15 min idle, first load up to ~1 min)
 
@@ -25,7 +25,7 @@
 | 11 | [Remaining minigames & balance](docs/phases/PHASE-11-minigames-balance.md) | ✅ DONE | 2026-11-23 | `phase-11-done` |
 | 12 | [Results & replay](docs/phases/PHASE-12-results-replay.md) | ✅ DONE | 2026-11-24 | `phase-12-done` |
 | 13 | [PWA & mobile polish](docs/phases/PHASE-13-pwa-polish.md) | ✅ DONE | 2026-11-24 | `phase-13-done` |
-| 14 | [Hardening & demo](docs/phases/PHASE-14-hardening-demo.md) | ▶ NEXT | | |
+| 14 | [Hardening & demo](docs/phases/PHASE-14-hardening-demo.md) | ◐ IN PROGRESS | 2026-11-24 | |
 
 ## Handoff notes for the next session
 _From the UI/UX pass (2026-11-24, after Phase 13; Phase 14 is still ▶ NEXT):_
