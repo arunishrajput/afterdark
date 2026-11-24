@@ -168,6 +168,8 @@ function CoopSheet({ view }: { view: PlayerView }) {
               data-testid="coop-input"
               inputMode="numeric"
               pattern="[0-9]*"
+              name="pin"
+              spellCheck={false}
               autoComplete="off"
               maxLength={digits}
               value={pin}

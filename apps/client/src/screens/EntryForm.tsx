@@ -61,6 +61,8 @@ export function EntryForm({ entry, onBack }: { entry: Entry; onBack: () => void 
             onChange={(e) => setName(e.target.value)}
             onBlur={() => setTouched(true)}
             maxLength={DEFAULT_CONFIG.usernameMaxLen + 8}
+            name="username"
+            spellCheck={false}
             autoComplete="nickname"
             enterKeyHint="go"
             aria-invalid={nameError !== undefined}

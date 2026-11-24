@@ -48,6 +48,7 @@ export function Home({
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
             placeholder="CODE"
+            name="code"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}

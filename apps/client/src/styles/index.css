@@ -71,6 +71,18 @@ select {
   user-select: none;
 }
 
+/* Keyboard and switch users see where they are; a tap or click shows no ring (:focus-visible). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
 /* The map owns its gestures (pan, pinch) and the page must not scroll under it. */
 .leaflet-container {
   touch-action: none;
