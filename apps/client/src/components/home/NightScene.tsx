@@ -1,11 +1,12 @@
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 /**
- * Home's hero: a dark street map seen from above, like the game's own map. The host's drawn
- * area (with its corner handles), three task pins, the Base, and six players walking. One of
- * them is being tailed by an Imposter who looks like everyone else; the dashed red ring is the
- * "exposed" mark only Imposters see in a real game. Inline SVG with SMIL motion: nothing to
- * load, and it stands still when the player asks for less motion. Decorative (ADR-110).
+ * Home's night map, beside the logo on a laptop: a dark street map seen from above, like the
+ * game's own map. The host's drawn area (with its corner handles), three task pins, the Base, and
+ * six players walking. One of them is being tailed by an Imposter who looks like everyone else; the
+ * dashed red ring is the "exposed" mark only Imposters see in a real game. Inline SVG with SMIL
+ * motion: nothing to load, and it stands still when the player asks for less motion. Decorative
+ * (ADR-110, ADR-111).
  */
 
 type Point = readonly [number, number];
@@ -97,14 +98,6 @@ export function NightScene({ className = '' }: { className?: string }) {
         <mask id="ad-hero-fade" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="320">
           <rect width="400" height="320" fill="url(#ad-hero-fade-fill)" />
         </mask>
-        <linearGradient id="ad-hero-moon" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7DB8FF" />
-          <stop offset="1" stopColor="#2E8BFF" />
-        </linearGradient>
-        <radialGradient id="ad-hero-moon-glow">
-          <stop offset="0" stopColor="#2E8BFF" stopOpacity="0.3" />
-          <stop offset="0.7" stopColor="#2E8BFF" stopOpacity="0" />
-        </radialGradient>
       </defs>
 
       {/* The map itself fades into the night at its edges. Static, so the mask is drawn once. */}
@@ -165,7 +158,6 @@ export function NightScene({ className = '' }: { className?: string }) {
       {WALKERS.map((w) => (
         <WalkerDot key={`${w.path}${w.offset}`} walker={w} still={still} />
       ))}
-      <Moon still={still} />
     </svg>
   );
 }
@@ -253,41 +245,5 @@ function ExposedRing({ still }: { still: boolean }) {
         </>
       )}
     </circle>
-  );
-}
-
-/** The app icon's crescent and its watching eye (public/icon.svg), which blinks and looks over the map. */
-function Moon({ still }: { still: boolean }) {
-  return (
-    <g transform="translate(292 4) scale(0.18)">
-      <circle cx="285" cy="263" r="260" fill="url(#ad-hero-moon-glow)" />
-      <path d="M318 98a168 168 0 1 0 72 296A132 132 0 0 1 318 98Z" fill="url(#ad-hero-moon)" />
-      <g transform="translate(384 262)">
-        <g>
-          {!still && (
-            <animateTransform
-              attributeName="transform"
-              type="scale"
-              values="1 1;1 1;1 0.1;1 1"
-              keyTimes="0;0.93;0.965;1"
-              dur="7s"
-              repeatCount="indefinite"
-            />
-          )}
-          <path d="M-46 0c26-22 66-22 92 0-26 16-66 16-92 0Z" fill="#F2F3F5" />
-          <circle cx="8" cy="-6" r="9" fill="#07080A">
-            {!still && (
-              <animate
-                attributeName="cx"
-                values="8;-14;-14;8;8"
-                keyTimes="0;0.15;0.55;0.7;1"
-                dur="11s"
-                repeatCount="indefinite"
-              />
-            )}
-          </circle>
-        </g>
-      </g>
-    </g>
   );
 }

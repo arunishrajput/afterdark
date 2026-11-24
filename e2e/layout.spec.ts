@@ -28,7 +28,7 @@ test('Home fits a short 360 px phone: Create and Join show without scrolling', a
   await page.setViewportSize({ width: 360, height: 640 });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'AfterDark' })).toBeVisible();
-  await expect(page.getByTestId('night-scene')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'AfterDark' })).toBeVisible(); // the logo
   await expectNoSidewaysScroll(page, 'home');
   for (const name of ['Create game', 'Join game']) {
     const box = await page.getByRole('button', { name }).boundingBox();

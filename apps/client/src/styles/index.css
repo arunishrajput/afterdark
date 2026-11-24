@@ -22,6 +22,26 @@
   --animate-scene-in: scene-in 900ms ease-out both;
 }
 
+/* The creator's logo art sits on black (ADR-111). `lighten` lets the page show through that black,
+   so no dark box shows on the glow at the top of the page or over Home's night map. */
+.brand-art {
+  mix-blend-mode: lighten;
+}
+
+/* Home brings its own blue and red glow with the logo; the page's white top glow would grey the
+   crewmate's dark body through the blend. */
+body:has(.hero-logo) {
+  background: var(--bg);
+}
+
+/* Home's logo: soften where its glow is cut. The wordmark sits within 17–88 % of the width. */
+.hero-logo {
+  mask-image:
+    linear-gradient(to right, transparent, #000 9% 91%, transparent),
+    linear-gradient(transparent, #000 4% 96%, transparent);
+  mask-composite: intersect;
+}
+
 /* Home's night map comes up out of the dark once, on load. */
 @keyframes scene-in {
   from {

@@ -1,6 +1,8 @@
 import { DEFAULT_CONFIG, lobbyCodeSchema } from '@afterdark/shared';
 import { type FormEvent, useState } from 'react';
 
+import logo768 from '../assets/brand/logo-768.webp';
+import logo1536 from '../assets/brand/logo-1536.webp';
 import { NightScene } from '../components/home/NightScene';
 import { HowToArt } from '../components/howto/HowToArt';
 import { HowToPlay } from '../components/howto/HowToPlay';
@@ -58,24 +60,34 @@ export function Home({
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-10">
+    // The logo is wider than the column on purpose; on a phone its glow is clipped at the screen's
+    // edges, so the page never widens (a wider page makes Chrome Android zoom out, ADR-106).
+    <main className="mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] max-lg:overflow-x-clip sm:px-6 lg:px-10">
       <section
         aria-labelledby="home-title"
         className="flex min-h-dvh flex-col lg:grid lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:items-center lg:gap-12 lg:py-10"
       >
-        <div className="-mx-4 flex animate-scene-in justify-center pt-[env(safe-area-inset-top)] sm:-mx-6 lg:order-2 lg:mx-0 lg:pt-0">
-          <NightScene className="aspect-[5/4] max-h-[40dvh] w-full max-w-2xl lg:max-h-none lg:max-w-none" />
+        {/* The night map needs room: laptops only. On a phone the logo is the whole hero. */}
+        <div className="hidden animate-scene-in lg:order-2 lg:flex">
+          <NightScene className="aspect-[5/4] w-full" />
         </div>
 
-        <div className="relative mx-auto -mt-12 flex w-full max-w-md flex-1 flex-col lg:mx-0 lg:mt-0 lg:max-w-none lg:flex-none">
-          <h1
-            id="home-title"
-            className="font-display text-[clamp(3.5rem,20vw,5.5rem)] leading-[0.9] font-bold tracking-[-0.045em] lg:text-[6.5rem]"
-          >
-            <span>After</span>
-            <span className="text-muted">Dark</span>
+        <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col pt-[env(safe-area-inset-top)] lg:mx-0 lg:max-w-none lg:flex-none lg:pt-0">
+          <h1 id="home-title">
+            {/* Drawn at 140 % of the column so the wordmark (17–88 % of the art) spans the column;
+                the glow around it runs off the screen on a phone. */}
+            <img
+              src={logo1536}
+              srcSet={`${logo768} 768w, ${logo1536} 1536w`}
+              sizes="(min-width: 1024px) 42rem, 140vw"
+              width={1536}
+              height={984}
+              alt="AfterDark"
+              fetchPriority="high"
+              className="brand-art hero-logo -ml-[23.6%] h-auto w-[140%] max-w-none"
+            />
           </h1>
-          <p className="mt-3 font-display text-xl font-medium lg:mt-5 lg:text-2xl">
+          <p className="font-display text-xl font-medium lg:text-2xl">
             Among Us, played on your feet.
           </p>
           <p className="mt-2 text-muted lg:text-lg">

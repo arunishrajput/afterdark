@@ -1,6 +1,7 @@
 import type { PlayerView } from '@afterdark/shared';
 import { useCallback, useState } from 'react';
 
+import wordmark from '../assets/brand/wordmark-480.webp';
 import { HowToPlay } from '../components/howto/HowToPlay';
 import { howToSeen, markHowToSeen } from '../components/howto/seen';
 import { AddBots } from '../components/lobby/AddBots';
@@ -47,7 +48,13 @@ export function Lobby({ view }: { view: PlayerView }) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <header className="flex items-center justify-between">
-        <span className="font-display text-xl font-bold">AfterDark</span>
+        <img
+          src={wordmark}
+          alt="AfterDark"
+          width={480}
+          height={107}
+          className="brand-art h-8 w-auto"
+        />
         <div className="flex items-center gap-2">
           {lobby.testMode && (
             <span className="rounded-md border border-danger/50 px-2 py-0.5 font-mono text-xs font-semibold tracking-widest text-danger">
