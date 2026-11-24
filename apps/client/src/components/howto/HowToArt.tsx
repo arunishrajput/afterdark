@@ -49,7 +49,8 @@ export function HowToArt({ id }: { id: ArtId }) {
         <>
           <circle cx="62" cy="52" r="10" fill={STROKE} stroke="none" />
           <circle cx="104" cy="52" r="10" stroke="var(--danger)" strokeDasharray="3 4" />
-          <circle cx="146" cy="52" r="10" fill="var(--infected, var(--danger))" stroke="none" />
+          {/* Not `--infected`: it is transparent outside the imposter theme, and this art shows on Home and in the lobby. */}
+          <circle cx="146" cy="52" r="10" fill="var(--danger)" stroke="none" />
           <circle cx="188" cy="52" r="10" fill={STROKE} stroke="none" />
           <path d="M72 52 L92 52" stroke="var(--danger)" opacity="0.8" />
           <g transform="translate(60 82)">
