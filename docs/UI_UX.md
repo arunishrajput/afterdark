@@ -4,6 +4,7 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 
 ## 1. Visual identity: "AfterDark"
 - **Mood:** a night-time ops console, using deep blacks, neon edges, scanlines kept to a minimum, and a monospace for codes and tags.
+- **Logo** (the creator's, ADR-111): a crewmate under a red location pin, a crescent moon, a blue-to-red ring and a gridded globe, over the italic wordmark "After" (white) and "Dark" (red). Master `apps/client/brand/afterdark-logo.png`; `pnpm icons` renders the app icons and favicon (the emblem without the wordmark), Home's hero (the whole logo) and the lobby header's wordmark. The art sits on black, so it is shown with `mix-blend-mode: lighten` (`.brand-art`).
 - **Themes** are CSS variables on `<html data-theme>`:
 
 | Token | `crew` | `imposter` | `neutral` (meetings, lobby, results) |
@@ -24,9 +25,9 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 ## 2. Screens
 | Screen | Key content | Notes |
 |---|---|---|
-| **Home** | A hero (ADR-110): the live night map (players walking in a drawn area, task pins, the Base, the crescent-and-eye, one player tailed by an Imposter), the split-tone AfterDark wordmark, "Among Us, played on your feet.", a one-line pitch, the facts line (players and minutes, from the config and presets), "Create game", "Join game" (code input), Install, How to play, the connection pill. Below the fold, "How a game goes" (three beats with the How to play pictures, the win conditions, "Walk, never run", "Read the full rules"). Two columns on a laptop | `?code=` pre-fills Join. Create and Join stay above the fold on a 360 × 640 phone. The map stands still with reduced motion |
+| **Home** | A hero (ADR-110, ADR-111): the logo as the heading, "Among Us, played on your feet.", a one-line pitch, the facts line (players and minutes, from the config and presets), "Create game", "Join game" (code input), Install, How to play, the connection pill. On a laptop, two columns: the logo and actions left, the live night map right (players walking in a drawn area, task pins, the Base, one player tailed by an Imposter). Below the fold, "How a game goes" (three beats with the How to play pictures, the win conditions, "Walk, never run", "Read the full rules") | `?code=` pre-fills Join. Create and Join stay above the fold on a 360 × 640 phone, and the page never scrolls sideways. The night map stands still with reduced motion |
 | **Join / Create** | Username field and safety notice checkbox (required) | Validates in real time |
-| **Lobby** | Large code with share and QR buttons, player list (ready ✓, host 👑, connection dot), map preview, setup checklist, Ready button, Test-mode badge | Ready is disabled until location is granted and good |
+| **Lobby** | The logo's wordmark in the header, a large code with share and QR buttons, player list (ready ✓, host 👑, connection dot), map preview, setup checklist, Ready button, Test-mode badge | Ready is disabled until location is granted and good |
 | **Host setup** (host only) | Steps: ① Boundary ② Regions ③ Task points ④ No-go zones ⑤ Base ⑥ Settings (presets Quick 15 / Standard 25 / Long 40, with advanced settings collapsed) | Each step shows ✓ when valid. Any edit un-readies everyone, with a toast. |
 | **Permission gate** | Explains location and wake lock, with "Allow" and troubleshooting tips for iOS and Android | Shown before Ready |
 | **Spawn** | Map with your spawn pin, distance, compass arrow, "6/8 players in position" and spawn timer | Host sees "Force start" |

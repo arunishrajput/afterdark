@@ -1,3 +1,5 @@
+<p align="center"><img src="apps/client/brand/afterdark-logo.png" width="480" alt="AfterDark: a crewmate under a location pin and a crescent moon, on a gridded globe"></p>
+
 # AfterDark 🌙
 
 **Among Us played with your feet.** AfterDark is a real-world, GPS-based social-deduction game that runs in your phone's browser as an installable PWA.

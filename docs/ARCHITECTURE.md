@@ -105,7 +105,7 @@
 - **Tiles:** `CacheFirst` for `tile.openstreetmap.org` (500 entries, 7 days, opaque responses allowed). The CSP's `connect-src` allows the tile host for this.
 - **Updates:** `registerType: 'prompt'`. A waiting build shows "Update available. Tap to reload" only on Home, in the lobby or on the results screen; it is queued during spawn, reveal and play. An hourly `registration.update()` checks for new builds.
 - **Install:** Android/Chromium: `beforeinstallprompt` → an "Install AfterDark" button on Home. iOS Safari: written Add-to-Home-Screen steps, dismissable and remembered.
-- **Manifest:** name "AfterDark", standalone, portrait, `#07080A` theme and background, icons 192, 512 and 512 maskable (`pnpm icons` renders them from `icon.svg` and `icon-maskable.svg`). `theme-color` follows the current theme.
+- **Manifest:** name "AfterDark", standalone, portrait, `#07080A` theme and background, icons 192, 512 and 512 maskable (`pnpm icons` renders them, the favicon and the Home and lobby logo images from the creator's logo, `apps/client/brand/afterdark-logo.png`, ADR-111). `theme-color` follows the current theme.
 - **Fonts** are self-hosted and precached (ADR-101). Game screens are lazy chunks; the first visit loads Home only.
 - **Resume:** on `visibilitychange` the wake lock is re-acquired, the GPS watch restarted, a half-dead socket detected (a `time:ping` that times out reconnects) and, after more than `staleAfterS` away during a game, a "You were away" toast is shown. A "Reconnecting…" banner with Retry appears after `reconnectBannerAfterMs` offline. Socket.IO backs off from `reconnectDelayMs` to `reconnectDelayMaxMs`.
 

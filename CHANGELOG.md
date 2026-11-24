@@ -2,6 +2,10 @@
 
 AfterDark was built in 15 phases, one Claude Code session each ([docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)). Every phase ended with a `phase-NN-done` tag; the full story of each is in [PROGRESS.md](PROGRESS.md) › Session log, and every design choice in [docs/DECISIONS.md](docs/DECISIONS.md). Versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+- **Logo:** the creator's AfterDark logo replaces the crescent-and-eye everywhere: app icons, favicon, the Home hero and the lobby header, all rendered from one master by `pnpm icons` (ADR-111).
+- **Home:** a hero page with the logo, a one-line pitch and the game's facts, the live night map beside it on laptops, and "How a game goes" below the fold (ADR-110). The How to play infection picture shows its infected dot again.
+
 ## [1.0.0] · 2026-11-24 · `v1.0.0`, `phase-14-done`
 Hardening, final checks and demo readiness.
 - **Security:** lobby creation is limited to 5 a minute per client address and 200 lobbies per server (new error code `SERVER_BUSY`, ADR-107); junk payloads to every client event are fuzzed over real sockets; every minigame and the co-op PIN are fuzzed with hostile bodies; every `dev:*` event is proven refused without test mode.
