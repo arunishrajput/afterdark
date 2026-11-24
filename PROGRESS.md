@@ -4,7 +4,7 @@
 > Status legend: `☐ NOT STARTED` · `▶ NEXT` · `◐ IN PROGRESS` · `✅ DONE` · `⏸ BLOCKED`
 
 ## Current status
-**▶ NEXT: Phase 13, PWA & mobile polish** → [docs/phases/PHASE-13-pwa-polish.md](docs/phases/PHASE-13-pwa-polish.md)
+**◐ IN PROGRESS: Phase 13, PWA & mobile polish** (started 2026-11-24, resume at task 13.1) → [docs/phases/PHASE-13-pwa-polish.md](docs/phases/PHASE-13-pwa-polish.md)
 
 **Live URL:** <https://afterdark-24gx.onrender.com> (Render free, Singapore; sleeps after ~15 min idle, first load up to ~1 min)
 
@@ -24,7 +24,7 @@
 | 10 | [Co-op tasks & Camouflage](docs/phases/PHASE-10-coop-camouflage.md) | ✅ DONE | 2026-11-23 | `phase-10-done` |
 | 11 | [Remaining minigames & balance](docs/phases/PHASE-11-minigames-balance.md) | ✅ DONE | 2026-11-23 | `phase-11-done` |
 | 12 | [Results & replay](docs/phases/PHASE-12-results-replay.md) | ✅ DONE | 2026-11-24 | `phase-12-done` |
-| 13 | [PWA & mobile polish](docs/phases/PHASE-13-pwa-polish.md) | ▶ NEXT | | |
+| 13 | [PWA & mobile polish](docs/phases/PHASE-13-pwa-polish.md) | ◐ IN PROGRESS | 2026-11-24 | |
 | 14 | [Hardening & demo](docs/phases/PHASE-14-hardening-demo.md) | ☐ NOT STARTED | | |
 
 ## Handoff notes for the next session
