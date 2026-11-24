@@ -13,3 +13,4 @@ blob-report/
 .vite/
 .claude/settings.local.json
 .playwright-mcp/
+.impeccable/
