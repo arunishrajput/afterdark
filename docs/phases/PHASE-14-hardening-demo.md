@@ -31,14 +31,14 @@
 
   Fix what you find and add tests.
 - [x] **14.2 Anti-spoof review:** check the speed gate, the re-anchor logic and accuracy gating. Log repeated teleports per player, privacy-safely (counts only). Consider a "suspicious GPS" indicator for the host only, but only if it can't leak roles; otherwise leave it out and record an ADR.
-- [ ] **14.3 Regression:**
+- [x] **14.3 Regression:**
   - e2e suite: a full 8-player game (1–2 browser contexts + bots) covering lobby → setup → spawn → reveal → tasks → infection → meeting → abilities → co-op → results → play again
   - run it 3 times to catch flakiness, and fix any flaky test
   - extend the raw-frame leak scan to the full game
-- [ ] **14.4 Load test:** `pnpm bots:load --lobbies 20 --players 8` against a local production build, then (briefly, if the free plan allows) against Render. Measure tick time (≤ 5 ms per room), memory, and the 95th-percentile view latency. Record the results in PROGRESS and fix hotspots.
-- [ ] **14.5 Field-test fixes:** go through every PROGRESS field-test note. Fix 🔴 and 🟠 items. Tune `infectionRadiusM`, `reachRadiusM`, `sectionEntryHoldS`, the meeting durations and similar values from real data, with an ADR for each.
+- [x] **14.4 Load test:** `pnpm bots:load --lobbies 20 --players 8` against a local production build, then (briefly, if the free plan allows) against Render. Measure tick time (≤ 5 ms per room), memory, and the 95th-percentile view latency. Record the results in PROGRESS and fix hotspots.
+- [x] **14.5 Field-test fixes:** go through every PROGRESS field-test note. Fix 🔴 and 🟠 items. Tune `infectionRadiusM`, `reachRadiusM`, `sectionEntryHoldS`, the meeting durations and similar values from real data, with an ADR for each.
 - [x] **14.6 Code quality pass:** run `code-review-and-quality` and `code-simplification` across the engine and views. Remove dead code. Make sure every system file is under about 400 lines (split if not).
-- [ ] **14.7 Docs:**
+- [x] **14.7 Docs:**
   - README: pitch, screenshots, how to play, run locally, test, deploy, architecture diagram link, credits (OSM/CARTO), licence choice (ask the human)
   - check that every doc in `docs/` matches the final code (CONFIG and PROTOCOL especially)
 - [x] **14.8 Demo script** (`docs/DEMO.md`): a 3-minute judge demo.
@@ -48,7 +48,7 @@
   4. Show the directional task reveal, a minigame, an infection with the boxes filling, a meeting and vote, and the results.
 
   Include the fallback plan (pre-recorded GIF, local server) and the pre-demo checklist (warm Render, battery, hotspot).
-- [ ] **14.9 Release:** update the CHANGELOG (from the tags), bump the version to 1.0.0, tag `v1.0.0` and `phase-14-done`, push, and confirm the deploy plus the prod smoke test.
+- [x] **14.9 Release:** update the CHANGELOG (from the tags), bump the version to 1.0.0, tag `v1.0.0` and `phase-14-done`, push, and confirm the deploy plus the prod smoke test.
 
 ## Acceptance criteria
 - No known high-severity security issue. Limits are enforced and tested.
