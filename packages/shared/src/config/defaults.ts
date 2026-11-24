@@ -75,6 +75,7 @@ export const DEFAULT_CONFIG = {
   locationSendIntervalMs: 1000,
   locationMinMoveM: 3,
   stationarySendIntervalMs: 5000,
+  stationaryWindowS: 10,
   reachRadiusM: 15,
   sectionEntryHoldS: 3,
 

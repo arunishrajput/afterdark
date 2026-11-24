@@ -74,7 +74,7 @@
 - **Leak tests** (in [TESTING.md](TESTING.md#3-leak-tests-mandatory-from-phase-1)) are mandatory from Phase 1 on.
 
 ## 5. Location pipeline
-1. **Client:** `navigator.geolocation.watchPosition({enableHighAccuracy: true, maximumAge: 0, timeout: 10000})`. Sends when ≥1 s has passed and the player has moved `locationMinMoveM` (3 m), or every 5 s otherwise (a heartbeat). In testMode the GPS simulator replaces this source.
+1. **Client:** `navigator.geolocation.watchPosition({enableHighAccuracy: true, maximumAge: 0, timeout: 10000})`. Sends every `locationSendIntervalMs` (1 s) while moving, and every `stationarySendIntervalMs` (5 s) once the player has moved under `locationMinMoveM` (3 m) over `stationaryWindowS` (10 s). The lobby drops to low-accuracy GPS once the player is ready (ADR-100). In testMode the GPS simulator replaces this source.
 2. **Server:**
    - validate the schema
    - reject fixes from the future (>5 s ahead)

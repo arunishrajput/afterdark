@@ -121,6 +121,7 @@ export const gameConfigSchema = z.strictObject({
   locationSendIntervalMs: positiveInt(),
   locationMinMoveM: positive(),
   stationarySendIntervalMs: positiveInt(),
+  stationaryWindowS: positiveInt(),
   reachRadiusM: int(8, 30),
   sectionEntryHoldS: positive(),
 

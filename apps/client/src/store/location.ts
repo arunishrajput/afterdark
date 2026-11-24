@@ -73,4 +73,5 @@ export const SEND_GATE = {
   sendIntervalMs: DEFAULT_CONFIG.locationSendIntervalMs,
   minMoveM: DEFAULT_CONFIG.locationMinMoveM,
   heartbeatMs: DEFAULT_CONFIG.stationarySendIntervalMs,
+  windowMs: DEFAULT_CONFIG.stationaryWindowS * 1000,
 } as const;

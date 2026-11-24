@@ -73,8 +73,9 @@ The Phase 11 balance script and the Phase 14 field test may change defaults. Rec
 | `speedCheckMinDtS` | 1 | — | 🔒 | The speed check divides by at least this many seconds, so two fixes a few ms apart can't fake a huge speed. |
 | `teleportAccuracyM` | 5 | — | 🔒 | Accuracy given to a `dev:teleport` fix (test mode only). |
 | `locationSendIntervalMs` | 1000 | — | 🔒 | Most frequent rate the client sends updates. |
-| `locationMinMoveM` | 3 | — | 🔒 | The client also sends an update when it has moved this far. |
-| `stationarySendIntervalMs` | 5000 | — | 🔒 | Battery saver used while the player is not moving (Phase 13). |
+| `locationMinMoveM` | 3 | — | 🔒 | A player who has moved less than this over `stationaryWindowS` counts as stationary. |
+| `stationarySendIntervalMs` | 5000 | — | 🔒 | Battery saver: a stationary player sends this often instead of every `locationSendIntervalMs` (Phase 13). |
+| `stationaryWindowS` | 10 | — | 🔒 | The look-back for "stationary": net movement over this long is compared with `locationMinMoveM`. |
 | `reachRadiusM` | 15 | 8–30 | ⚙️ | Distance to count as at a spawn, a task pin or a co-op point. |
 | `sectionEntryHoldS` | 3 | — | 🔒 | Player must stay inside a section this long before its pin is revealed. |
 
