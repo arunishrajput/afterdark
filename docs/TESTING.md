@@ -10,7 +10,7 @@ Claude can't walk around outside. So most of the game must be provable with **un
 | `pnpm typecheck` | `tsc --noEmit` in every package |
 | `pnpm lint` | ESLint (flat config) + Prettier check |
 | `pnpm verify` | lint + typecheck + test + build. **Must be green before every commit that ends a phase.** |
-| `pnpm e2e` | Playwright against the dev or preview servers (Chromium) |
+| `pnpm e2e` | Playwright against the dev server, plus the `pwa` project against `vite preview` (Chromium) |
 | `pnpm bots -- --code ABC123 --count 7 [--imposter-behaviour chase|sabotage] [--meetings random]` | Bot players (Phase 4+) |
 | `pnpm tunnel` | cloudflared quick tunnel to the dev client, for real-phone HTTPS tests |
 
@@ -81,10 +81,15 @@ Do this with at least 2 phones (one iOS, one Android if possible), outdoors.
 4. Lock the screen for 20 s, then unlock: does the app recover, and did the dot go stale and come back?
 5. Do 3 tasks: did the section highlight → pin → at-pin progression feel right? Note distances.
 6. Leave the boundary: warning after 0 s, penalty after 15 s?
-7. Battery drop over 20 min of play: ___%.
-8. Anything confusing or annoying: free text.
+7. Battery drop over 20 min of play: ___% (note the phone, brightness and whether Battery Saver was on). Compare a stationary stretch with a walking one if you can.
+8. Install: did "Install AfterDark" (Android) or Add to Home Screen (iOS) work, and does it open full screen in the dark theme?
+9. Reconnect: switch to airplane mode for 20 s mid-game, then back. Did "Reconnecting…" show, and did the game resume by itself? Lock the screen for 30 s: did you see "You were away"?
+10. Anything confusing or annoying: free text.
 
 Paste the results into PROGRESS.md under **Field-test notes**. Mark blockers with 🔴 so the next session fixes them first.
+
+- **PWA specs (Phase 13):** `e2e/pwa.spec.ts` runs in its own Playwright project against the production build (`vite preview` on :4173, started by the config after a build), because the service worker exists only there: the manifest and icons, and the shell loading with `context.setOffline(true)` after two online loads. `e2e/polish.spec.ts` (dev server) covers How to play, the sound toggle, the update banner's queue (Home and lobby yes, mid-game no, via the `pwaNeedRefresh` test hook) and the reconnect banner (via `dropConnection`). `apps/server/test/clientCopy.test.ts` is the "no run wording" lint.
+- **Lighthouse** (manual, Phase 13): `pnpm build`, serve it with `NODE_ENV=production PORT=3100 node apps/server/dist/index.js`, then `npx lighthouse@12 http://localhost:3100/ --form-factor=mobile --only-categories=performance,accessibility,best-practices,seo`. Phase 13 result: 87 / 100 / 96 / 100.
 
 ## 7. Definition of Done for tests in each phase
 - Every new rule has engine tests, including edge cases from the RULES.md table that are now in scope.

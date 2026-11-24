@@ -19,7 +19,7 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 
 - **Type:** a display face for titles (e.g. "Space Grotesk"), Inter for UI, JetBrains Mono for codes, tags and timers, all self-hosted variable fonts (Fontsource, latin subset), so they also work offline. Minimum body size 16 px.
 - **Contrast:** WCAG AA at minimum, AAA for HUD numbers. Tap targets ≥ 44 px. Never rely on colour alone: roles also have icons and text labels.
-- **Motion:** short and purposeful (150–250 ms), respecting `prefers-reduced-motion`. Haptics on Android through `navigator.vibrate`. iOS has no vibration, so use sound and visual pulses instead.
+- **Motion:** short and purposeful (150–250 ms), respecting `prefers-reduced-motion`. Haptics on Android through `navigator.vibrate`. iOS has no vibration, so use sound and visual pulses instead. Sounds are a small WebAudio kit (`net/sounds.ts`) with a **Sound** toggle in the lobby header and the game menu (remembered on the device; vibration is unaffected). Imposter-only cues are quiet and short (ADR-102). Every interactive element shows a `:focus-visible` outline in the theme accent.
 
 ## 2. Screens
 | Screen | Key content | Notes |
@@ -41,7 +41,13 @@ Mobile-first, one-handed, readable outdoors and at night. The core flow is in [R
 | **Meeting** | **Neutral theme for everyone.** Gather (distance to Base, arrivals) → Discuss (countdown, roster) → Vote (roster cards + Skip, confirm) → Result (tallies, ejection reveal) | Big type, so it can be held up in a circle |
 | **Spectator** | Neutral theme, "You were ejected", public map and HUD | No hidden information |
 | **Results** | Winner banner and reason (crew blue or imposter red glow; "Aborted by host" after an abort), "Who was who" cards flipping in one by one (imposters first: role, class, tag), team-score chart against the target, awards (crew MVP, top infector, most fooled) and the ranked leaderboard, timeline (icon, match-clock time, a sentence), meeting history (counts only), **Play again** (host) or "Waiting for the host…", optional Share result (Web Share, text only), Leave | Neutral theme. One scrolling page; the reveal never relies on colour alone (ADR-098) |
-| **How to play** | 5 short illustrated cards | Reachable from Home and the Lobby |
+| **How to play** | 5 short illustrated cards (inline SVG): The goal · Tasks and directions · Imposters and infection · Meetings and voting · Safety first | Reachable from Home and the Lobby; the Lobby shows a one-time "New to AfterDark?" hint (remembered per device) |
+
+## 2b. Connection, install and update bars
+- **Reconnecting…** (top bar, with *Retry now*): appears after `reconnectBannerAfterMs` (2 s) offline, for anyone in a lobby or game. The copy says the game is safe: it is, because the state lives on the server.
+- **Update available. Tap to reload**: only on Home, in the lobby and on the results screen; never during spawn, reveal or play (ADR-099).
+- **Install AfterDark** (Home): a button where the browser offers installation; on iOS Safari, written Share → Add to Home Screen steps that can be dismissed.
+- **You were away** toast: after more than `staleAfterS` in the background during a game.
 
 ## 3. HUD details
 - **Infection boxes:** `crewCount` squares. Filled boxes = compromised. A notch after box number `threshold` marks the imposter win line. When a box fills, animate it with a glitch, play a sound, and show the toast "Someone has been compromised".
@@ -62,4 +68,4 @@ Short, imperative and a little playful. Wording to use exactly:
 
 ## 5. Accessibility and safety
 - Every action is reachable by touch with large targets. Minigames avoid colour-only cues. Text scales with system font size where the layout allows.
-- The safety notice is shown on join. The "Stop somewhere safe" interstitial is shown before every minigame. "Leave game" is always reachable from the menu. Guidance never says "run".
+- The safety notice is shown on join. The "Stop somewhere safe" interstitial is shown before every minigame. "Leave game" (with a confirm) is reachable from the menu on every in-game screen: spawn, reveal, play, meeting and spectator. Guidance never says "run"; `apps/server/test/clientCopy.test.ts` scans the client's text for it. The join notice includes "walk and never run".

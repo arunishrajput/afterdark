@@ -98,12 +98,14 @@
 - **Map:** react-leaflet with custom layers. Keep the dot layer cheap (≤ 12 markers; positions animated with CSS transforms).
 
 ## 8. PWA
-vite-plugin-pwa (Workbox):
-- precache the app shell
-- runtime-cache map tiles (CacheFirst, max ~500 tiles, 7 days)
-- `registerType: 'prompt'` with an in-app "Update available" toast
-
-Manifest: name "AfterDark", standalone, portrait, dark theme colour, maskable icons. iOS: apple-touch-icon and status-bar meta tags, plus Add-to-Home-Screen instructions. Wake Lock is re-acquired on `visibilitychange`.
+`vite-plugin-pwa` (Workbox `generateSW`, ADR-099), registered by `net/pwa.ts`:
+- **Precache:** the built JS, CSS, SVG, PNG, woff2 and the manifest. `index.html` is not precached: navigations are `NetworkFirst` (4 s timeout), so a deploy always reaches online players and the last HTML serves offline.
+- **Tiles:** `CacheFirst` for `tile.openstreetmap.org` (500 entries, 7 days, opaque responses allowed). The CSP's `connect-src` allows the tile host for this.
+- **Updates:** `registerType: 'prompt'`. A waiting build shows "Update available. Tap to reload" only on Home, in the lobby or on the results screen; it is queued during spawn, reveal and play. An hourly `registration.update()` checks for new builds.
+- **Install:** Android/Chromium: `beforeinstallprompt` → an "Install AfterDark" button on Home. iOS Safari: written Add-to-Home-Screen steps, dismissable and remembered.
+- **Manifest:** name "AfterDark", standalone, portrait, `#07080A` theme and background, icons 192, 512 and 512 maskable (`pnpm icons` renders them from `icon.svg` and `icon-maskable.svg`). `theme-color` follows the current theme.
+- **Fonts** are self-hosted and precached (ADR-101). Game screens are lazy chunks; the first visit loads Home only.
+- **Resume:** on `visibilitychange` the wake lock is re-acquired, the GPS watch restarted, a half-dead socket detected (a `time:ping` that times out reconnects) and, after more than `staleAfterS` away during a game, a "You were away" toast is shown. A "Reconnecting…" banner with Retry appears after `reconnectBannerAfterMs` offline. Socket.IO backs off from `reconnectDelayMs` to `reconnectDelayMaxMs`.
 
 ## 9. Deployment (Phase 6)
 - **Render web service:** `pnpm install --frozen-lockfile && pnpm build`, then `node apps/server/dist/index.js`. The server serves `apps/client/dist` and Socket.IO on the same port.
@@ -127,6 +129,6 @@ Manifest: name "AfterDark", standalone, portrait, dark theme colour, maskable ic
 - The anti-cheat table is in [RULES.md](RULES.md) and the INFILTR8 notes.
 
 ## 11. Performance budgets
-- Initial JS ≤ 300 KB gzipped (Leaflet included, map tiles excluded). Minigames are lazy-loaded.
+- Initial JS ≤ 300 KB gzipped (map tiles excluded). The map, the game screens and the minigames are lazy-loaded; at Phase 13 the initial bundle is 120 KB gzipped and the map chunk 124 KB. Lighthouse (mobile): Performance 87, Accessibility 100.
 - Position-to-screen latency ≤ 1.5 s at the 95th percentile. A server tick for 12 players takes < 5 ms.
-- Battery: location sends drop to every 5 s when stationary. The wake lock is only held during an active lobby or game.
+- Battery: location sends drop to every 5 s when stationary (ADR-100), and a ready lobby uses coarse location. The wake lock is only held during an active lobby or game.
