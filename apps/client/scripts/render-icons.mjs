@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium } from '@playwright/test';
 
-const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'client', 'public');
+const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const JOBS = [
   { src: 'icon.svg', out: 'icon-192.png', size: 192 },
   { src: 'icon.svg', out: 'icon-512.png', size: 512 },
