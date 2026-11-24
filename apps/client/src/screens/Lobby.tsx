@@ -1,6 +1,8 @@
 import type { PlayerView } from '@afterdark/shared';
 import { useCallback, useState } from 'react';
 
+import { HowToPlay } from '../components/howto/HowToPlay';
+import { howToSeen, markHowToSeen } from '../components/howto/seen';
 import { AddBots } from '../components/lobby/AddBots';
 import { Checklist } from '../components/lobby/Checklist';
 import { CodeCard } from '../components/lobby/CodeCard';
@@ -22,6 +24,13 @@ export function Lobby({ view }: { view: PlayerView }) {
   const { lobby, me } = view;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [howTo, setHowTo] = useState(false);
+  const [hint, setHint] = useState(() => !howToSeen());
+  const openHowTo = () => {
+    markHowToSeen();
+    setHint(false);
+    setHowTo(true);
+  };
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const pushToast = useGame((s) => s.pushToast);
   const simOn = useLocation((s) => s.sim.on);
@@ -48,6 +57,32 @@ export function Lobby({ view }: { view: PlayerView }) {
           <SoundToggle />
         </div>
       </header>
+
+      {hint && (
+        <section
+          data-testid="how-to-hint"
+          aria-label="First time?"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-surface p-4"
+        >
+          <p className="text-sm">New to AfterDark? The guide takes one minute.</p>
+          <div className="flex shrink-0 gap-1">
+            <Button className="min-h-11 px-4 text-sm" onClick={openHowTo}>
+              How to play
+            </Button>
+            <Button
+              variant="ghost"
+              aria-label="Dismiss"
+              className="min-h-11 min-w-11"
+              onClick={() => {
+                markHowToSeen();
+                setHint(false);
+              }}
+            >
+              ✕
+            </Button>
+          </div>
+        </section>
+      )}
 
       <CodeCard code={lobby.code} />
       <PermissionGate view={view} simulated={simulated} />
@@ -78,6 +113,9 @@ export function Lobby({ view }: { view: PlayerView }) {
       {lobby.testMode && me.isHost && <AddBots playerCount={lobby.players.length} />}
       {lobby.testMode && <SimPanel />}
 
+      <Button variant="ghost" className="self-center" onClick={openHowTo}>
+        How to play
+      </Button>
       <VersionTag className="text-center" />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-bg/90 backdrop-blur">
@@ -97,6 +135,8 @@ export function Lobby({ view }: { view: PlayerView }) {
           </Button>
         </div>
       </div>
+
+      <HowToPlay open={howTo} onClose={() => setHowTo(false)} />
 
       {settingsOpen && (
         <SettingsSheet

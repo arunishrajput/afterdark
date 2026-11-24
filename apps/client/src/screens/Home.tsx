@@ -1,20 +1,13 @@
 import { lobbyCodeSchema } from '@afterdark/shared';
 import { type FormEvent, useState } from 'react';
 
+import { HowToPlay } from '../components/howto/HowToPlay';
 import { InstallCard } from '../components/pwa/InstallCard';
 import { Button } from '../components/ui/Button';
 import { ConnectionPill } from '../components/ui/ConnectionPill';
-import { Sheet } from '../components/ui/Sheet';
 import { VersionTag } from '../components/ui/VersionTag';
 
 export type Entry = { mode: 'create' } | { mode: 'join'; code: string };
-
-const HOW_TO_PLAY = [
-  'Everyone meets up outside and joins one lobby.',
-  'Crew walk to hidden task spots and solve quick minigames.',
-  'Imposters secretly infect players and sabotage.',
-  'Call a meeting, talk face to face, and vote someone out.',
-];
 
 export function Home({
   initialCode,
@@ -77,19 +70,7 @@ export function Home({
         <VersionTag className="text-center" />
       </div>
 
-      <Sheet open={howTo} title="How to play" onClose={() => setHowTo(false)}>
-        <ol className="flex list-decimal flex-col gap-2 pl-5 text-muted">
-          {HOW_TO_PLAY.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ol>
-        <p className="mt-4 text-sm text-muted">
-          The full illustrated guide arrives in a later build.
-        </p>
-        <Button variant="secondary" className="mt-5 w-full" onClick={() => setHowTo(false)}>
-          Got it
-        </Button>
-      </Sheet>
+      <HowToPlay open={howTo} onClose={() => setHowTo(false)} />
     </main>
   );
 }
