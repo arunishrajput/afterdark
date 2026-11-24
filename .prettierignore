@@ -7,3 +7,4 @@ blob-report
 pnpm-lock.yaml
 # Markdown docs are hand-formatted (tables, line breaks); Prettier would churn them.
 *.md
+trailer

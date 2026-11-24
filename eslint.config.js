@@ -16,6 +16,7 @@ export default defineConfig(
     'playwright-report/',
     'test-results/',
     'blob-report/',
+    'trailer/', // standalone Remotion project (marketing video), not part of the game
   ]),
 
   js.configs.recommended,

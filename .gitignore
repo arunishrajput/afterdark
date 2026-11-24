@@ -14,3 +14,10 @@ blob-report/
 .claude/settings.local.json
 .playwright-mcp/
 .impeccable/
+
+# trailer (Remotion project): heavy renders and raw captures
+trailer/out/
+trailer/public/footage/_raw-*/
+trailer/public/footage/*.webm
+trailer/public/footage/_tmp*
+trailer/public/music.wav
