@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { cardLabel, guidance } from './taskGeo';
+import { cardLabel, guidance, labelOf } from './taskGeo';
 
 describe('cardLabel', () => {
   it('reads "NE · Region A", and Centre for the centre section', () => {
     expect(cardLabel({ section: 'NE', regionName: 'Region A' })).toBe('NE · Region A');
     expect(cardLabel({ section: 'C', regionName: 'Region B' })).toBe('Centre · Region B');
+  });
+});
+
+describe('labelOf', () => {
+  it('names the partner to find on a co-op card', () => {
+    const card = { section: 'E', regionName: 'Region A', partnerTag: 'RAPTOR-04' } as const;
+    expect(labelOf({ ...card, kind: 'coop' })).toBe('Find RAPTOR-04 · E · Region A');
+    expect(labelOf({ ...card, kind: 'solo' })).toBe('E · Region A');
   });
 });
 

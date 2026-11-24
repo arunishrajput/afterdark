@@ -209,6 +209,16 @@ textarea {
   bottom: var(--map-inset-bottom, 0px);
 }
 
+/* A co-op card waiting for the partner breathes gently (reduced motion stills it, see above). */
+.coop-wait {
+  animation: coop-wait 1.6s ease-in-out infinite;
+}
+@keyframes coop-wait {
+  50% {
+    opacity: 0.55;
+  }
+}
+
 /* Geoman toolbar on a dark map */
 .leaflet-pm-toolbar .leaflet-buttons-control-button {
   min-width: 36px;

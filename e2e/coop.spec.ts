@@ -108,7 +108,10 @@ test('two crew complete a co-op; a camouflaged imposter stands in for a real par
   // Both walk to the same section and then the pin.
   await Promise.all([reachPin(a, cardA), reachPin(b, cardB)]);
   await a.getByTestId('coop-start').click();
-  await expect(a.getByTestId('coop-waiting')).toContainText('Waiting for');
+  // Waiting is on the card, not a full-screen page: the map stays in view (ADR-104).
+  await expect(cardA.getByTestId('coop-waiting')).toContainText(/Waiting for [A-Z]+-\d{2}/);
+  await expect(a.getByTestId('coop-sheet')).toHaveCount(0);
+  await expect(a.getByTestId('map')).toBeVisible();
   await a.screenshot({ path: `${SHOT}-coop-waiting.png` });
   await expect(b.getByTestId('coop-start')).toHaveText('Join');
   await b.getByTestId('coop-start').click();
@@ -129,7 +132,12 @@ test('two crew complete a co-op; a camouflaged imposter stands in for a real par
   await expect(cardAReq).toHaveCount(1);
   await reachPin(c, cardC);
   await c.getByTestId('coop-start').click();
-  await expect(c.getByTestId('coop-waiting')).toBeVisible();
+  await expect(cardC.getByTestId('coop-waiting')).toBeVisible();
+  // Cancel brings Start co-op back on the card; start again.
+  await cardC.getByTestId('coop-cancel').click();
+  await expect(cardC.getByTestId('coop-waiting')).toHaveCount(0);
+  await cardC.getByTestId('coop-start').click();
+  await expect(cardC.getByTestId('coop-waiting')).toBeVisible();
   const pin = await pinPosition(c, await positionOf(cardC));
 
   // The imposter disguises itself: its phone must read as crew.

@@ -18,6 +18,15 @@ export function cardLabel(card: Pick<TaskCard, 'section' | 'regionName'>): strin
   return `${section} · ${card.regionName}`;
 }
 
+/** "Find GHOST-03 · NE · Region B" for a co-op card, "NE · Region B" otherwise (UI_UX §3). */
+export function labelOf(
+  card: Pick<TaskCard, 'kind' | 'partnerTag' | 'section' | 'regionName'>,
+): string {
+  return card.kind === 'coop' && card.partnerTag
+    ? `Find ${card.partnerTag} · ${cardLabel(card)}`
+    : cardLabel(card);
+}
+
 /** The middle of a section's largest polygon (its first ring's vertex average): enough to point an arrow at. */
 export function sectionAnchor(region: RegionPublic, section: SectionId): LatLng | undefined {
   const shape = sectionShapes(region, DEFAULT_CONFIG.sectionCentreRatio).find(

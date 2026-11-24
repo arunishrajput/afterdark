@@ -1,8 +1,9 @@
 /**
- * The co-op screen (UI_UX §2 › Co-op waiting, TASKS §5): "Waiting for <tag>…", then the
- * PIN panel (show yours, type theirs), then success. It looks the same for a real partner
- * and for a camouflaged stand-in. The server checks the PIN; if it resets the session (a
- * meeting, a Task Stop, someone walking away) the view changes and the sheet follows it.
+ * The co-op screen (UI_UX §2 › Co-op, TASKS §5): the PIN panel (show yours, type theirs) once both
+ * players are in, then success. Waiting for the partner is not a screen: it shows on the task card,
+ * so the map stays in view (ADR-104). It looks the same for a real partner and for a camouflaged
+ * stand-in. The server checks the PIN; if it resets the session (a meeting, a Task Stop, someone
+ * walking away) the view changes and the sheet follows it.
  */
 import { DEFAULT_CONFIG, type PlayerView, type TaskCard } from '@afterdark/shared';
 import { useEffect, useRef, useState } from 'react';
@@ -21,7 +22,7 @@ function partnerName(cards: readonly TaskCard[], taskId: string): string {
   return cards.find((c) => c.id === taskId)?.partnerTag ?? 'your partner';
 }
 
-/** The sheet while a session is on, and a short "Co-op complete" once it ends in success. */
+/** The PIN sheet while a session is active, and a short "Co-op complete" once it ends in success. */
 export function CoopLayer({ view }: { view: PlayerView }) {
   const coop = view.game?.coop;
   const doneSeq = useGame((s) => s.taskDone?.seq ?? 0);
@@ -63,9 +64,10 @@ export function CoopLayer({ view }: { view: PlayerView }) {
       </Shell>
     );
   }
-  if (!coop) return null;
-  // Keyed by phase: a reset back to waiting, or a fresh puzzle, starts from an empty field.
-  return <CoopSheet key={coop.phase} view={view} />;
+  // Waiting for the partner shows on the task card (TaskPanel), over the live map.
+  if (coop?.phase !== 'active') return null;
+  // Keyed by task: a fresh session starts from an empty field.
+  return <CoopSheet key={coop.taskId} view={view} />;
 }
 
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
@@ -132,21 +134,6 @@ function CoopSheet({ view }: { view: PlayerView }) {
 
   return (
     <Shell title="Co-op task">
-      {coop.phase === 'waiting' && (
-        <section className="flex flex-1 flex-col justify-center gap-4 text-center">
-          <p className="font-display text-3xl font-bold" data-testid="coop-waiting">
-            Waiting for {name}…
-          </p>
-          <p className="text-muted">
-            Stay at the pin. {name === 'your partner' ? 'They' : name} must come to the pin and tap
-            Join. Stop somewhere safe while you wait.
-          </p>
-          <Button variant="secondary" data-testid="coop-cancel" onClick={() => void cancel()}>
-            Cancel
-          </Button>
-        </section>
-      )}
-
       {coop.phase === 'active' && coop.puzzle && (
         <section className="flex flex-1 flex-col gap-5" data-testid="coop-pin-panel">
           <div className="text-center">

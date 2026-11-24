@@ -1,37 +1,25 @@
 /**
  * The task cards (UI_UX §2–§3): stage icon, "NE · Region A", distance and arrow, and the card menu.
- * Co-op cards say who to find and start or join the session at the pin. A disguised imposter's decoy
- * cards look and behave the same but never reach the server.
+ * Co-op cards say who to find and start or join the session at the pin; while the viewer waits for
+ * their partner, the card says so and offers Cancel (ADR-104). A disguised imposter's decoy cards
+ * look and behave the same but never reach the server. Collapsed, the panel shows one card.
  */
 import type { PlayerView, TaskCard } from '@afterdark/shared';
 import { useMemo, useState } from 'react';
 
 import { useServerNow } from '../../hooks/useServerNow';
-import { coopJoin, coopStart, reportUnsafe, rerollTask } from '../../net/actions';
+import { coopCancel, coopJoin, coopStart, reportUnsafe, rerollTask } from '../../net/actions';
 import { messageFor } from '../../net/errors';
 import { useGame } from '../../store';
 import type { SelfPosition } from '../map/MapView';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
-import { formatClock, formatDistance } from './format';
+import { formatClock } from './format';
 import { priorityCardId } from './sheetState';
-import { cardLabel, guidance, sectionAnchor } from './taskGeo';
+import { TaskCardRow } from './TaskCardRow';
+import { guidance, labelOf, sectionAnchor } from './taskGeo';
 
 const CLOCK_REFRESH_MS = 1000;
-
-/** "Find GHOST-03 · NE · Region B" for a co-op card, "NE · Region B" otherwise (UI_UX §3). */
-const labelOf = (card: TaskCard): string =>
-  card.kind === 'coop' && card.partnerTag
-    ? `Find ${card.partnerTag} · ${cardLabel(card)}`
-    : cardLabel(card);
-
-const STAGE_ICON = { assigned: '🧭', pin: '📍', atPin: '🎯' } as const;
-const STAGE_NAME = { assigned: 'Head to the area', pin: 'Walk to the pin', atPin: 'At the pin' };
-
-function stageOf(card: TaskCard): keyof typeof STAGE_ICON {
-  if (card.stage === 'assigned') return 'assigned';
-  return card.atPin ? 'atPin' : 'pin';
-}
 
 export function TaskPanel({
   view,
@@ -97,7 +85,13 @@ export function TaskPanel({
     else setMenuFor(undefined);
   };
 
-  /** Start or join the co-op session at the pin; the sheet that follows comes from the next view. */
+  /** Stop waiting for the partner (the card stays, Start co-op comes back). */
+  const cancelCoop = async (taskId: string) => {
+    const res = await coopCancel(taskId);
+    if (!res.ok) pushToast(messageFor(res.code));
+  };
+
+  /** Start or join the co-op session at the pin: waiting shows on the card, the PIN panel comes once both are in. */
   const coopAction = async (card: Extract<TaskCard, { stage: 'pin' }>) => {
     const res = await (card.partnerWaiting ? coopJoin(card.id) : coopStart(card.id));
     if (!res.ok) pushToast(messageFor(res.code));
@@ -114,8 +108,12 @@ export function TaskPanel({
       return [c.id, self && target ? guidance(self, target, self.heading) : undefined] as const;
     }),
   );
+  // The viewer started a co-op at this card's pin and waits for the partner (ADR-104).
+  const coop = view.game?.coop;
+  const waitingId = coop?.phase === 'waiting' ? coop.taskId : undefined;
   const shownId = collapsed
     ? priorityCardId(cards, {
+        waitingId,
         distances: new Map([...guides].map(([id, g]) => [id, g?.distanceM])),
       })
     : undefined;
@@ -132,85 +130,40 @@ export function TaskPanel({
 
   return (
     <section aria-label="Your tasks" className="flex flex-col gap-2" data-testid="task-panel">
-      {shown.map((card) => {
-        const stage = stageOf(card);
-        const g = guides.get(card.id);
-        return (
-          <article
-            key={card.id}
-            data-testid="task-card"
-            data-stage={stage}
-            data-kind={card.kind}
-            data-requested={card.requested ? 'true' : undefined}
-            data-holds-key={card.holdsKey ? 'true' : undefined}
-            className={`flex items-center gap-3 rounded-2xl border bg-surface px-3 py-2 ${stage === 'atPin' ? 'border-accent shadow-[0_0_14px_var(--accent-glow)]' : 'border-white/10'}`}
+      {waitingId && !cards.some((c) => c.id === waitingId) && (
+        // The co-op being waited on has no card in this list (should not happen): still offer Cancel.
+        <article className="flex items-center gap-2 rounded-2xl border border-accent bg-surface px-3 py-2">
+          <p
+            role="status"
+            data-testid="coop-waiting"
+            className="coop-wait min-w-0 flex-1 font-semibold text-accent"
           >
-            <button
-              type="button"
-              onClick={() => onFocus(card)}
-              aria-label={`${STAGE_NAME[stage]}: ${cardLabel(card)}. Show on the map.`}
-              className="flex min-h-12 min-w-0 flex-1 items-center gap-3 text-left"
-            >
-              <span aria-hidden="true" className="text-2xl" data-testid="task-stage-icon">
-                {STAGE_ICON[stage]}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold" data-testid="task-label">
-                  {labelOf(card)}
-                </span>
-                <span className="block text-xs text-muted">
-                  {card.kind === 'coop'
-                    ? `${card.requested ? 'Requested by a teammate' : 'Co-op'} · ${STAGE_NAME[stage]}`
-                    : card.holdsKey
-                      ? `🔑 Key in hand · ${STAGE_NAME[stage]}`
-                      : STAGE_NAME[stage]}
-                </span>
-              </span>
-              {g && stage !== 'atPin' && (
-                <span className="flex flex-col items-center text-xs text-muted tabular-nums">
-                  <span
-                    aria-hidden="true"
-                    className="inline-block text-lg leading-none text-accent"
-                    style={{ transform: `rotate(${g.arrowDeg}deg)` }}
-                  >
-                    ↑
-                  </span>
-                  <span data-testid="task-distance">{formatDistance(g.distanceM)}</span>
-                </span>
-              )}
-            </button>
-            {card.stage === 'pin' && card.atPin && card.kind !== 'coop' && (
-              <Button
-                data-testid="task-start"
-                className="min-h-11 px-4"
-                disabled={jammed}
-                onClick={() => onStart(card)}
-              >
-                {jammed ? 'Jammed' : 'Start'}
-              </Button>
-            )}
-            {card.stage === 'pin' && card.atPin && card.kind === 'coop' && (
-              <Button
-                data-testid="coop-start"
-                className="min-h-11 px-4"
-                disabled={jammed}
-                onClick={() => void coopAction(card)}
-              >
-                {jammed ? 'Jammed' : card.partnerWaiting ? 'Join' : 'Start co-op'}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              data-testid="task-menu"
-              aria-label="Task options"
-              className="min-h-11 min-w-11"
-              onClick={() => setMenuFor(card.id)}
-            >
-              ⋯
-            </Button>
-          </article>
-        );
-      })}
+            Co-op: waiting for your partner…
+          </p>
+          <Button
+            variant="secondary"
+            data-testid="coop-cancel"
+            className="min-h-11 shrink-0 px-4"
+            onClick={() => void cancelCoop(waitingId)}
+          >
+            Cancel
+          </Button>
+        </article>
+      )}
+      {shown.map((card) => (
+        <TaskCardRow
+          key={card.id}
+          card={card}
+          guide={guides.get(card.id)}
+          jammed={jammed}
+          waitingFor={card.id === waitingId ? (card.partnerTag ?? 'your partner') : undefined}
+          onFocus={() => onFocus(card)}
+          onStart={() => onStart(card)}
+          onCoop={() => card.stage === 'pin' && void coopAction(card)}
+          onCancelCoop={() => void cancelCoop(card.id)}
+          onMenu={() => setMenuFor(card.id)}
+        />
+      ))}
       {joinOffer && (
         <article
           data-testid="coop-join-offer"
@@ -220,7 +173,7 @@ export function TaskPanel({
             🎯
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">Co-op task nearby</span>
+            <span className="block font-semibold">Co-op task nearby</span>
             <span className="block text-xs text-muted">Someone is waiting for a partner</span>
           </span>
           <Button
@@ -240,7 +193,7 @@ export function TaskPanel({
       >
         {menuCard && (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-muted">{cardLabel(menuCard)}</p>
+            <p className="text-sm break-words text-muted">{labelOf(menuCard)}</p>
             <Button
               variant="secondary"
               data-testid="task-reroll"

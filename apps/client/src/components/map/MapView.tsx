@@ -163,13 +163,11 @@ function MapEffects({
     };
   }, [map]);
 
-  // The overlays changed height (the sheet opened or closed): keep the area fitted in the band
-  // between them until the player has moved the map themselves.
+  // The overlays changed height (a card grew, the sheet collapsed): later fits use the new band,
+  // but the map does not move by itself, as in a maps app. The Fit button re-centres it.
   useEffect(() => {
     insetsRef.current = insets;
-    const r = ringRef.current;
-    if (fitted.current && autoFit.current && r) map.fitBounds(boundsOf(r), fitOptions(insets));
-  }, [map, insets]);
+  }, [insets]);
 
   // Fit the first boundary we see; later changes only on the Fit button.
   useEffect(() => {
