@@ -1,10 +1,10 @@
 # AfterDark trailer: YouTube upload kit
 
-**Published:** <https://www.youtube.com/watch?v=jajMJy-C4BI>
+**Published:** <https://www.youtube.com/watch?v=U6HoX-31tbk>
 
 ## Files
-- **Video:** `trailer/out/afterdark-trailer.mp4` (1920×1080, 30 fps, 60 s)
-- **Thumbnail:** `trailer/out/afterdark-thumbnail.jpg` (1280×720, about 250 KB, under YouTube's 2 MB limit). Logo-first design.
+- **Video:** `trailer/out/afterdark-trailer.mp4` (1920×1080, 30 fps, 60 s, AAC 320 kbps)
+- **Thumbnail:** `trailer/out/afterdark-thumbnail.jpg` (1280×720, about 250 KB, under YouTube's 2 MB limit). The imposter's red visor, the logo and the night map.
 
 Both live in `trailer/out/`, which is git-ignored. Re-render with the commands in [README.md](README.md) if they are missing.
 
@@ -42,7 +42,8 @@ Server-authoritative game engine, per-player views so a crew phone never receive
 
 SOURCE CODE: https://github.com/arunishrajput/afterdark
 
-Built for the CodeNMode hackathon at SIT, written entirely with Claude Code. Trailer made with Remotion; the soundtrack is original and synthesized in code.
+Built for the CodeNMode hackathon at SIT, written entirely with Claude Code. Trailer made with Remotion; the score is original and synthesized in code.
+Map data © OpenStreetMap contributors (Connaught Place, New Delhi), openstreetmap.org/copyright
 
 #AfterDark #AmongUs #IndieGame #GPSGame #CodeNMode #ClaudeCode
 ```

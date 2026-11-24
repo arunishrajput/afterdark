@@ -1,0 +1,31 @@
+{
+  "fps": 30,
+  "duration": 60,
+  "bpm": 120,
+  "scenes": {
+    "mapReveal": [0, 4],
+    "card1": [4, 5.5],
+    "lineup": [5.5, 7.5],
+    "card2": [7.5, 9],
+    "reveal": [9, 12],
+    "scatter": [12, 14],
+    "navigate": [14, 16],
+    "games": [16, 20],
+    "visor": [20, 21],
+    "infect": [21, 24],
+    "boxes": [24, 25],
+    "jam": [25, 27],
+    "fake": [27, 29],
+    "camo": [29, 31],
+    "escalate": [31, 32],
+    "alarm": [32, 34],
+    "converge": [34, 36],
+    "accuse": [36, 39],
+    "eject": [39, 42],
+    "breath": [42, 44],
+    "montage": [44, 49.5],
+    "black": [49.5, 50],
+    "logo": [50, 55],
+    "cta": [55, 60]
+  }
+}
