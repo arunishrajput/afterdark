@@ -70,7 +70,7 @@ export function Roster({
               aria-label={p.connected ? 'online' : 'offline'}
               className={`size-2.5 shrink-0 rounded-full ${p.connected ? 'bg-emerald-400' : 'bg-white/20'}`}
             />
-            <span className={`min-w-0 flex-1 truncate ${p.connected ? '' : 'text-muted'}`}>
+            <span className={`min-w-0 flex-1 break-words ${p.connected ? '' : 'text-muted'}`}>
               {p.username}
               {p.isHost && (
                 <span className="ml-1.5" role="img" aria-label="host">

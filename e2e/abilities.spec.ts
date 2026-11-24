@@ -4,6 +4,7 @@ import {
   advanceClock,
   enableTestMode,
   fakesOf,
+  HOME,
   joinLobby,
   lobbyWithBots,
   newPlayer,
@@ -31,20 +32,31 @@ const ABILITY_WAIT_S = 65;
 const LOCK_S = 30;
 
 /**
- * The map's centre is where the fake goes. The client can only check the boundary, so try spots on rings around the
- * centre until the server (which knows the task points) accepts one: it refuses anything within 30 m of a point.
+ * The crosshair is where the fake goes: the middle of the band the HUD and the sheet leave free, not the
+ * map's own centre (ADR-103). The client can only check the boundary, so aim the crosshair at spots on
+ * rings around the middle of the area (drawn around HOME) until the server (which knows the task points)
+ * accepts one: it refuses anything within 30 m of a point.
  */
 async function plantFake(page: Page) {
   await page.getByTestId('ability-fakeTask').click();
   await expect(page.getByTestId('fake-placer')).toBeVisible();
   await expect(page.getByTestId('placer-cross')).toBeVisible();
-  const home = await page.evaluate(() => {
-    const map = (
-      window as unknown as { __afterdarkMap?: { getCenter(): { lat: number; lng: number } } }
-    ).__afterdarkMap;
-    return map?.getCenter();
-  });
-  if (!home) throw new Error('map test hook missing');
+  // The sheet just swapped the ability bar for the smaller placer bar: wait until the crosshair,
+  // which follows the sheet's height, has settled.
+  const crossY = () =>
+    page.getByTestId('placer-cross').evaluate((el) => el.getBoundingClientRect().top);
+  let lastY = await crossY();
+  await expect
+    .poll(
+      async () => {
+        const y = await crossY();
+        const settled = y === lastY;
+        lastY = y;
+        return settled;
+      },
+      { intervals: [250] },
+    )
+    .toBe(true);
   const spots: { dLat: number; dLng: number }[] = [{ dLat: 0, dLng: 0 }];
   for (const ring of RING_STEPS_M) {
     for (let k = 0; k < RING_BEARINGS; k++) {
@@ -56,19 +68,30 @@ async function plantFake(page: Page) {
     }
   }
   for (const spot of spots) {
+    // Pan so the crosshair (not the map's centre) lands on the spot.
     await page.evaluate(
       ({ lat, lng }) => {
         const map = (
           window as unknown as {
             __afterdarkMap?: {
-              setView(c: [number, number], z: number, o: object): void;
+              setView(c: { lat: number; lng: number }, z: number, o: object): void;
               getZoom(): number;
+              getContainer(): HTMLElement;
+              project(p: [number, number], z: number): { x: number; y: number };
+              unproject(p: [number, number], z: number): { lat: number; lng: number };
             };
           }
         ).__afterdarkMap;
-        map?.setView([lat, lng], map.getZoom(), { animate: false });
+        const cross = document.querySelector('[data-testid="placer-cross"]');
+        if (!map || !cross) throw new Error('map test hook or crosshair missing');
+        const c = cross.getBoundingClientRect();
+        const box = map.getContainer().getBoundingClientRect();
+        const dy = c.top + c.height / 2 - (box.top + box.height / 2);
+        const z = map.getZoom();
+        const p = map.project([lat, lng], z);
+        map.setView(map.unproject([p.x, p.y - dy], z), z, { animate: false });
       },
-      { lat: home.lat + spot.dLat, lng: home.lng + spot.dLng },
+      { lat: HOME.lat + spot.dLat, lng: HOME.lng + spot.dLng },
     );
     await expect(page.getByTestId('fake-spot-status')).toHaveAttribute('data-valid', 'true');
     await page.getByTestId('fake-confirm').click();

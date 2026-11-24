@@ -111,7 +111,7 @@ export function WhoWasWho({ players }: { players: ResultsPlayer[] }) {
               <span aria-hidden="true">{p.role === 'imposter' ? '🎭' : '🛡️'}</span>{' '}
               {ROLE_LABEL[p.role]}
             </p>
-            <p className="mt-1 truncate font-display text-lg font-bold">{p.username}</p>
+            <p className="mt-1 font-display text-lg font-bold break-words">{p.username}</p>
             <p className="font-mono text-sm text-muted">{p.tag}</p>
             {p.classes && (
               <p className="mt-1 text-xs text-muted">
@@ -231,7 +231,7 @@ export function Leaderboard({ results }: { results: ResultsView }) {
               </span>
               <span className="flex min-w-0 flex-col">
                 <span className="text-xs tracking-wider text-muted uppercase">{c.label}</span>
-                <span className="truncate font-semibold">{c.text}</span>
+                <span className="font-semibold break-words">{c.text}</span>
               </span>
             </li>
           ))}
@@ -246,7 +246,7 @@ export function Leaderboard({ results }: { results: ResultsView }) {
           >
             <span className="font-mono text-sm text-muted">{i + 1}</span>
             <span className="min-w-0">
-              <span className="block truncate font-semibold">
+              <span className="block font-semibold break-words">
                 {p.username}{' '}
                 <span className="text-xs font-normal text-muted">{ROLE_LABEL[p.role]}</span>
               </span>
