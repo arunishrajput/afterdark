@@ -10,7 +10,7 @@
 
 No accounts and no app store: share a 6-letter code and play. **Live:** <https://afterdark-24gx.onrender.com>
 
-> Built for the CodeNMode hackathon at SIT, written entirely with Claude Code, one phase per session ([build plan](docs/BUILD_PLAN.md), [progress](PROGRESS.md)).
+> Built for the Code N Mode hackathon at SIT, organised by 32 BIT, the game dev club, in 15 phases ([build plan](docs/BUILD_PLAN.md), [progress](PROGRESS.md)).
 
 [![Trailer](https://img.shields.io/badge/trailer-YouTube-red?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=U6HoX-31tbk) [![CI](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml/badge.svg)](https://github.com/arunishrajput/afterdark/actions/workflows/ci.yml)
 
@@ -101,7 +101,7 @@ The server decides everything: every rule, timer, random roll and win check live
 ## Docs
 | | |
 |---|---|
-| Product | [Trailer](https://www.youtube.com/watch?v=U6HoX-31tbk) · [PRD](docs/PRD.md) · [Original concept](docs/CONCEPT.md) · [INFILTR8 notes](docs/reference/INFILTR8_NOTES.md) · [Demo script](docs/DEMO.md) |
+| Product | [Trailer](https://www.youtube.com/watch?v=U6HoX-31tbk) · [Launch post](marketing/linkedin/README.md) · [PRD](docs/PRD.md) · [Original concept](docs/CONCEPT.md) · [INFILTR8 notes](docs/reference/INFILTR8_NOTES.md) · [Demo script](docs/DEMO.md) |
 | Game design | [Rules](docs/RULES.md) · [Roles & visibility](docs/ROLES.md) · [Scoring](docs/SCORING.md) · [Config](docs/CONFIG.md) · [Map & regions](docs/MAP_AND_REGIONS.md) · [Tasks](docs/TASKS.md) · [Meetings](docs/MEETINGS.md) |
 | Engineering | [Architecture](docs/ARCHITECTURE.md) · [Protocol](docs/PROTOCOL.md) · [UI/UX](docs/UI_UX.md) · [Testing](docs/TESTING.md) · [Decisions](docs/DECISIONS.md) · [Changelog](CHANGELOG.md) |
 | Process | [CLAUDE.md](CLAUDE.md) · [Build plan](docs/BUILD_PLAN.md) · [Manual setup](docs/MANUAL_SETUP.md) · [Progress](PROGRESS.md) |

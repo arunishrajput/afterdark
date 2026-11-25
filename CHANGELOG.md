@@ -1,6 +1,6 @@
 # Changelog
 
-AfterDark was built in 15 phases, one Claude Code session each ([docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)). Every phase ended with a `phase-NN-done` tag; the full story of each is in [PROGRESS.md](PROGRESS.md) › Session log, and every design choice in [docs/DECISIONS.md](docs/DECISIONS.md). Versions follow [Semantic Versioning](https://semver.org/).
+AfterDark was built in 15 phases ([docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)). Every phase ended with a `phase-NN-done` tag; the full story of each is in [PROGRESS.md](PROGRESS.md) › Session log, and every design choice in [docs/DECISIONS.md](docs/DECISIONS.md). Versions follow [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 - **Trailer:** a 60-second cinematic trailer, [on YouTube](https://www.youtube.com/watch?v=U6HoX-31tbk), with its Remotion source in [`trailer/`](trailer/README.md): hand-animated shots on a real street map of Connaught Place, New Delhi, live minigames, an infection, a sabotage, a meeting and an ejection, an original score synthesized in code with sound design on every cut, and a new thumbnail. It replaces a first cut from the same day. Standalone, so it is not part of `pnpm verify`.

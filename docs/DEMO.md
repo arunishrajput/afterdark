@@ -51,4 +51,4 @@ Roles are secret and random, so plan for it:
 - **Safety:** "Stop somewhere safe" before every puzzle, never "run" in the copy (a test enforces it), no-go zones, and players can report an unsafe spot.
 - **Privacy:** positions live in server memory only, are never logged, and vanish with the lobby. No accounts.
 - **Scale:** one free Render instance; the Phase 14 load test ran 20 lobbies of 8 bots (see PROGRESS.md).
-- **Built with Claude Code:** 15 phases, one per session, with tests at every step (1100+ unit and integration tests, 30+ Playwright specs).
+- **Built in 15 phases:** with tests at every step (1100+ unit and integration tests, 30+ Playwright specs).

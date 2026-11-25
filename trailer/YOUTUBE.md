@@ -42,15 +42,15 @@ Server-authoritative game engine, per-player views so a crew phone never receive
 
 SOURCE CODE: https://github.com/arunishrajput/afterdark
 
-Built for the CodeNMode hackathon at SIT, written entirely with Claude Code. Trailer made with Remotion; the score is original and synthesized in code.
+Built for the Code N Mode hackathon at SIT, organised by 32 BIT. Trailer made with Remotion; the score is original and synthesized in code.
 Map data © OpenStreetMap contributors (Connaught Place, New Delhi), openstreetmap.org/copyright
 
-#AfterDark #AmongUs #IndieGame #GPSGame #CodeNMode #ClaudeCode
+#AfterDark #AmongUs #IndieGame #GPSGame #CodeNMode
 ```
 
 ## Tags
 ```
-afterdark, among us real life, real life among us, gps game, social deduction game, pwa game, browser game, indie game, hackathon project, claude code, codenmode, game trailer
+afterdark, among us real life, real life among us, gps game, social deduction game, pwa game, browser game, indie game, hackathon project, codenmode, game trailer
 ```
 
 ## Suggested settings

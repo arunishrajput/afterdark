@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Product** | AfterDark, a real-world GPS social-deduction game (PWA) |
-| **Context** | Hackathon project (CodeNMode @ SIT), built entirely with Claude Code |
+| **Context** | Hackathon project (Code N Mode @ SIT, organised by 32 BIT) |
 | **Version** | 1.0 spec · 2026-11-23 |
 | **Sources** | [CONCEPT.md](CONCEPT.md), [INFILTR8 notes](reference/INFILTR8_NOTES.md), [DECISIONS.md](DECISIONS.md) |
 

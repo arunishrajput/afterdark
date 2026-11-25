@@ -378,7 +378,7 @@ export const Finale: React.FC = () => {
         <div style={{ opacity: cta(16), marginTop: 40, fontFamily: mono, fontSize: 24, letterSpacing: '0.42em', color: '#b4bdd6', paddingLeft: '0.42em' }}>4–12 PLAYERS · NO APP · NO ACCOUNTS</div>
       </div>
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 52, textAlign: 'center', opacity: cta(26) * 0.75, fontFamily: mono, fontSize: 17, letterSpacing: '0.34em', color: C.muted, paddingLeft: '0.34em' }}>
-        WALK, NEVER RUN · BUILT WITH CLAUDE CODE · CODENMODE @ SIT
+        WALK, NEVER RUN · BUILT AT CODE N MODE · 32 BIT, SIT
       </div>
       <Flare at={0} y={430} width={2400} color={C.blueHi} dur={30} />
       <Flare at={2} y={430} width={1800} color={C.redHi} dur={26} />
