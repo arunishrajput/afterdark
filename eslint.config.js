@@ -17,6 +17,7 @@ export default defineConfig(
     'test-results/',
     'blob-report/',
     'trailer/', // standalone Remotion project (marketing video), not part of the game
+    'marketing/', // launch-post assets and their render script, not part of the game
   ]),
 
   js.configs.recommended,

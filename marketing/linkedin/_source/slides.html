@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AfterDark launch slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#04060c; --ink:#F2F5FB; --muted:#9aa4c2; --blue:#2E8BFF; --blue-hi:#8EC5FF; --red:#FF3B3B; --red-hi:#FF9A9A; --green:#7CFF4F; --amber:#FFB020; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #222; display: flex; flex-direction: column; gap: 40px; padding: 40px; align-items: center; }
+  .slide { width: 1080px; height: 1350px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Inter, sans-serif; }
+  .glow { position: absolute; inset: 0; pointer-events: none; }
+  .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: .32em; text-transform: uppercase; }
+  .kicker { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; letter-spacing: .38em; text-transform: uppercase; color: var(--muted); }
+  h1, h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; letter-spacing: -.01em; line-height: 1.02; }
+  .red { color: var(--red); } .blue { color: var(--blue-hi); }
+  .footer { position: absolute; left: 72px; right: 72px; bottom: 56px; display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+  .footer b { color: var(--ink); font-weight: 700; }
+  .page { color: var(--ink); }
+  .brandmark { position: absolute; top: 52px; left: 72px; height: 54px; mix-blend-mode: lighten; }
+
+  /* 1 — cover */
+  #s1 .map { position: absolute; left: -230px; top: 120px; width: 1540px; }
+  #s1 .shade { position: absolute; inset: 0; background: linear-gradient(180deg, #04060c 0%, rgba(4,6,12,.55) 16%, rgba(4,6,12,0) 32%, rgba(4,6,12,0) 50%, rgba(4,6,12,.85) 64%, #04060c 72%); }
+  #s1 .logo { position: absolute; left: 50%; top: 20px; width: 680px; transform: translateX(-50%); mix-blend-mode: lighten; filter: drop-shadow(0 0 40px rgba(255,59,59,.35)); }
+  #s1 .text { position: absolute; left: 72px; right: 72px; top: 820px; }
+  #s1 h1 { font-size: 104px; margin-top: 22px; }
+  #s1 p { font-size: 32px; line-height: 1.4; color: #c9d1ea; margin-top: 26px; max-width: 940px; }
+
+  /* 2 — how a game goes */
+  #s2 .head { position: absolute; left: 72px; top: 132px; right: 72px; }
+  #s2 h2 { font-size: 76px; margin-top: 18px; }
+  #s2 .cards { position: absolute; left: 72px; right: 72px; top: 330px; display: flex; flex-direction: column; gap: 34px; }
+  .beat { display: flex; gap: 30px; align-items: center; }
+  .beat .shot { width: 470px; height: 264px; border-radius: 26px; overflow: hidden; flex: none; position: relative; border: 2px solid rgba(255,255,255,.12); }
+  .beat .shot img { width: 100%; height: 100%; object-fit: cover; }
+  .beat .tag { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; letter-spacing: .3em; }
+  .beat h3 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.05; margin-top: 12px; }
+  .beat p { font-size: 25px; line-height: 1.42; color: #c3cbe3; margin-top: 12px; }
+
+  /* 3 — real app */
+  #s3 .head { position: absolute; left: 72px; right: 72px; top: 132px; }
+  #s3 h2 { font-size: 84px; margin-top: 18px; }
+  #s3 .head p { font-size: 32px; line-height: 1.4; color: #c3cbe3; margin-top: 22px; }
+  .phones { position: absolute; left: 0; right: 0; top: 470px; height: 640px; }
+  .phone { position: absolute; width: 292px; height: 632px; border-radius: 44px; padding: 10px; background: linear-gradient(140deg,#3a4152,#0b0d13 35%,#0a0c12 70%,#2c3240); box-shadow: 0 0 0 1.5px rgba(255,255,255,.16), 0 40px 90px rgba(0,0,0,.7); }
+  .phone img { width: 100%; height: 100%; border-radius: 35px; object-fit: cover; object-position: top; display: block; }
+  .phone.l { left: 120px; top: 50px; transform: rotate(-7deg); box-shadow: 0 0 0 1.5px rgba(255,255,255,.16), 0 0 90px rgba(46,139,255,.35), 0 40px 90px rgba(0,0,0,.7); }
+  .phone.c { left: 394px; top: 0; z-index: 2; box-shadow: 0 0 0 1.5px rgba(255,255,255,.2), 0 0 110px rgba(46,139,255,.45), 0 40px 90px rgba(0,0,0,.8); }
+  .phone.r { left: 668px; top: 50px; transform: rotate(7deg); box-shadow: 0 0 0 1.5px rgba(255,255,255,.16), 0 0 90px rgba(255,59,59,.4), 0 40px 90px rgba(0,0,0,.7); }
+  .chips { position: absolute; left: 72px; right: 72px; top: 1168px; display: flex; gap: 16px; justify-content: center; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 21px; letter-spacing: .14em; text-transform: uppercase; padding: 14px 24px; border-radius: 999px; border: 2px solid rgba(142,197,255,.55); color: var(--blue-hi); background: rgba(46,139,255,.08); white-space: nowrap; }
+
+  /* 4 — under the hood */
+  #s4 .head { position: absolute; left: 72px; right: 72px; top: 132px; }
+  #s4 h2 { font-size: 80px; margin-top: 18px; }
+  .grid { position: absolute; left: 72px; right: 72px; top: 390px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .stat.wide { grid-column: 1 / -1; min-height: 0; display: flex; align-items: center; gap: 30px; }
+  .stat.wide .big { font-size: 54px; flex: none; }
+  .stat { border-radius: 28px; padding: 30px 32px; background: linear-gradient(160deg, rgba(20,30,54,.9), rgba(8,12,24,.95)); border: 1.5px solid rgba(120,150,220,.2); min-height: 236px; }
+  .stat .big { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 66px; line-height: 1; letter-spacing: -.02em; }
+  .stat .lbl { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 27px; margin-top: 14px; }
+  .stat p { font-size: 21px; line-height: 1.42; color: #aab3cf; margin-top: 10px; }
+  .stack { position: absolute; left: 72px; right: 72px; top: 1196px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+
+  /* 5 — trailer */
+  #s5 .head { position: absolute; left: 72px; right: 72px; top: 132px; }
+  #s5 h2 { font-size: 92px; margin-top: 18px; }
+  #s5 .thumb { position: absolute; left: 72px; right: 72px; top: 350px; height: 529px; border-radius: 30px; overflow: hidden; border: 2px solid rgba(255,255,255,.16); box-shadow: 0 0 120px rgba(255,59,59,.25), 0 0 80px rgba(46,139,255,.2), 0 50px 100px rgba(0,0,0,.7); }
+  #s5 .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .play { position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; background: rgba(255,59,59,.92); box-shadow: 0 0 60px rgba(255,59,59,.8); display: flex; align-items: center; justify-content: center; }
+  .play:after { content: ''; border-left: 50px solid #fff; border-top: 31px solid transparent; border-bottom: 31px solid transparent; margin-left: 12px; }
+  #s5 .cta { position: absolute; left: 72px; right: 72px; top: 940px; text-align: center; }
+  #s5 .cta .big { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 42px; white-space: nowrap; }
+  #s5 .cta .url { display: inline-block; margin-top: 26px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 34px; padding: 16px 34px; border-radius: 18px; border: 2px solid rgba(255,255,255,.8); box-shadow: 0 0 40px rgba(46,139,255,.4); }
+  #s5 .cta p { font-size: 24px; color: var(--muted); margin-top: 22px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · cover -->
+<section class="slide" id="s1">
+  <img class="map" src="frames/t13.4.jpg" alt="">
+  <div class="shade"></div>
+  <div class="glow" style="background: radial-gradient(600px 400px at 18% 80%, rgba(46,139,255,.16), transparent 70%), radial-gradient(600px 400px at 85% 85%, rgba(255,59,59,.16), transparent 70%)"></div>
+  <img class="logo" src="frames/afterdark-logo.png" alt="AfterDark">
+  <div class="text">
+    <div class="kicker">Code N Mode · hackathon build</div>
+    <h1>We built Among Us<br>for the <span class="red">real world.</span></h1>
+    <p>Your city is the map. Your friends are the crew.<br><span style="color:#fff">Some of them are lying.</span></p>
+  </div>
+  <div class="footer"><span>Built at <b>Code N Mode</b> · 32 BIT, SIT</span><span class="page">Swipe →</span></div>
+</section>
+
+<!-- 2 · how a game goes -->
+<section class="slide" id="s2">
+  <div class="glow" style="background: radial-gradient(700px 500px at 0% 0%, rgba(46,139,255,.18), transparent 70%), radial-gradient(700px 500px at 100% 60%, rgba(255,59,59,.14), transparent 70%)"></div>
+  <img class="brandmark" src="frames/afterdark-logo.png" alt="" style="display:none">
+  <div class="head">
+    <div class="kicker">How a game goes</div>
+    <h2>Walk. Solve. <span class="red">Suspect.</span></h2>
+  </div>
+  <div class="cards">
+    <div class="beat">
+      <div class="shot" style="box-shadow: 0 0 50px rgba(46,139,255,.35)"><img src="frames/t13.4.jpg" alt=""></div>
+      <div><div class="tag blue">01 · CREW</div><h3>Find the tasks</h3><p>Clues like “NE · Region B” lead to hidden spots on a real map. Get there, solve a 20-second minigame.</p></div>
+    </div>
+    <div class="beat">
+      <div class="shot" style="box-shadow: 0 0 50px rgba(255,59,59,.4)"><img src="frames/t22.6.jpg" alt="" style="object-position: 40% 50%"></div>
+      <div><div class="tag red">02 · IMPOSTERS</div><h3>Infect in silence</h3><p>Stay within 8 m of someone for 10 seconds and they’re infected. Nobody is told who.</p></div>
+    </div>
+    <div class="beat">
+      <div class="shot" style="box-shadow: 0 0 50px rgba(255,59,59,.3)"><img src="frames/t32.9.jpg" alt=""></div>
+      <div><div class="tag" style="color:#fff">03 · MEETING</div><h3>Face to face</h3><p>Anyone can call a meeting. Everyone walks to the Base, argues in person and votes.</p></div>
+    </div>
+  </div>
+  <div class="footer"><span><b>AfterDark</b> · real-world social deduction</span><span class="page">2 / 5</span></div>
+</section>
+
+<!-- 3 · the real app -->
+<section class="slide" id="s3">
+  <div class="glow" style="background: radial-gradient(800px 600px at 50% 62%, rgba(46,139,255,.22), transparent 70%)"></div>
+  <div class="head">
+    <div class="kicker">The actual game</div>
+    <h2>No app store.<br><span class="blue">No accounts.</span></h2>
+    <p>Share a 6-letter code and play in your phone’s browser.</p>
+  </div>
+  <div class="phones">
+    <div class="phone l"><img src="frames/reveal.png" alt="Secret role reveal: CREW"></div>
+    <div class="phone c"><img src="frames/game.png" alt="The crew game screen with task cards"></div>
+    <div class="phone r"><img src="frames/jammed.png" alt="Systems jammed by an imposter"></div>
+  </div>
+  <div class="chips"><span class="chip">4–12 players</span><span class="chip">7 minigames</span><span class="chip">3 imposter classes</span></div>
+  <div class="footer"><span><b>AfterDark</b> · installable web app</span><span class="page">3 / 5</span></div>
+</section>
+
+<!-- 4 · under the hood -->
+<section class="slide" id="s4">
+  <div class="glow" style="background: radial-gradient(800px 500px at 100% 0%, rgba(46,139,255,.2), transparent 70%), radial-gradient(700px 500px at 0% 100%, rgba(255,59,59,.14), transparent 70%)"></div>
+  <div class="head">
+    <div class="kicker">Under the hood</div>
+    <h2>Built so nobody<br>can <span class="red">cheat.</span></h2>
+  </div>
+  <div class="grid">
+    <div class="stat"><div class="big blue">1,140</div><div class="lbl">automated tests</div><p>Unit, integration and end-to-end, green on every commit.</p></div>
+    <div class="stat"><div class="big" style="color:var(--green)">0</div><div class="lbl">secrets leaked</div><p>Each phone only receives what its player may know, checked down to raw network frames.</p></div>
+    <div class="stat"><div class="big" style="color:var(--amber)">100%</div><div class="lbl">server-decided</div><p>Every rule, timer and dice roll runs on the server. The phone just draws.</p></div>
+    <div class="stat"><div class="big red">20×8</div><div class="lbl">players load-tested</div><p>20 games of 8 on one server, positions on screen in under 0.2 s.</p></div>
+    <div class="stat wide"><div class="big blue">GPS</div><div><div class="lbl" style="margin-top:0">real location, real safety</div><p>Anti-spoofing speed checks, reconnects that keep your role, no-go zones, and “Stop somewhere safe” before every puzzle.</p></div></div>
+  </div>
+  <div class="stack">React · TypeScript · Socket.IO · Leaflet · Node.js</div>
+  <div class="footer"><span><b>AfterDark</b> · walk, never run</span><span class="page">4 / 5</span></div>
+</section>
+
+<!-- 5 · trailer -->
+<section class="slide" id="s5">
+  <div class="glow" style="background: radial-gradient(700px 500px at 20% 40%, rgba(46,139,255,.2), transparent 70%), radial-gradient(700px 500px at 80% 50%, rgba(255,59,59,.2), transparent 70%)"></div>
+  <div class="head">
+    <div class="kicker">Watch · play</div>
+    <h2>Who’s <span class="red">lying?</span></h2>
+  </div>
+  <div class="thumb"><img src="frames/thumbnail.jpg" alt="AfterDark official trailer"><div class="play"></div></div>
+  <div class="cta">
+    <div class="big">Trailer and play link in the comments</div>
+    <div class="url">afterdark-24gx.onrender.com</div>
+    <p>Free · in your browser · grab a few friends and an open, safe space</p>
+  </div>
+  <div class="footer"><span>Built at <b>Code N Mode</b> · 32 BIT, SIT</span><span class="page">5 / 5</span></div>
+</section>
+
+</body>
+</html>

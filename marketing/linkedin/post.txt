@@ -1,0 +1,28 @@
+We built Among Us… except you play it with your feet. 🌙📍
+
+No couch. No controller. Just your city, your friends, and the creeping feeling that someone standing next to you is lying.
+
+At Code N Mode, the hackathon by 32 BIT, the game dev club of SIT, we built AfterDark: a real-world, GPS-based social-deduction game that runs right in your phone's browser.
+
+How a round goes:
+
+🔵 Crew follow clues like "NE · Region B" to hidden spots on a real map, then solve quick minigames to reach the team target.
+🔴 Imposters hide among them. Stay within 8 metres of someone for 10 seconds and they're infected. Nobody is told who.
+🚨 Anyone can call an emergency meeting. Everyone walks to the Base, argues face to face, and votes someone out.
+
+No app store. No accounts. Share a 6-letter code and play.
+
+The part we're proudest of is the part you can't see:
+
+→ The server decides everything: every rule, every timer, every dice roll.
+→ Each phone only receives what its player is allowed to know. 1,140 automated tests check that, down to the raw network traffic, so a crew phone can't even find out who's infected.
+→ GPS anti-spoofing, reconnects that keep your secret role, and "walk, never run" safety built into every screen.
+→ Even the 60-second trailer is code: every shot animated and the soundtrack synthesized from scratch.
+
+A huge thank you to 32 BIT for organising Code N Mode and for making room for ideas this ambitious. 🙌
+
+🎬 The trailer and the play link are in the first comment. Grab a few friends, find an open, safe space, and try to work out who's lying.
+
+So, which one are you: the crew member everyone trusts, or the imposter nobody suspects? 👇
+
+#Hackathon #GameDev #CodeNMode #BuildInPublic #WebDevelopment #TypeScript #IndieGame
